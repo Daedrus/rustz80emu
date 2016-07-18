@@ -1,5 +1,10 @@
 use super::memory;
 
+const REG_PAIR_BC:u8 = 0b00;
+const REG_PAIR_DE:u8 = 0b01;
+const REG_PAIR_HL:u8 = 0b10;
+const REG_PAIR_SP:u8 = 0b11;
+
 #[derive(Debug)]
 pub struct Cpu {
     af: u16,
@@ -57,11 +62,62 @@ impl Cpu {
 
         match instruction {
             0b11110011 => {
+                self.iff1 = false;
+                self.iff1 = false;
                 println!("{:#x}: DI", self.pc);
-                self.iff1 = false;
-                self.iff1 = false;
                 self.pc += 1;
             },
+            0b00000001 | 0b00010001 | 0b00100001 | 0b00110001 => {
+                let nn =
+                    (self.read_word(self.pc + 1) as u16) +
+                    ((self.read_word(self.pc + 2) as u16) << 8);
+                match (instruction & 0b00110000) >> 4 {
+                    REG_PAIR_BC => {
+                        self.bc = nn;
+                        println!("{:#x}: LD BC, ${:x}", self.pc, nn);
+                    }
+                    REG_PAIR_DE => {
+                        self.de = nn;
+                        println!("{:#x}: LD DE, ${:x}", self.pc, nn);
+                    }
+                    REG_PAIR_HL => {
+                        self.hl = nn;
+                        println!("{:#x}: LD HL, ${:x}", self.pc, nn);
+                    }
+                    REG_PAIR_SP => {
+                        self.sp = nn;
+                        println!("{:#x}: LD SP, ${:x}", self.pc, nn);
+                    }
+                    _ => {
+                        panic!("Error when parsing \"LD dd, nn\" instruction");
+                    }
+                }
+                self.pc += 3;
+            },
+            0b00001011 | 0b00011011 | 0b00101011 | 0b00111011 => {
+                match (instruction & 0b00110000) >> 4 {
+                    REG_PAIR_BC => {
+                        self.bc -= 1;
+                        println!("{:#x}: DEC BC", self.pc);
+                    }
+                    REG_PAIR_DE => {
+                        self.de -= 1;
+                        println!("{:#x}: DEC DE", self.pc);
+                    }
+                    REG_PAIR_HL => {
+                        self.hl -= 1;
+                        println!("{:#x}: DEC HL", self.pc);
+                    }
+                    REG_PAIR_SP => {
+                        self.sp -= 1;
+                        println!("{:#x}: DEC SP", self.pc);
+                    }
+                    _ => {
+                        panic!("Error when parsing \"DEC ss\" instruction");
+                    }
+                }
+                self.pc += 1;
+            }
             _ => {
                 panic!("Unrecognized instruction: {:#x}", instruction);
             }
