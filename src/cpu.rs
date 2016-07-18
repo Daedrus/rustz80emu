@@ -63,7 +63,7 @@ impl Cpu {
         match instruction {
             0b11110011 => {
                 self.iff1 = false;
-                self.iff1 = false;
+                self.iff2 = false;
                 println!("{:#x}: DI", self.pc);
                 self.pc += 1;
             },
