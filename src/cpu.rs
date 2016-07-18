@@ -48,9 +48,25 @@ impl Cpu {
 
     pub fn run(&mut self) {
         loop {
-            let instruction = self.read_word(self.pc);
-            panic!("Opcode: {:#x}", instruction);
+            self.run_instruction();
         }
+    }
+
+    fn run_instruction(&mut self) {
+        let instruction = self.read_word(self.pc);
+
+        match instruction {
+            0b11110011 => {
+                println!("{:#x}: DI", self.pc);
+                self.iff1 = false;
+                self.iff1 = false;
+                self.pc += 1;
+            },
+            _ => {
+                panic!("Unrecognized instruction: {:#x}", instruction);
+            }
+        }
+
     }
 
     fn read_word(&self, addr: u16) -> u8 {
