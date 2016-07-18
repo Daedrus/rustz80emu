@@ -1,4 +1,6 @@
-#[derive(Default, Debug)]
+use super::memory;
+
+#[derive(Debug)]
 pub struct Cpu {
     af: u16,
     bc: u16,
@@ -15,10 +17,44 @@ pub struct Cpu {
     pc: u16,
 
     iff1: bool,
-    iff2: bool
+    iff2: bool,
+
+    memory: memory::Memory
 }
 
 impl Cpu {
-}
+    pub fn new(memory: memory::Memory) -> Cpu {
+        Cpu {
+            af: 0,
+            bc: 0,
+            de: 0,
+            hl: 0,
+            af_: 0,
+            bc_: 0,
+            de_: 0,
+            hl_: 0,
+            ir: 0,
+            ix: 0,
+            iy: 0,
+            sp: 0,
+            pc: 0,
 
+            iff1: false,
+            iff2: false,
+
+            memory: memory
+        }
+    }
+
+    pub fn run(&mut self) {
+        loop {
+            let instruction = self.read_word(self.pc);
+            panic!("Opcode: {:#x}", instruction);
+        }
+    }
+
+    fn read_word(&self, addr: u16) -> u8 {
+        self.memory.read_word(addr)
+    }
+}
 

@@ -21,6 +21,9 @@ fn main() {
 
     let mut memory = memory::Memory::new(rom, ram);
 
-    let mut cpu = cpu::Cpu::default();
+    let mut cpu = cpu::Cpu::new(memory);
+
+    cpu.run();
+
     println!("{:?}", cpu);
 }
