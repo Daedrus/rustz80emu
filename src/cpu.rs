@@ -12,7 +12,10 @@ pub struct Cpu {
     ix: u16,
     iy: u16,
     sp: u16,
-    pc: u16
+    pc: u16,
+
+    iff1: bool,
+    iff2: bool
 }
 
 impl Cpu {
