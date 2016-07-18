@@ -1,0 +1,6 @@
+[package]
+name = "rustz80emu"
+version = "0.1.0"
+authors = ["Andrei Faur <da3drus@gmail.com>"]
+
+[dependencies]
