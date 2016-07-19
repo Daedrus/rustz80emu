@@ -64,6 +64,51 @@ impl Cpu {
         }
     }
 
+    // TODO have a single function called write_reg that handles multiple types
+    fn write_regpair(&mut self, reg: RegPair, val: u16) {
+        match reg {
+            RegPair::BC => { self.bc = val; }
+            RegPair::DE => { self.de = val; }
+            RegPair::HL => { self.hl = val; }
+            RegPair::SP => { self.sp = val; }
+        }
+    }
+
+    fn write_reg(&mut self, reg: Reg, val: u8) {
+        match reg {
+            Reg::A => { self.af |= (val as u16) << 8 }
+            Reg::B => { self.bc |= (val as u16) << 8 }
+            Reg::C => { self.bc |=  val as u16       }
+            Reg::D => { self.de |= (val as u16) << 8 }
+            Reg::E => { self.de |=  val as u16       }
+            Reg::H => { self.hl |= (val as u16) << 8 }
+            Reg::L => { self.hl |=  val as u16       }
+
+        }
+    }
+
+    // TODO have a single function called read_reg that handles multiple types
+    fn read_regpair(&mut self, reg: RegPair) -> u16 {
+        match reg {
+            RegPair::BC => { self.bc }
+            RegPair::DE => { self.de }
+            RegPair::HL => { self.hl }
+            RegPair::SP => { self.sp }
+        }
+    }
+
+    fn read_reg(&mut self, reg: Reg) -> u8 {
+        match reg {
+            Reg::A => { ((self.af & 0xFF00) >> 8) as u8 }
+            Reg::B => { ((self.bc & 0xFF00) >> 8) as u8 }
+            Reg::C => { ((self.bc & 0x00FF)     ) as u8 }
+            Reg::D => { ((self.de & 0xFF00) >> 8) as u8 }
+            Reg::E => { ((self.de & 0x00FF)     ) as u8 }
+            Reg::H => { ((self.hl & 0xFF00) >> 8) as u8 }
+            Reg::L => { ((self.hl & 0x00FF)     ) as u8 }
+        }
+    }
+
     fn run_instruction(&mut self) {
         let instruction = self.read_word(self.pc);
 
