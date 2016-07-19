@@ -2,6 +2,7 @@
 name = "rustz80emu"
 version = "0.1.0"
 authors = ["Andrei Faur <da3drus@gmail.com>"]
+license = "MIT"
 
 [dependencies]
 enum_primitive = "0.1.0"
