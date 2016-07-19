@@ -1,9 +1,26 @@
 use super::memory;
+use num::FromPrimitive;
+use std::fmt;
 
-const REG_PAIR_BC:u8 = 0b00;
-const REG_PAIR_DE:u8 = 0b01;
-const REG_PAIR_HL:u8 = 0b10;
-const REG_PAIR_SP:u8 = 0b11;
+enum_from_primitive! {
+enum RegPair {
+    RegPairBC = 0b00,
+    RegPairDE = 0b01,
+    RegPairHL = 0b10,
+    RegPairSP = 0b11
+}
+}
+
+impl fmt::Debug for RegPair {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &RegPair::RegPairBC => {write!(f, "BC")}
+            &RegPair::RegPairDE => {write!(f, "DE")}
+            &RegPair::RegPairHL => {write!(f, "HL")}
+            &RegPair::RegPairSP => {write!(f, "SP")}
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Cpu {
@@ -71,58 +88,53 @@ impl Cpu {
                 let nn =
                     (self.read_word(self.pc + 1) as u16) +
                     ((self.read_word(self.pc + 2) as u16) << 8);
-                match (instruction & 0b00110000) >> 4 {
-                    REG_PAIR_BC => {
+                let regpair = RegPair::from_u8((instruction & 0b00110000) >> 4);
+                match regpair {
+                    Some(RegPair::RegPairBC) => {
                         self.bc = nn;
-                        println!("{:#x}: LD BC, ${:x}", self.pc, nn);
                     }
-                    REG_PAIR_DE => {
+                    Some(RegPair::RegPairDE) => {
                         self.de = nn;
-                        println!("{:#x}: LD DE, ${:x}", self.pc, nn);
                     }
-                    REG_PAIR_HL => {
+                    Some(RegPair::RegPairHL) => {
                         self.hl = nn;
-                        println!("{:#x}: LD HL, ${:x}", self.pc, nn);
                     }
-                    REG_PAIR_SP => {
+                    Some(RegPair::RegPairSP) => {
                         self.sp = nn;
-                        println!("{:#x}: LD SP, ${:x}", self.pc, nn);
                     }
                     _ => {
                         panic!("Error when parsing \"LD dd, nn\" instruction");
                     }
                 }
+                println!("{:#x}: LD {:?}, ${:x}", self.pc, regpair.unwrap(), nn);
                 self.pc += 3;
             },
             0b00001011 | 0b00011011 | 0b00101011 | 0b00111011 => {
-                match (instruction & 0b00110000) >> 4 {
-                    REG_PAIR_BC => {
+                let regpair = RegPair::from_u8((instruction & 0b00110000) >> 4);
+                match regpair {
+                    Some(RegPair::RegPairBC) => {
                         self.bc -= 1;
-                        println!("{:#x}: DEC BC", self.pc);
                     }
-                    REG_PAIR_DE => {
+                    Some(RegPair::RegPairDE) => {
                         self.de -= 1;
-                        println!("{:#x}: DEC DE", self.pc);
                     }
-                    REG_PAIR_HL => {
+                    Some(RegPair::RegPairHL) => {
                         self.hl -= 1;
-                        println!("{:#x}: DEC HL", self.pc);
                     }
-                    REG_PAIR_SP => {
+                    Some(RegPair::RegPairSP) => {
                         self.sp -= 1;
-                        println!("{:#x}: DEC SP", self.pc);
                     }
                     _ => {
                         panic!("Error when parsing \"DEC ss\" instruction");
                     }
                 }
+                println!("{:#x}: DEC {:?}", self.pc, regpair.unwrap());
                 self.pc += 1;
             }
             _ => {
                 panic!("Unrecognized instruction: {:#x}", instruction);
             }
         }
-
     }
 
     fn read_word(&self, addr: u16) -> u8 {

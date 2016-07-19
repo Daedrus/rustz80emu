@@ -4,3 +4,5 @@ version = "0.1.0"
 authors = ["Andrei Faur <da3drus@gmail.com>"]
 
 [dependencies]
+enum_primitive = "0.1.0"
+num = "0.1.34"
