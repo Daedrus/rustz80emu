@@ -3,12 +3,25 @@ use num::FromPrimitive;
 use std::fmt;
 
 enum_from_primitive! {
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum RegPair {
     BC = 0b00,
     DE = 0b01,
     HL = 0b10,
     SP = 0b11
+}
+}
+
+enum_from_primitive! {
+#[derive(Debug, Clone, Copy)]
+enum Reg {
+    A = 0b111,
+    B = 0b000,
+    C = 0b001,
+    D = 0b010,
+    E = 0b011,
+    H = 0b100,
+    L = 0b101
 }
 }
 
@@ -113,6 +126,15 @@ impl Cpu {
         let instruction = self.read_word(self.pc);
 
         match instruction {
+            instruction if instruction & 0b11000000 == 0b01000000 => {
+                // TODO Better Option handling here
+                let rt = Reg::from_u8((instruction >> 3) & 0b111).unwrap();
+                let rs = Reg::from_u8( instruction       & 0b111).unwrap();
+                let rsval = self.read_reg(rs);
+                self.write_reg(rt, rsval);
+                println!("{:#x}: LD {:?}, {:?}", self.pc, rt, rs);
+                self.pc += 1;
+            }
             0b11110011 => {
                 self.iff1 = false;
                 self.iff2 = false;
