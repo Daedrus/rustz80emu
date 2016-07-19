@@ -85,23 +85,14 @@ impl Cpu {
                 self.pc += 1;
             },
             0b00000001 | 0b00010001 | 0b00100001 | 0b00110001 => {
-                let nn =
-                    (self.read_word(self.pc + 1) as u16) +
-                    ((self.read_word(self.pc + 2) as u16) << 8);
+                let nn = (self.read_word(self.pc + 1) as u16) +
+                        ((self.read_word(self.pc + 2) as u16) << 8);
                 let regpair = RegPair::from_u8((instruction & 0b00110000) >> 4);
                 match regpair {
-                    Some(RegPair::RegPairBC) => {
-                        self.bc = nn;
-                    }
-                    Some(RegPair::RegPairDE) => {
-                        self.de = nn;
-                    }
-                    Some(RegPair::RegPairHL) => {
-                        self.hl = nn;
-                    }
-                    Some(RegPair::RegPairSP) => {
-                        self.sp = nn;
-                    }
+                    Some(RegPair::RegPairBC) => { self.bc = nn; }
+                    Some(RegPair::RegPairDE) => { self.de = nn; }
+                    Some(RegPair::RegPairHL) => { self.hl = nn; }
+                    Some(RegPair::RegPairSP) => { self.sp = nn; }
                     _ => {
                         panic!("Error when parsing \"LD dd, nn\" instruction");
                     }
@@ -112,18 +103,10 @@ impl Cpu {
             0b00001011 | 0b00011011 | 0b00101011 | 0b00111011 => {
                 let regpair = RegPair::from_u8((instruction & 0b00110000) >> 4);
                 match regpair {
-                    Some(RegPair::RegPairBC) => {
-                        self.bc -= 1;
-                    }
-                    Some(RegPair::RegPairDE) => {
-                        self.de -= 1;
-                    }
-                    Some(RegPair::RegPairHL) => {
-                        self.hl -= 1;
-                    }
-                    Some(RegPair::RegPairSP) => {
-                        self.sp -= 1;
-                    }
+                    Some(RegPair::RegPairBC) => { self.bc -= 1; }
+                    Some(RegPair::RegPairDE) => { self.de -= 1; }
+                    Some(RegPair::RegPairHL) => { self.hl -= 1; }
+                    Some(RegPair::RegPairSP) => { self.sp -= 1; }
                     _ => {
                         panic!("Error when parsing \"DEC ss\" instruction");
                     }
