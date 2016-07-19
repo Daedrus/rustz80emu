@@ -3,23 +3,13 @@ use num::FromPrimitive;
 use std::fmt;
 
 enum_from_primitive! {
+#[derive(Debug)]
 enum RegPair {
-    RegPairBC = 0b00,
-    RegPairDE = 0b01,
-    RegPairHL = 0b10,
-    RegPairSP = 0b11
+    BC = 0b00,
+    DE = 0b01,
+    HL = 0b10,
+    SP = 0b11
 }
-}
-
-impl fmt::Debug for RegPair {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &RegPair::RegPairBC => {write!(f, "BC")}
-            &RegPair::RegPairDE => {write!(f, "DE")}
-            &RegPair::RegPairHL => {write!(f, "HL")}
-            &RegPair::RegPairSP => {write!(f, "SP")}
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -89,10 +79,10 @@ impl Cpu {
                         ((self.read_word(self.pc + 2) as u16) << 8);
                 let regpair = RegPair::from_u8((instruction & 0b00110000) >> 4);
                 match regpair {
-                    Some(RegPair::RegPairBC) => { self.bc = nn; }
-                    Some(RegPair::RegPairDE) => { self.de = nn; }
-                    Some(RegPair::RegPairHL) => { self.hl = nn; }
-                    Some(RegPair::RegPairSP) => { self.sp = nn; }
+                    Some(RegPair::BC) => { self.bc = nn; }
+                    Some(RegPair::DE) => { self.de = nn; }
+                    Some(RegPair::HL) => { self.hl = nn; }
+                    Some(RegPair::SP) => { self.sp = nn; }
                     _ => {
                         panic!("Error when parsing \"LD dd, nn\" instruction");
                     }
@@ -103,10 +93,10 @@ impl Cpu {
             0b00001011 | 0b00011011 | 0b00101011 | 0b00111011 => {
                 let regpair = RegPair::from_u8((instruction & 0b00110000) >> 4);
                 match regpair {
-                    Some(RegPair::RegPairBC) => { self.bc -= 1; }
-                    Some(RegPair::RegPairDE) => { self.de -= 1; }
-                    Some(RegPair::RegPairHL) => { self.hl -= 1; }
-                    Some(RegPair::RegPairSP) => { self.sp -= 1; }
+                    Some(RegPair::BC) => { self.bc -= 1; }
+                    Some(RegPair::DE) => { self.de -= 1; }
+                    Some(RegPair::HL) => { self.hl -= 1; }
+                    Some(RegPair::SP) => { self.sp -= 1; }
                     _ => {
                         panic!("Error when parsing \"DEC ss\" instruction");
                     }
