@@ -4,7 +4,7 @@ use std::fmt;
 
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy)]
-enum RegPair {
+enum Reg16 {
     BC = 0b00,
     DE = 0b01,
     HL = 0b10,
@@ -14,7 +14,7 @@ enum RegPair {
 
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy)]
-enum Reg {
+enum Reg8 {
     A = 0b111,
     B = 0b000,
     C = 0b001,
@@ -27,20 +27,37 @@ enum Reg {
 
 #[derive(Debug)]
 pub struct Cpu {
-    af: u16,
-    bc: u16,
-    de: u16,
-    hl: u16,
-    af_: u16,
-    bc_: u16,
-    de_: u16,
-    hl_: u16,
-    ir: u16,
+    // main register set
+    a: u8, f: u8,
+    b: u8, c: u8,
+    d: u8, e: u8,
+    h: u8, l: u8,
+
+    // alternate register set
+    a_alt: u8, f_alt: u8,
+    b_alt: u8, c_alt: u8,
+    d_alt: u8, e_alt: u8,
+    h_alt: u8, l_alt: u8,
+
+    // interrupt vector
+    i: u8,
+
+    // memory refresh
+    r: u8,
+
+    // index register X
     ix: u16,
+
+    // index register Y
     iy: u16,
+
+    // stack pointer
     sp: u16,
+
+    // program counter
     pc: u16,
 
+    // interrupt flip-flops
     iff1: bool,
     iff2: bool,
 
@@ -50,20 +67,20 @@ pub struct Cpu {
 impl Cpu {
     pub fn new(memory: memory::Memory) -> Cpu {
         Cpu {
-            af: 0,
-            bc: 0,
-            de: 0,
-            hl: 0,
-            af_: 0,
-            bc_: 0,
-            de_: 0,
-            hl_: 0,
-            ir: 0,
+            a: 0, f: 0,
+            b: 0, c: 0,
+            d: 0, e: 0,
+            h: 0, l: 0,
+            a_alt: 0, f_alt: 0,
+            b_alt: 0, c_alt: 0,
+            d_alt: 0, e_alt: 0,
+            h_alt: 0, l_alt: 0,
+            i: 0,
+            r: 0,
             ix: 0,
             iy: 0,
             sp: 0,
             pc: 0,
-
             iff1: false,
             iff2: false,
 
@@ -77,48 +94,53 @@ impl Cpu {
         }
     }
 
-    // TODO have a single function called write_reg that handles multiple types
-    fn write_regpair(&mut self, reg: RegPair, val: u16) {
+    fn read_reg8(&self, reg: Reg8) -> u8 {
         match reg {
-            RegPair::BC => { self.bc = val; }
-            RegPair::DE => { self.de = val; }
-            RegPair::HL => { self.hl = val; }
-            RegPair::SP => { self.sp = val; }
+            Reg8::A => self.a,
+            Reg8::B => self.b,
+            Reg8::C => self.c,
+            Reg8::D => self.d,
+            Reg8::E => self.e,
+            Reg8::H => self.h,
+            Reg8::L => self.l
         }
     }
 
-    fn write_reg(&mut self, reg: Reg, val: u8) {
+    fn write_reg8(&mut self, reg: Reg8, val: u8) {
         match reg {
-            Reg::A => { self.af |= (val as u16) << 8 }
-            Reg::B => { self.bc |= (val as u16) << 8 }
-            Reg::C => { self.bc |=  val as u16       }
-            Reg::D => { self.de |= (val as u16) << 8 }
-            Reg::E => { self.de |=  val as u16       }
-            Reg::H => { self.hl |= (val as u16) << 8 }
-            Reg::L => { self.hl |=  val as u16       }
-
+            Reg8::A => self.a = val,
+            Reg8::B => self.b = val,
+            Reg8::C => self.c = val,
+            Reg8::D => self.d = val,
+            Reg8::E => self.e = val,
+            Reg8::H => self.h = val,
+            Reg8::L => self.l = val
         }
     }
 
-    // TODO have a single function called read_reg that handles multiple types
-    fn read_regpair(&mut self, reg: RegPair) -> u16 {
-        match reg {
-            RegPair::BC => { self.bc }
-            RegPair::DE => { self.de }
-            RegPair::HL => { self.hl }
-            RegPair::SP => { self.sp }
-        }
+    fn read_reg16(&self, reg: Reg16) -> u16 {
+        let value = match reg {
+            Reg16::SP => self.sp,
+            _ => {
+                let (high, low) = match reg {
+                    Reg16::BC => (self.b, self.c),
+                    Reg16::DE => (self.d, self.e),
+                    Reg16::HL => (self.h, self.l),
+                    _ => unreachable!()
+                };
+                (((high as u16) << 8 ) + low as u16)
+            }
+        };
+        value
     }
 
-    fn read_reg(&mut self, reg: Reg) -> u8 {
+    fn write_reg16(&mut self, reg: Reg16, val: u16) {
+        let (high, low) = (((val & 0xFF00) >> 8) as u8, (val & 0x00FF) as u8);
         match reg {
-            Reg::A => { ((self.af & 0xFF00) >> 8) as u8 }
-            Reg::B => { ((self.bc & 0xFF00) >> 8) as u8 }
-            Reg::C => { ((self.bc & 0x00FF)     ) as u8 }
-            Reg::D => { ((self.de & 0xFF00) >> 8) as u8 }
-            Reg::E => { ((self.de & 0x00FF)     ) as u8 }
-            Reg::H => { ((self.hl & 0xFF00) >> 8) as u8 }
-            Reg::L => { ((self.hl & 0x00FF)     ) as u8 }
+            Reg16::BC => { self.b = high; self.c = low; }
+            Reg16::DE => { self.d = high; self.e = low; }
+            Reg16::HL => { self.h = high; self.l = low; }
+            Reg16::SP => { self.sp = val }
         }
     }
 
@@ -128,49 +150,38 @@ impl Cpu {
         match instruction {
             instruction if instruction & 0b11000000 == 0b01000000 => {
                 // TODO Better Option handling here
-                let rt = Reg::from_u8((instruction >> 3) & 0b111).unwrap();
-                let rs = Reg::from_u8( instruction       & 0b111).unwrap();
-                let rsval = self.read_reg(rs);
-                self.write_reg(rt, rsval);
+                let rt = Reg8::from_u8((instruction >> 3) & 0b111).unwrap();
+                let rs = Reg8::from_u8( instruction       & 0b111).unwrap();
+                let rsval = self.read_reg8(rs);
+                self.write_reg8(rt, rsval);
                 println!("{:#x}: LD {:?}, {:?}", self.pc, rt, rs);
                 self.pc += 1;
-            }
+            },
+
             0b11110011 => {
                 self.iff1 = false;
                 self.iff2 = false;
                 println!("{:#x}: DI", self.pc);
                 self.pc += 1;
             },
+
             0b00000001 | 0b00010001 | 0b00100001 | 0b00110001 => {
                 let nn = (self.read_word(self.pc + 1) as u16) +
                         ((self.read_word(self.pc + 2) as u16) << 8);
-                let regpair = RegPair::from_u8((instruction & 0b00110000) >> 4);
-                match regpair {
-                    Some(RegPair::BC) => { self.bc = nn; }
-                    Some(RegPair::DE) => { self.de = nn; }
-                    Some(RegPair::HL) => { self.hl = nn; }
-                    Some(RegPair::SP) => { self.sp = nn; }
-                    _ => {
-                        panic!("Error when parsing \"LD dd, nn\" instruction");
-                    }
-                }
-                println!("{:#x}: LD {:?}, ${:x}", self.pc, regpair.unwrap(), nn);
+                let regpair = Reg16::from_u8((instruction & 0b00110000) >> 4).unwrap();
+                self.write_reg16(regpair, nn);
+
+                println!("{:#x}: LD {:?}, ${:x}", self.pc, regpair, nn);
                 self.pc += 3;
             },
             0b00001011 | 0b00011011 | 0b00101011 | 0b00111011 => {
-                let regpair = RegPair::from_u8((instruction & 0b00110000) >> 4);
-                match regpair {
-                    Some(RegPair::BC) => { self.bc -= 1; }
-                    Some(RegPair::DE) => { self.de -= 1; }
-                    Some(RegPair::HL) => { self.hl -= 1; }
-                    Some(RegPair::SP) => { self.sp -= 1; }
-                    _ => {
-                        panic!("Error when parsing \"DEC ss\" instruction");
-                    }
-                }
-                println!("{:#x}: DEC {:?}", self.pc, regpair.unwrap());
+                let regpair = Reg16::from_u8((instruction & 0b00110000) >> 4).unwrap();
+                let oldregval = self.read_reg16(regpair);
+                self.write_reg16(regpair, oldregval - 1);
+
+                println!("{:#x}: DEC {:?}", self.pc, regpair);
                 self.pc += 1;
-            }
+            },
             _ => {
                 panic!("Unrecognized instruction: {:#x}", instruction);
             }
