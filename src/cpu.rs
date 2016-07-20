@@ -25,7 +25,6 @@ enum Reg8 {
 }
 }
 
-#[derive(Debug)]
 pub struct Cpu {
     // main register set
     a: u8, f: u8,
@@ -62,6 +61,33 @@ pub struct Cpu {
     iff2: bool,
 
     memory: memory::Memory
+
+impl fmt::Debug for Cpu {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "
+                         -----------
+                     af: | {:02X} | {:02X} |
+                     bc: | {:02X} | {:02X} |
+                     de: | {:02X} | {:02X} |
+                     hl: | {:02X} | {:02X} |
+                         -----------
+                     ir  | {:02X} | {:02X} |
+                         -----------
+                     ix  |   {:04X}  |
+                     iy  |   {:04X}  |
+                     sp  |   {:04X}  |
+                     pc  |   {:04X}  |
+                         -----------",
+                      self.a, self.f,
+                      self.b, self.c,
+                      self.d, self.e,
+                      self.h, self.l,
+                      self.i, self.r,
+                      self.ix,
+                      self.iy,
+                      self.sp,
+                      self.pc)
+    }
 }
 
 impl Cpu {
@@ -186,6 +212,7 @@ impl Cpu {
                 panic!("Unrecognized instruction: {:#x}", instruction);
             }
         }
+        println!("{:?}", self);
     }
 
     fn read_word(&self, addr: u16) -> u8 {
