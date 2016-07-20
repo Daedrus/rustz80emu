@@ -60,7 +60,10 @@ pub struct Cpu {
     iff1: bool,
     iff2: bool,
 
-    memory: memory::Memory
+    memory: memory::Memory,
+
+    instr_table: [fn(&mut Cpu, u8); 256]
+}
 
 impl fmt::Debug for Cpu {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -110,7 +113,266 @@ impl Cpu {
             iff1: false,
             iff2: false,
 
-            memory: memory
+            memory: memory,
+
+            instr_table: [
+                Cpu::instr_UNSUPPORTED, /* 0b00000000 */
+                Cpu::instr_LD_DD_NN   , /* 0b00000001 */
+                Cpu::instr_UNSUPPORTED, /* 0b00000010 */
+                Cpu::instr_UNSUPPORTED, /* 0b00000011 */
+                Cpu::instr_UNSUPPORTED, /* 0b00000100 */
+                Cpu::instr_UNSUPPORTED, /* 0b00000101 */
+                Cpu::instr_UNSUPPORTED, /* 0b00000110 */
+                Cpu::instr_UNSUPPORTED, /* 0b00000111 */
+                Cpu::instr_UNSUPPORTED, /* 0b00001000 */
+                Cpu::instr_UNSUPPORTED, /* 0b00001001 */
+                Cpu::instr_UNSUPPORTED, /* 0b00001010 */
+                Cpu::instr_DEC        , /* 0b00001011 */
+                Cpu::instr_UNSUPPORTED, /* 0b00001100 */
+                Cpu::instr_UNSUPPORTED, /* 0b00001101 */
+                Cpu::instr_UNSUPPORTED, /* 0b00001110 */
+                Cpu::instr_UNSUPPORTED, /* 0b00001111 */
+                Cpu::instr_UNSUPPORTED, /* 0b00010000 */
+                Cpu::instr_LD_DD_NN,    /* 0b00010001 */
+                Cpu::instr_UNSUPPORTED, /* 0b00010010 */
+                Cpu::instr_UNSUPPORTED, /* 0b00010011 */
+                Cpu::instr_UNSUPPORTED, /* 0b00010100 */
+                Cpu::instr_UNSUPPORTED, /* 0b00010101 */
+                Cpu::instr_UNSUPPORTED, /* 0b00010110 */
+                Cpu::instr_UNSUPPORTED, /* 0b00010111 */
+                Cpu::instr_UNSUPPORTED, /* 0b00011000 */
+                Cpu::instr_UNSUPPORTED, /* 0b00011001 */
+                Cpu::instr_UNSUPPORTED, /* 0b00011010 */
+                Cpu::instr_DEC        , /* 0b00011011 */
+                Cpu::instr_UNSUPPORTED, /* 0b00011100 */
+                Cpu::instr_UNSUPPORTED, /* 0b00011101 */
+                Cpu::instr_UNSUPPORTED, /* 0b00011110 */
+                Cpu::instr_UNSUPPORTED, /* 0b00011111 */
+                Cpu::instr_UNSUPPORTED, /* 0b00100000 */
+                Cpu::instr_LD_DD_NN   , /* 0b00100001 */
+                Cpu::instr_UNSUPPORTED, /* 0b00100010 */
+                Cpu::instr_UNSUPPORTED, /* 0b00100011 */
+                Cpu::instr_UNSUPPORTED, /* 0b00100100 */
+                Cpu::instr_UNSUPPORTED, /* 0b00100101 */
+                Cpu::instr_UNSUPPORTED, /* 0b00100110 */
+                Cpu::instr_UNSUPPORTED, /* 0b00100111 */
+                Cpu::instr_UNSUPPORTED, /* 0b00101000 */
+                Cpu::instr_UNSUPPORTED, /* 0b00101001 */
+                Cpu::instr_UNSUPPORTED, /* 0b00101010 */
+                Cpu::instr_DEC        , /* 0b00101011 */
+                Cpu::instr_UNSUPPORTED, /* 0b00101100 */
+                Cpu::instr_UNSUPPORTED, /* 0b00101101 */
+                Cpu::instr_UNSUPPORTED, /* 0b00101110 */
+                Cpu::instr_UNSUPPORTED, /* 0b00101111 */
+                Cpu::instr_UNSUPPORTED, /* 0b00110000 */
+                Cpu::instr_LD_DD_NN   , /* 0b00110001 */
+                Cpu::instr_UNSUPPORTED, /* 0b00110010 */
+                Cpu::instr_UNSUPPORTED, /* 0b00110011 */
+                Cpu::instr_UNSUPPORTED, /* 0b00110100 */
+                Cpu::instr_UNSUPPORTED, /* 0b00110101 */
+                Cpu::instr_UNSUPPORTED, /* 0b00110110 */
+                Cpu::instr_UNSUPPORTED, /* 0b00110111 */
+                Cpu::instr_UNSUPPORTED, /* 0b00111000 */
+                Cpu::instr_UNSUPPORTED, /* 0b00111001 */
+                Cpu::instr_UNSUPPORTED, /* 0b00111010 */
+                Cpu::instr_DEC        , /* 0b00111011 */
+                Cpu::instr_UNSUPPORTED, /* 0b00111100 */
+                Cpu::instr_UNSUPPORTED, /* 0b00111101 */
+                Cpu::instr_UNSUPPORTED, /* 0b00111110 */
+                Cpu::instr_UNSUPPORTED, /* 0b00111111 */
+                Cpu::instr_LD_R_R,      /* 0b01000000 */
+                Cpu::instr_LD_R_R,      /* 0b01000001 */
+                Cpu::instr_LD_R_R,      /* 0b01000010 */
+                Cpu::instr_LD_R_R,      /* 0b01000011 */
+                Cpu::instr_LD_R_R,      /* 0b01000100 */
+                Cpu::instr_LD_R_R,      /* 0b01000101 */
+                Cpu::instr_UNSUPPORTED, /* 0b01000110 */
+                Cpu::instr_LD_R_R,      /* 0b01000111 */
+                Cpu::instr_LD_R_R,      /* 0b01001000 */
+                Cpu::instr_LD_R_R,      /* 0b01001001 */
+                Cpu::instr_LD_R_R,      /* 0b01001010 */
+                Cpu::instr_LD_R_R,      /* 0b01001011 */
+                Cpu::instr_LD_R_R,      /* 0b01001100 */
+                Cpu::instr_LD_R_R,      /* 0b01001101 */
+                Cpu::instr_UNSUPPORTED, /* 0b01001110 */
+                Cpu::instr_LD_R_R,      /* 0b01001111 */
+                Cpu::instr_LD_R_R,      /* 0b01010000 */
+                Cpu::instr_LD_R_R,      /* 0b01010001 */
+                Cpu::instr_LD_R_R,      /* 0b01010010 */
+                Cpu::instr_LD_R_R,      /* 0b01010011 */
+                Cpu::instr_LD_R_R,      /* 0b01010100 */
+                Cpu::instr_LD_R_R,      /* 0b01010101 */
+                Cpu::instr_UNSUPPORTED, /* 0b01010110 */
+                Cpu::instr_LD_R_R,      /* 0b01010111 */
+                Cpu::instr_LD_R_R,      /* 0b01011000 */
+                Cpu::instr_LD_R_R,      /* 0b01011001 */
+                Cpu::instr_LD_R_R,      /* 0b01011010 */
+                Cpu::instr_LD_R_R,      /* 0b01011011 */
+                Cpu::instr_LD_R_R,      /* 0b01011100 */
+                Cpu::instr_LD_R_R,      /* 0b01011101 */
+                Cpu::instr_UNSUPPORTED, /* 0b01011110 */
+                Cpu::instr_LD_R_R,      /* 0b01011111 */
+                Cpu::instr_LD_R_R,      /* 0b01100000 */
+                Cpu::instr_LD_R_R,      /* 0b01100001 */
+                Cpu::instr_LD_R_R,      /* 0b01100010 */
+                Cpu::instr_LD_R_R,      /* 0b01100011 */
+                Cpu::instr_LD_R_R,      /* 0b01100100 */
+                Cpu::instr_LD_R_R,      /* 0b01100101 */
+                Cpu::instr_UNSUPPORTED, /* 0b01100110 */
+                Cpu::instr_LD_R_R,      /* 0b01100111 */
+                Cpu::instr_LD_R_R,      /* 0b01101000 */
+                Cpu::instr_LD_R_R,      /* 0b01101001 */
+                Cpu::instr_LD_R_R,      /* 0b01101010 */
+                Cpu::instr_LD_R_R,      /* 0b01101011 */
+                Cpu::instr_LD_R_R,      /* 0b01101100 */
+                Cpu::instr_LD_R_R,      /* 0b01101101 */
+                Cpu::instr_UNSUPPORTED, /* 0b01101110 */
+                Cpu::instr_LD_R_R,      /* 0b01101111 */
+                Cpu::instr_UNSUPPORTED, /* 0b01110000 */
+                Cpu::instr_UNSUPPORTED, /* 0b01110001 */
+                Cpu::instr_UNSUPPORTED, /* 0b01110010 */
+                Cpu::instr_UNSUPPORTED, /* 0b01110011 */
+                Cpu::instr_UNSUPPORTED, /* 0b01110100 */
+                Cpu::instr_UNSUPPORTED, /* 0b01110101 */
+                Cpu::instr_UNSUPPORTED, /* 0b01110110 */
+                Cpu::instr_UNSUPPORTED, /* 0b01110111 */
+                Cpu::instr_LD_R_R,      /* 0b01111000 */
+                Cpu::instr_LD_R_R,      /* 0b01111001 */
+                Cpu::instr_LD_R_R,      /* 0b01111010 */
+                Cpu::instr_LD_R_R,      /* 0b01111011 */
+                Cpu::instr_LD_R_R,      /* 0b01111100 */
+                Cpu::instr_LD_R_R,      /* 0b01111101 */
+                Cpu::instr_UNSUPPORTED, /* 0b01111110 */
+                Cpu::instr_LD_R_R,      /* 0b01111111 */
+                Cpu::instr_UNSUPPORTED, /* 0b10000000 */
+                Cpu::instr_UNSUPPORTED, /* 0b10000001 */
+                Cpu::instr_UNSUPPORTED, /* 0b10000010 */
+                Cpu::instr_UNSUPPORTED, /* 0b10000011 */
+                Cpu::instr_UNSUPPORTED, /* 0b10000100 */
+                Cpu::instr_UNSUPPORTED, /* 0b10000101 */
+                Cpu::instr_UNSUPPORTED, /* 0b10000110 */
+                Cpu::instr_UNSUPPORTED, /* 0b10000111 */
+                Cpu::instr_UNSUPPORTED, /* 0b10001000 */
+                Cpu::instr_UNSUPPORTED, /* 0b10001001 */
+                Cpu::instr_UNSUPPORTED, /* 0b10001010 */
+                Cpu::instr_UNSUPPORTED, /* 0b10001011 */
+                Cpu::instr_UNSUPPORTED, /* 0b10001100 */
+                Cpu::instr_UNSUPPORTED, /* 0b10001101 */
+                Cpu::instr_UNSUPPORTED, /* 0b10001110 */
+                Cpu::instr_UNSUPPORTED, /* 0b10001111 */
+                Cpu::instr_UNSUPPORTED, /* 0b10010000 */
+                Cpu::instr_UNSUPPORTED, /* 0b10010001 */
+                Cpu::instr_UNSUPPORTED, /* 0b10010010 */
+                Cpu::instr_UNSUPPORTED, /* 0b10010011 */
+                Cpu::instr_UNSUPPORTED, /* 0b10010100 */
+                Cpu::instr_UNSUPPORTED, /* 0b10010101 */
+                Cpu::instr_UNSUPPORTED, /* 0b10010110 */
+                Cpu::instr_UNSUPPORTED, /* 0b10010111 */
+                Cpu::instr_UNSUPPORTED, /* 0b10011000 */
+                Cpu::instr_UNSUPPORTED, /* 0b10011001 */
+                Cpu::instr_UNSUPPORTED, /* 0b10011010 */
+                Cpu::instr_UNSUPPORTED, /* 0b10011011 */
+                Cpu::instr_UNSUPPORTED, /* 0b10011100 */
+                Cpu::instr_UNSUPPORTED, /* 0b10011101 */
+                Cpu::instr_UNSUPPORTED, /* 0b10011110 */
+                Cpu::instr_UNSUPPORTED, /* 0b10011111 */
+                Cpu::instr_UNSUPPORTED, /* 0b10100000 */
+                Cpu::instr_UNSUPPORTED, /* 0b10100001 */
+                Cpu::instr_UNSUPPORTED, /* 0b10100010 */
+                Cpu::instr_UNSUPPORTED, /* 0b10100011 */
+                Cpu::instr_UNSUPPORTED, /* 0b10100100 */
+                Cpu::instr_UNSUPPORTED, /* 0b10100101 */
+                Cpu::instr_UNSUPPORTED, /* 0b10100110 */
+                Cpu::instr_UNSUPPORTED, /* 0b10100111 */
+                Cpu::instr_UNSUPPORTED, /* 0b10101000 */
+                Cpu::instr_UNSUPPORTED, /* 0b10101001 */
+                Cpu::instr_UNSUPPORTED, /* 0b10101010 */
+                Cpu::instr_UNSUPPORTED, /* 0b10101011 */
+                Cpu::instr_UNSUPPORTED, /* 0b10101100 */
+                Cpu::instr_UNSUPPORTED, /* 0b10101101 */
+                Cpu::instr_UNSUPPORTED, /* 0b10101110 */
+                Cpu::instr_UNSUPPORTED, /* 0b10101111 */
+                Cpu::instr_UNSUPPORTED, /* 0b10110000 */
+                Cpu::instr_UNSUPPORTED, /* 0b10110001 */
+                Cpu::instr_UNSUPPORTED, /* 0b10110010 */
+                Cpu::instr_UNSUPPORTED, /* 0b10110011 */
+                Cpu::instr_UNSUPPORTED, /* 0b10110100 */
+                Cpu::instr_UNSUPPORTED, /* 0b10110101 */
+                Cpu::instr_UNSUPPORTED, /* 0b10110110 */
+                Cpu::instr_UNSUPPORTED, /* 0b10110111 */
+                Cpu::instr_UNSUPPORTED, /* 0b10111000 */
+                Cpu::instr_UNSUPPORTED, /* 0b10111001 */
+                Cpu::instr_UNSUPPORTED, /* 0b10111010 */
+                Cpu::instr_UNSUPPORTED, /* 0b10111011 */
+                Cpu::instr_UNSUPPORTED, /* 0b10111100 */
+                Cpu::instr_UNSUPPORTED, /* 0b10111101 */
+                Cpu::instr_UNSUPPORTED, /* 0b10111110 */
+                Cpu::instr_UNSUPPORTED, /* 0b10111111 */
+                Cpu::instr_UNSUPPORTED, /* 0b11000000 */
+                Cpu::instr_UNSUPPORTED, /* 0b11000001 */
+                Cpu::instr_UNSUPPORTED, /* 0b11000010 */
+                Cpu::instr_UNSUPPORTED, /* 0b11000011 */
+                Cpu::instr_UNSUPPORTED, /* 0b11000100 */
+                Cpu::instr_UNSUPPORTED, /* 0b11000101 */
+                Cpu::instr_UNSUPPORTED, /* 0b11000110 */
+                Cpu::instr_UNSUPPORTED, /* 0b11000111 */
+                Cpu::instr_UNSUPPORTED, /* 0b11001000 */
+                Cpu::instr_UNSUPPORTED, /* 0b11001001 */
+                Cpu::instr_UNSUPPORTED, /* 0b11001010 */
+                Cpu::instr_UNSUPPORTED, /* 0b11001011 */
+                Cpu::instr_UNSUPPORTED, /* 0b11001100 */
+                Cpu::instr_UNSUPPORTED, /* 0b11001101 */
+                Cpu::instr_UNSUPPORTED, /* 0b11001110 */
+                Cpu::instr_UNSUPPORTED, /* 0b11001111 */
+                Cpu::instr_UNSUPPORTED, /* 0b11010000 */
+                Cpu::instr_UNSUPPORTED, /* 0b11010001 */
+                Cpu::instr_UNSUPPORTED, /* 0b11010010 */
+                Cpu::instr_UNSUPPORTED, /* 0b11010011 */
+                Cpu::instr_UNSUPPORTED, /* 0b11010100 */
+                Cpu::instr_UNSUPPORTED, /* 0b11010101 */
+                Cpu::instr_UNSUPPORTED, /* 0b11010110 */
+                Cpu::instr_UNSUPPORTED, /* 0b11010111 */
+                Cpu::instr_UNSUPPORTED, /* 0b11011000 */
+                Cpu::instr_UNSUPPORTED, /* 0b11011001 */
+                Cpu::instr_UNSUPPORTED, /* 0b11011010 */
+                Cpu::instr_UNSUPPORTED, /* 0b11011011 */
+                Cpu::instr_UNSUPPORTED, /* 0b11011100 */
+                Cpu::instr_UNSUPPORTED, /* 0b11011101 */
+                Cpu::instr_UNSUPPORTED, /* 0b11011110 */
+                Cpu::instr_UNSUPPORTED, /* 0b11011111 */
+                Cpu::instr_UNSUPPORTED, /* 0b11100000 */
+                Cpu::instr_UNSUPPORTED, /* 0b11100001 */
+                Cpu::instr_UNSUPPORTED, /* 0b11100010 */
+                Cpu::instr_UNSUPPORTED, /* 0b11100011 */
+                Cpu::instr_UNSUPPORTED, /* 0b11100100 */
+                Cpu::instr_UNSUPPORTED, /* 0b11100101 */
+                Cpu::instr_UNSUPPORTED, /* 0b11100110 */
+                Cpu::instr_UNSUPPORTED, /* 0b11100111 */
+                Cpu::instr_UNSUPPORTED, /* 0b11101000 */
+                Cpu::instr_UNSUPPORTED, /* 0b11101001 */
+                Cpu::instr_UNSUPPORTED, /* 0b11101010 */
+                Cpu::instr_UNSUPPORTED, /* 0b11101011 */
+                Cpu::instr_UNSUPPORTED, /* 0b11101100 */
+                Cpu::instr_UNSUPPORTED, /* 0b11101101 */
+                Cpu::instr_UNSUPPORTED, /* 0b11101110 */
+                Cpu::instr_UNSUPPORTED, /* 0b11101111 */
+                Cpu::instr_UNSUPPORTED, /* 0b11110000 */
+                Cpu::instr_UNSUPPORTED, /* 0b11110001 */
+                Cpu::instr_UNSUPPORTED, /* 0b11110010 */
+                Cpu::instr_DI,          /* 0b11110011 */
+                Cpu::instr_UNSUPPORTED, /* 0b11110100 */
+                Cpu::instr_UNSUPPORTED, /* 0b11110101 */
+                Cpu::instr_UNSUPPORTED, /* 0b11110110 */
+                Cpu::instr_UNSUPPORTED, /* 0b11110111 */
+                Cpu::instr_UNSUPPORTED, /* 0b11111000 */
+                Cpu::instr_UNSUPPORTED, /* 0b11111001 */
+                Cpu::instr_UNSUPPORTED, /* 0b11111010 */
+                Cpu::instr_UNSUPPORTED, /* 0b11111011 */
+                Cpu::instr_UNSUPPORTED, /* 0b11111100 */
+                Cpu::instr_UNSUPPORTED, /* 0b11111101 */
+                Cpu::instr_UNSUPPORTED, /* 0b11111110 */
+                Cpu::instr_UNSUPPORTED  /* 0b11111111 */
+            ]
         }
     }
 
@@ -170,48 +432,50 @@ impl Cpu {
         }
     }
 
+    fn instr_UNSUPPORTED(_: &mut Cpu, instr: u8) {
+        panic!("Unsupported instruction: {:#x}", instr);
+    }
+
+    fn instr_DI(cpu: &mut Cpu, instr: u8) {
+        cpu.iff1 = false;
+        cpu.iff2 = false;
+        println!("{:#x}: DI", cpu.pc);
+        cpu.pc += 1;
+    }
+
+    fn instr_DEC(cpu: &mut Cpu, instr: u8) {
+        let regpair = Reg16::from_u8((instr & 0b00110000) >> 4).unwrap();
+        let oldregval = cpu.read_reg16(regpair);
+        cpu.write_reg16(regpair, oldregval - 1);
+
+        println!("{:#x}: DEC {:?}", cpu.pc, regpair);
+        cpu.pc += 1;
+    }
+
+    fn instr_LD_DD_NN(cpu: &mut Cpu, instr: u8) {
+        let nn =  (cpu.read_word(cpu.pc + 1) as u16) +
+                 ((cpu.read_word(cpu.pc + 2) as u16) << 8);
+        let regpair = Reg16::from_u8((instr & 0b00110000) >> 4).unwrap();
+        cpu.write_reg16(regpair, nn);
+
+        println!("{:#x}: LD {:?}, ${:x}", cpu.pc, regpair, nn);
+        cpu.pc += 3;
+    }
+
+    fn instr_LD_R_R(cpu: &mut Cpu, instr: u8) {
+        let rt = Reg8::from_u8((instr >> 3) & 0b111).unwrap();
+        let rs = Reg8::from_u8( instr       & 0b111).unwrap();
+        let rsval = cpu.read_reg8(rs);
+        cpu.write_reg8(rt, rsval);
+        println!("{:#x}: LD {:?}, {:?}", cpu.pc, rt, rs);
+        cpu.pc += 1;
+    }
+
     fn run_instruction(&mut self) {
         let instruction = self.read_word(self.pc);
 
-        match instruction {
-            instruction if instruction & 0b11000000 == 0b01000000 => {
-                // TODO Better Option handling here
-                let rt = Reg8::from_u8((instruction >> 3) & 0b111).unwrap();
-                let rs = Reg8::from_u8( instruction       & 0b111).unwrap();
-                let rsval = self.read_reg8(rs);
-                self.write_reg8(rt, rsval);
-                println!("{:#x}: LD {:?}, {:?}", self.pc, rt, rs);
-                self.pc += 1;
-            },
+        self.instr_table[instruction as usize](self, instruction);
 
-            0b11110011 => {
-                self.iff1 = false;
-                self.iff2 = false;
-                println!("{:#x}: DI", self.pc);
-                self.pc += 1;
-            },
-
-            0b00000001 | 0b00010001 | 0b00100001 | 0b00110001 => {
-                let nn = (self.read_word(self.pc + 1) as u16) +
-                        ((self.read_word(self.pc + 2) as u16) << 8);
-                let regpair = Reg16::from_u8((instruction & 0b00110000) >> 4).unwrap();
-                self.write_reg16(regpair, nn);
-
-                println!("{:#x}: LD {:?}, ${:x}", self.pc, regpair, nn);
-                self.pc += 3;
-            },
-            0b00001011 | 0b00011011 | 0b00101011 | 0b00111011 => {
-                let regpair = Reg16::from_u8((instruction & 0b00110000) >> 4).unwrap();
-                let oldregval = self.read_reg16(regpair);
-                self.write_reg16(regpair, oldregval - 1);
-
-                println!("{:#x}: DEC {:?}", self.pc, regpair);
-                self.pc += 1;
-            },
-            _ => {
-                panic!("Unrecognized instruction: {:#x}", instruction);
-            }
-        }
         println!("{:?}", self);
     }
 
