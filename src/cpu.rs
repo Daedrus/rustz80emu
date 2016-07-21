@@ -62,7 +62,7 @@ pub struct Cpu {
 
     memory: memory::Memory,
 
-    instr_table: [fn(&mut Cpu, u8); 256]
+    instr_table: [fn(&mut Cpu); 256]
 }
 
 impl fmt::Debug for Cpu {
@@ -117,7 +117,7 @@ impl Cpu {
 
             instr_table: [
                 Cpu::instr_UNSUPPORTED, /* 0b00000000 */
-                Cpu::instr_LD_DD_NN   , /* 0b00000001 */
+                Cpu::instr_LD_BC_NN   , /* 0b00000001 */
                 Cpu::instr_UNSUPPORTED, /* 0b00000010 */
                 Cpu::instr_UNSUPPORTED, /* 0b00000011 */
                 Cpu::instr_UNSUPPORTED, /* 0b00000100 */
@@ -127,13 +127,13 @@ impl Cpu {
                 Cpu::instr_UNSUPPORTED, /* 0b00001000 */
                 Cpu::instr_UNSUPPORTED, /* 0b00001001 */
                 Cpu::instr_UNSUPPORTED, /* 0b00001010 */
-                Cpu::instr_DEC        , /* 0b00001011 */
+                Cpu::instr_DEC_BC     , /* 0b00001011 */
                 Cpu::instr_UNSUPPORTED, /* 0b00001100 */
                 Cpu::instr_UNSUPPORTED, /* 0b00001101 */
                 Cpu::instr_UNSUPPORTED, /* 0b00001110 */
                 Cpu::instr_UNSUPPORTED, /* 0b00001111 */
                 Cpu::instr_UNSUPPORTED, /* 0b00010000 */
-                Cpu::instr_LD_DD_NN,    /* 0b00010001 */
+                Cpu::instr_LD_DE_NN,    /* 0b00010001 */
                 Cpu::instr_UNSUPPORTED, /* 0b00010010 */
                 Cpu::instr_UNSUPPORTED, /* 0b00010011 */
                 Cpu::instr_UNSUPPORTED, /* 0b00010100 */
@@ -143,13 +143,13 @@ impl Cpu {
                 Cpu::instr_UNSUPPORTED, /* 0b00011000 */
                 Cpu::instr_UNSUPPORTED, /* 0b00011001 */
                 Cpu::instr_UNSUPPORTED, /* 0b00011010 */
-                Cpu::instr_DEC        , /* 0b00011011 */
+                Cpu::instr_DEC_DE     , /* 0b00011011 */
                 Cpu::instr_UNSUPPORTED, /* 0b00011100 */
                 Cpu::instr_UNSUPPORTED, /* 0b00011101 */
                 Cpu::instr_UNSUPPORTED, /* 0b00011110 */
                 Cpu::instr_UNSUPPORTED, /* 0b00011111 */
                 Cpu::instr_UNSUPPORTED, /* 0b00100000 */
-                Cpu::instr_LD_DD_NN   , /* 0b00100001 */
+                Cpu::instr_LD_HL_NN   , /* 0b00100001 */
                 Cpu::instr_UNSUPPORTED, /* 0b00100010 */
                 Cpu::instr_UNSUPPORTED, /* 0b00100011 */
                 Cpu::instr_UNSUPPORTED, /* 0b00100100 */
@@ -159,13 +159,13 @@ impl Cpu {
                 Cpu::instr_UNSUPPORTED, /* 0b00101000 */
                 Cpu::instr_UNSUPPORTED, /* 0b00101001 */
                 Cpu::instr_UNSUPPORTED, /* 0b00101010 */
-                Cpu::instr_DEC        , /* 0b00101011 */
+                Cpu::instr_DEC_HL     , /* 0b00101011 */
                 Cpu::instr_UNSUPPORTED, /* 0b00101100 */
                 Cpu::instr_UNSUPPORTED, /* 0b00101101 */
                 Cpu::instr_UNSUPPORTED, /* 0b00101110 */
                 Cpu::instr_UNSUPPORTED, /* 0b00101111 */
                 Cpu::instr_UNSUPPORTED, /* 0b00110000 */
-                Cpu::instr_LD_DD_NN   , /* 0b00110001 */
+                Cpu::instr_LD_SP_NN   , /* 0b00110001 */
                 Cpu::instr_UNSUPPORTED, /* 0b00110010 */
                 Cpu::instr_UNSUPPORTED, /* 0b00110011 */
                 Cpu::instr_UNSUPPORTED, /* 0b00110100 */
@@ -175,7 +175,7 @@ impl Cpu {
                 Cpu::instr_UNSUPPORTED, /* 0b00111000 */
                 Cpu::instr_UNSUPPORTED, /* 0b00111001 */
                 Cpu::instr_UNSUPPORTED, /* 0b00111010 */
-                Cpu::instr_DEC        , /* 0b00111011 */
+                Cpu::instr_DEC_SP     , /* 0b00111011 */
                 Cpu::instr_UNSUPPORTED, /* 0b00111100 */
                 Cpu::instr_UNSUPPORTED, /* 0b00111101 */
                 Cpu::instr_UNSUPPORTED, /* 0b00111110 */
@@ -432,19 +432,22 @@ impl Cpu {
         }
     }
 
-    fn instr_UNSUPPORTED(_: &mut Cpu, instr: u8) {
-        panic!("Unsupported instruction: {:#x}", instr);
+    fn instr_UNSUPPORTED(_: &mut Cpu) {
+        panic!("Unsupported instruction");
     }
 
-    fn instr_DI(cpu: &mut Cpu, instr: u8) {
+    fn instr_DI(cpu: &mut Cpu) {
         cpu.iff1 = false;
         cpu.iff2 = false;
         println!("{:#x}: DI", cpu.pc);
         cpu.pc += 1;
     }
 
-    fn instr_DEC(cpu: &mut Cpu, instr: u8) {
-        let regpair = Reg16::from_u8((instr & 0b00110000) >> 4).unwrap();
+    fn instr_DEC_BC(cpu: &mut Cpu) { Cpu::instr_DEC_SS(cpu, Reg16::BC); }
+    fn instr_DEC_DE(cpu: &mut Cpu) { Cpu::instr_DEC_SS(cpu, Reg16::DE); }
+    fn instr_DEC_HL(cpu: &mut Cpu) { Cpu::instr_DEC_SS(cpu, Reg16::HL); }
+    fn instr_DEC_SP(cpu: &mut Cpu) { Cpu::instr_DEC_SS(cpu, Reg16::SP); }
+    fn instr_DEC_SS(cpu: &mut Cpu, regpair: Reg16) {
         let oldregval = cpu.read_reg16(regpair);
         cpu.write_reg16(regpair, oldregval - 1);
 
@@ -452,29 +455,32 @@ impl Cpu {
         cpu.pc += 1;
     }
 
-    fn instr_LD_DD_NN(cpu: &mut Cpu, instr: u8) {
+    fn instr_LD_BC_NN(cpu: &mut Cpu) { Cpu::instr_LD_DD_NN(cpu, Reg16::BC); }
+    fn instr_LD_DE_NN(cpu: &mut Cpu) { Cpu::instr_LD_DD_NN(cpu, Reg16::DE); }
+    fn instr_LD_HL_NN(cpu: &mut Cpu) { Cpu::instr_LD_DD_NN(cpu, Reg16::HL); }
+    fn instr_LD_SP_NN(cpu: &mut Cpu) { Cpu::instr_LD_DD_NN(cpu, Reg16::SP); }
+    fn instr_LD_DD_NN(cpu: &mut Cpu, regpair: Reg16) {
         let nn =  (cpu.read_word(cpu.pc + 1) as u16) +
                  ((cpu.read_word(cpu.pc + 2) as u16) << 8);
-        let regpair = Reg16::from_u8((instr & 0b00110000) >> 4).unwrap();
         cpu.write_reg16(regpair, nn);
 
         println!("{:#x}: LD {:?}, ${:x}", cpu.pc, regpair, nn);
         cpu.pc += 3;
     }
 
-    fn instr_LD_R_R(cpu: &mut Cpu, instr: u8) {
-        let rt = Reg8::from_u8((instr >> 3) & 0b111).unwrap();
+    fn instr_LD_R_R(cpu: &mut Cpu) {
+        /*let rt = Reg8::from_u8((instr >> 3) & 0b111).unwrap();
         let rs = Reg8::from_u8( instr       & 0b111).unwrap();
         let rsval = cpu.read_reg8(rs);
         cpu.write_reg8(rt, rsval);
-        println!("{:#x}: LD {:?}, {:?}", cpu.pc, rt, rs);
+        println!("{:#x}: LD {:?}, {:?}", cpu.pc, rt, rs);*/
         cpu.pc += 1;
     }
 
     fn run_instruction(&mut self) {
         let instruction = self.read_word(self.pc);
 
-        self.instr_table[instruction as usize](self, instruction);
+        self.instr_table[instruction as usize](self);
 
         println!("{:?}", self);
     }
