@@ -10,7 +10,7 @@ struct Instruction_UNSUPPORTED;
 
 impl Instruction for Instruction_UNSUPPORTED {
     fn execute(&self, cpu: &mut Cpu) {
-        panic!("Unsupported instruction");
+        panic!("Unsupported instruction {:#x}", cpu.read_word(cpu.get_pc()));
     }
 }
 
@@ -489,5 +489,4 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11111110 */
     &Instruction_UNSUPPORTED  /* 0b11111111 */
 ];
-
 
