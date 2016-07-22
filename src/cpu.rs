@@ -180,54 +180,54 @@ impl Cpu {
                 Cpu::instr_UNSUPPORTED, /* 0b00111101 */
                 Cpu::instr_UNSUPPORTED, /* 0b00111110 */
                 Cpu::instr_UNSUPPORTED, /* 0b00111111 */
-                Cpu::instr_LD_R_R,      /* 0b01000000 */
-                Cpu::instr_LD_R_R,      /* 0b01000001 */
-                Cpu::instr_LD_R_R,      /* 0b01000010 */
-                Cpu::instr_LD_R_R,      /* 0b01000011 */
-                Cpu::instr_LD_R_R,      /* 0b01000100 */
-                Cpu::instr_LD_R_R,      /* 0b01000101 */
+                Cpu::instr_LD_B_B,      /* 0b01000000 */
+                Cpu::instr_LD_B_C,      /* 0b01000001 */
+                Cpu::instr_LD_B_D,      /* 0b01000010 */
+                Cpu::instr_LD_B_E,      /* 0b01000011 */
+                Cpu::instr_LD_B_H,      /* 0b01000100 */
+                Cpu::instr_LD_B_L,      /* 0b01000101 */
                 Cpu::instr_UNSUPPORTED, /* 0b01000110 */
-                Cpu::instr_LD_R_R,      /* 0b01000111 */
-                Cpu::instr_LD_R_R,      /* 0b01001000 */
-                Cpu::instr_LD_R_R,      /* 0b01001001 */
-                Cpu::instr_LD_R_R,      /* 0b01001010 */
-                Cpu::instr_LD_R_R,      /* 0b01001011 */
-                Cpu::instr_LD_R_R,      /* 0b01001100 */
-                Cpu::instr_LD_R_R,      /* 0b01001101 */
+                Cpu::instr_LD_B_A,      /* 0b01000111 */
+                Cpu::instr_LD_C_B,      /* 0b01001000 */
+                Cpu::instr_LD_C_C,      /* 0b01001001 */
+                Cpu::instr_LD_C_D,      /* 0b01001010 */
+                Cpu::instr_LD_C_E,      /* 0b01001011 */
+                Cpu::instr_LD_C_H,      /* 0b01001100 */
+                Cpu::instr_LD_C_L,      /* 0b01001101 */
                 Cpu::instr_UNSUPPORTED, /* 0b01001110 */
-                Cpu::instr_LD_R_R,      /* 0b01001111 */
-                Cpu::instr_LD_R_R,      /* 0b01010000 */
-                Cpu::instr_LD_R_R,      /* 0b01010001 */
-                Cpu::instr_LD_R_R,      /* 0b01010010 */
-                Cpu::instr_LD_R_R,      /* 0b01010011 */
-                Cpu::instr_LD_R_R,      /* 0b01010100 */
-                Cpu::instr_LD_R_R,      /* 0b01010101 */
+                Cpu::instr_LD_C_A,      /* 0b01001111 */
+                Cpu::instr_LD_D_B,      /* 0b01010000 */
+                Cpu::instr_LD_D_C,      /* 0b01010001 */
+                Cpu::instr_LD_D_D,      /* 0b01010010 */
+                Cpu::instr_LD_D_E,      /* 0b01010011 */
+                Cpu::instr_LD_D_H,      /* 0b01010100 */
+                Cpu::instr_LD_D_L,      /* 0b01010101 */
                 Cpu::instr_UNSUPPORTED, /* 0b01010110 */
-                Cpu::instr_LD_R_R,      /* 0b01010111 */
-                Cpu::instr_LD_R_R,      /* 0b01011000 */
-                Cpu::instr_LD_R_R,      /* 0b01011001 */
-                Cpu::instr_LD_R_R,      /* 0b01011010 */
-                Cpu::instr_LD_R_R,      /* 0b01011011 */
-                Cpu::instr_LD_R_R,      /* 0b01011100 */
-                Cpu::instr_LD_R_R,      /* 0b01011101 */
+                Cpu::instr_LD_D_A,      /* 0b01010111 */
+                Cpu::instr_LD_E_B,      /* 0b01011000 */
+                Cpu::instr_LD_E_C,      /* 0b01011001 */
+                Cpu::instr_LD_E_D,      /* 0b01011010 */
+                Cpu::instr_LD_E_E,      /* 0b01011011 */
+                Cpu::instr_LD_E_H,      /* 0b01011100 */
+                Cpu::instr_LD_E_L,      /* 0b01011101 */
                 Cpu::instr_UNSUPPORTED, /* 0b01011110 */
-                Cpu::instr_LD_R_R,      /* 0b01011111 */
-                Cpu::instr_LD_R_R,      /* 0b01100000 */
-                Cpu::instr_LD_R_R,      /* 0b01100001 */
-                Cpu::instr_LD_R_R,      /* 0b01100010 */
-                Cpu::instr_LD_R_R,      /* 0b01100011 */
-                Cpu::instr_LD_R_R,      /* 0b01100100 */
-                Cpu::instr_LD_R_R,      /* 0b01100101 */
+                Cpu::instr_LD_E_A,      /* 0b01011111 */
+                Cpu::instr_LD_H_B,      /* 0b01100000 */
+                Cpu::instr_LD_H_C,      /* 0b01100001 */
+                Cpu::instr_LD_H_D,      /* 0b01100010 */
+                Cpu::instr_LD_H_E,      /* 0b01100011 */
+                Cpu::instr_LD_H_H,      /* 0b01100100 */
+                Cpu::instr_LD_H_L,      /* 0b01100101 */
                 Cpu::instr_UNSUPPORTED, /* 0b01100110 */
-                Cpu::instr_LD_R_R,      /* 0b01100111 */
-                Cpu::instr_LD_R_R,      /* 0b01101000 */
-                Cpu::instr_LD_R_R,      /* 0b01101001 */
-                Cpu::instr_LD_R_R,      /* 0b01101010 */
-                Cpu::instr_LD_R_R,      /* 0b01101011 */
-                Cpu::instr_LD_R_R,      /* 0b01101100 */
-                Cpu::instr_LD_R_R,      /* 0b01101101 */
+                Cpu::instr_LD_H_A,      /* 0b01100111 */
+                Cpu::instr_LD_L_B,      /* 0b01101000 */
+                Cpu::instr_LD_L_C,      /* 0b01101001 */
+                Cpu::instr_LD_L_D,      /* 0b01101010 */
+                Cpu::instr_LD_L_E,      /* 0b01101011 */
+                Cpu::instr_LD_L_H,      /* 0b01101100 */
+                Cpu::instr_LD_L_L,      /* 0b01101101 */
                 Cpu::instr_UNSUPPORTED, /* 0b01101110 */
-                Cpu::instr_LD_R_R,      /* 0b01101111 */
+                Cpu::instr_LD_L_A,      /* 0b01101111 */
                 Cpu::instr_UNSUPPORTED, /* 0b01110000 */
                 Cpu::instr_UNSUPPORTED, /* 0b01110001 */
                 Cpu::instr_UNSUPPORTED, /* 0b01110010 */
@@ -236,14 +236,14 @@ impl Cpu {
                 Cpu::instr_UNSUPPORTED, /* 0b01110101 */
                 Cpu::instr_UNSUPPORTED, /* 0b01110110 */
                 Cpu::instr_UNSUPPORTED, /* 0b01110111 */
-                Cpu::instr_LD_R_R,      /* 0b01111000 */
-                Cpu::instr_LD_R_R,      /* 0b01111001 */
-                Cpu::instr_LD_R_R,      /* 0b01111010 */
-                Cpu::instr_LD_R_R,      /* 0b01111011 */
-                Cpu::instr_LD_R_R,      /* 0b01111100 */
-                Cpu::instr_LD_R_R,      /* 0b01111101 */
+                Cpu::instr_LD_A_B,      /* 0b01111000 */
+                Cpu::instr_LD_A_C,      /* 0b01111001 */
+                Cpu::instr_LD_A_D,      /* 0b01111010 */
+                Cpu::instr_LD_A_E,      /* 0b01111011 */
+                Cpu::instr_LD_A_H,      /* 0b01111100 */
+                Cpu::instr_LD_A_L,      /* 0b01111101 */
                 Cpu::instr_UNSUPPORTED, /* 0b01111110 */
-                Cpu::instr_LD_R_R,      /* 0b01111111 */
+                Cpu::instr_LD_A_A,      /* 0b01111111 */
                 Cpu::instr_UNSUPPORTED, /* 0b10000000 */
                 Cpu::instr_UNSUPPORTED, /* 0b10000001 */
                 Cpu::instr_UNSUPPORTED, /* 0b10000010 */
@@ -468,12 +468,59 @@ impl Cpu {
         cpu.pc += 3;
     }
 
-    fn instr_LD_R_R(cpu: &mut Cpu) {
-        /*let rt = Reg8::from_u8((instr >> 3) & 0b111).unwrap();
-        let rs = Reg8::from_u8( instr       & 0b111).unwrap();
+    fn instr_LD_B_B(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::B, Reg8::B); }
+    fn instr_LD_B_C(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::B, Reg8::C); }
+    fn instr_LD_B_D(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::B, Reg8::D); }
+    fn instr_LD_B_E(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::B, Reg8::E); }
+    fn instr_LD_B_H(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::B, Reg8::H); }
+    fn instr_LD_B_L(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::B, Reg8::L); }
+    fn instr_LD_B_A(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::B, Reg8::A); }
+    fn instr_LD_C_B(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::C, Reg8::B); }
+    fn instr_LD_C_C(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::C, Reg8::C); }
+    fn instr_LD_C_D(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::C, Reg8::D); }
+    fn instr_LD_C_E(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::C, Reg8::E); }
+    fn instr_LD_C_H(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::C, Reg8::H); }
+    fn instr_LD_C_L(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::C, Reg8::L); }
+    fn instr_LD_C_A(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::C, Reg8::A); }
+    fn instr_LD_D_B(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::D, Reg8::B); }
+    fn instr_LD_D_C(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::D, Reg8::C); }
+    fn instr_LD_D_D(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::D, Reg8::D); }
+    fn instr_LD_D_E(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::D, Reg8::E); }
+    fn instr_LD_D_H(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::D, Reg8::H); }
+    fn instr_LD_D_L(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::D, Reg8::L); }
+    fn instr_LD_D_A(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::D, Reg8::A); }
+    fn instr_LD_E_B(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::E, Reg8::B); }
+    fn instr_LD_E_C(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::E, Reg8::C); }
+    fn instr_LD_E_D(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::E, Reg8::D); }
+    fn instr_LD_E_E(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::E, Reg8::E); }
+    fn instr_LD_E_H(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::E, Reg8::H); }
+    fn instr_LD_E_L(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::E, Reg8::L); }
+    fn instr_LD_E_A(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::E, Reg8::A); }
+    fn instr_LD_H_B(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::H, Reg8::B); }
+    fn instr_LD_H_C(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::H, Reg8::C); }
+    fn instr_LD_H_D(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::H, Reg8::D); }
+    fn instr_LD_H_E(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::H, Reg8::E); }
+    fn instr_LD_H_H(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::H, Reg8::H); }
+    fn instr_LD_H_L(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::H, Reg8::L); }
+    fn instr_LD_H_A(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::H, Reg8::A); }
+    fn instr_LD_L_B(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::L, Reg8::B); }
+    fn instr_LD_L_C(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::L, Reg8::C); }
+    fn instr_LD_L_D(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::L, Reg8::D); }
+    fn instr_LD_L_E(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::L, Reg8::E); }
+    fn instr_LD_L_H(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::L, Reg8::H); }
+    fn instr_LD_L_L(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::L, Reg8::L); }
+    fn instr_LD_L_A(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::L, Reg8::A); }
+    fn instr_LD_A_B(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::A, Reg8::B); }
+    fn instr_LD_A_C(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::A, Reg8::C); }
+    fn instr_LD_A_D(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::A, Reg8::D); }
+    fn instr_LD_A_E(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::A, Reg8::E); }
+    fn instr_LD_A_H(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::A, Reg8::H); }
+    fn instr_LD_A_L(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::A, Reg8::L); }
+    fn instr_LD_A_A(cpu: &mut Cpu) { Cpu::instr_LD_R_R(cpu, Reg8::A, Reg8::A); }
+    fn instr_LD_R_R(cpu: &mut Cpu, rt: Reg8, rs: Reg8) {
         let rsval = cpu.read_reg8(rs);
         cpu.write_reg8(rt, rsval);
-        println!("{:#x}: LD {:?}, {:?}", cpu.pc, rt, rs);*/
+        println!("{:#x}: LD {:?}, {:?}", cpu.pc, rt, rs);
         cpu.pc += 1;
     }
 
