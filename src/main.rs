@@ -3,6 +3,7 @@ extern crate num;
 
 mod cpu;
 mod memory;
+mod instructions;
 
 use std::env;
 use std::fs;
