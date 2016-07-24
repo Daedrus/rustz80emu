@@ -110,6 +110,16 @@ impl Instruction for Instruction_JR_NZ {
     }
 }
 
+struct Instruction_JP_NN;
+
+impl Instruction for Instruction_JP_NN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+        cpu.set_pc(nn);
+    }
+}
+
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
     &Instruction_LD_NN {      /* 0b00000001 */
@@ -483,7 +493,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11000000 */
     &Instruction_UNSUPPORTED, /* 0b11000001 */
     &Instruction_UNSUPPORTED, /* 0b11000010 */
-    &Instruction_UNSUPPORTED, /* 0b11000011 */
+    &Instruction_JP_NN      , /* 0b11000011 */
     &Instruction_UNSUPPORTED, /* 0b11000100 */
     &Instruction_UNSUPPORTED, /* 0b11000101 */
     &Instruction_UNSUPPORTED, /* 0b11000110 */
