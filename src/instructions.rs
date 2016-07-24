@@ -26,6 +26,20 @@ impl Instruction for Instruction_DEC {
     }
 }
 
+struct Instruction_LD_R_N {
+    r: Reg8
+}
+
+impl Instruction for Instruction_LD_R_N {
+    fn execute(&self, cpu: &mut Cpu) {
+        let n = cpu.read_word(cpu.get_pc() + 1);
+        cpu.write_reg8(self.r, n);
+
+        println!("{:#x}: LD {:?}, ${:x}", cpu.get_pc(), self.r, n);
+        cpu.inc_pc(2);
+    }
+}
+
 struct Instruction_LD_NN {
     regpair: Reg16
 }
@@ -129,7 +143,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000011 */
     &Instruction_UNSUPPORTED, /* 0b00000100 */
     &Instruction_UNSUPPORTED, /* 0b00000101 */
-    &Instruction_UNSUPPORTED, /* 0b00000110 */
+    &Instruction_LD_R_N {     /* 0b00000110 */
+        r: Reg8::B
+    },
     &Instruction_UNSUPPORTED, /* 0b00000111 */
     &Instruction_UNSUPPORTED, /* 0b00001000 */
     &Instruction_UNSUPPORTED, /* 0b00001001 */
@@ -139,7 +155,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00001100 */
     &Instruction_UNSUPPORTED, /* 0b00001101 */
-    &Instruction_UNSUPPORTED, /* 0b00001110 */
+    &Instruction_LD_R_N {     /* 0b00001110 */
+        r: Reg8::C
+    },
     &Instruction_UNSUPPORTED, /* 0b00001111 */
     &Instruction_UNSUPPORTED, /* 0b00010000 */
     &Instruction_LD_NN {      /* 0b00010001 */
@@ -149,7 +167,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00010011 */
     &Instruction_UNSUPPORTED, /* 0b00010100 */
     &Instruction_UNSUPPORTED, /* 0b00010101 */
-    &Instruction_UNSUPPORTED, /* 0b00010110 */
+    &Instruction_LD_R_N {     /* 0b00010110 */
+        r: Reg8::D
+    },
     &Instruction_UNSUPPORTED, /* 0b00010111 */
     &Instruction_UNSUPPORTED, /* 0b00011000 */
     &Instruction_UNSUPPORTED, /* 0b00011001 */
@@ -159,7 +179,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00011100 */
     &Instruction_UNSUPPORTED, /* 0b00011101 */
-    &Instruction_UNSUPPORTED, /* 0b00011110 */
+    &Instruction_LD_R_N {     /* 0b00011110 */
+        r: Reg8::E
+    },
     &Instruction_UNSUPPORTED, /* 0b00011111 */
     &Instruction_JR_NZ      , /* 0b00100000 */
     &Instruction_LD_NN {      /* 0b00100001 */
@@ -169,7 +191,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00100011 */
     &Instruction_UNSUPPORTED, /* 0b00100100 */
     &Instruction_UNSUPPORTED, /* 0b00100101 */
-    &Instruction_UNSUPPORTED, /* 0b00100110 */
+    &Instruction_LD_R_N {     /* 0b00100110 */
+        r: Reg8::H
+    },
     &Instruction_UNSUPPORTED, /* 0b00100111 */
     &Instruction_UNSUPPORTED, /* 0b00101000 */
     &Instruction_UNSUPPORTED, /* 0b00101001 */
@@ -179,7 +203,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00101100 */
     &Instruction_UNSUPPORTED, /* 0b00101101 */
-    &Instruction_UNSUPPORTED, /* 0b00101110 */
+    &Instruction_LD_R_N {     /* 0b00101110 */
+        r: Reg8::L
+    },
     &Instruction_UNSUPPORTED, /* 0b00101111 */
     &Instruction_UNSUPPORTED, /* 0b00110000 */
     &Instruction_LD_NN {      /* 0b00110001 */
@@ -199,7 +225,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00111100 */
     &Instruction_UNSUPPORTED, /* 0b00111101 */
-    &Instruction_UNSUPPORTED, /* 0b00111110 */
+    &Instruction_LD_R_N {     /* 0b00111110 */
+        r: Reg8::A
+    },
     &Instruction_UNSUPPORTED, /* 0b00111111 */
     &Instruction_LD_R_R {     /* 0b01000000 *//*TODO: Valid?*/
         rt: Reg8::B,
