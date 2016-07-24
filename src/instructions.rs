@@ -32,8 +32,8 @@ struct Instruction_LD_NN {
 
 impl Instruction for Instruction_LD_NN {
     fn execute(&self, cpu: &mut Cpu) {
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as i16) |
-                 ((cpu.read_word(cpu.get_pc() + 2) as i16) << 8);
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
         cpu.write_reg16(self.regpair, nn);
 
         println!("{:#x}: LD {:?}, ${:x}", cpu.get_pc(), self.regpair, nn);
@@ -62,7 +62,7 @@ struct Instruction_OR_R {
 impl Instruction for Instruction_OR_R {
     fn execute(&self, cpu: &mut Cpu) {
         let orval = cpu.read_reg8(self.r) | cpu.read_reg8(Reg8::A);
-        cpu.write_reg8(self.r, orval);
+        cpu.write_reg8(Reg8::A, orval);
         if orval.count_ones() % 2 == 0 {
             cpu.set_flag(PARITY_OVERFLOW_FLAG);
         } else {
@@ -91,6 +91,22 @@ impl Instruction for Instruction_DI {
         cpu.clear_iff2();
         println!("{:#x}: DI", cpu.get_pc());
         cpu.inc_pc(1);
+    }
+}
+
+struct Instruction_JR_NZ;
+
+impl Instruction for Instruction_JR_NZ {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
+        let target = (curr_pc as i16 + offset as i16) as u16;
+        if cpu.get_flag(ZERO_FLAG) {
+            cpu.inc_pc(2);
+        } else {
+            cpu.set_pc(target);
+        }
+        println!("{:#x}: JR NZ {:#06X}", cpu.get_pc(), target);
     }
 }
 
@@ -135,7 +151,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00011101 */
     &Instruction_UNSUPPORTED, /* 0b00011110 */
     &Instruction_UNSUPPORTED, /* 0b00011111 */
-    &Instruction_UNSUPPORTED, /* 0b00100000 */
+    &Instruction_JR_NZ      , /* 0b00100000 */
     &Instruction_LD_NN {      /* 0b00100001 */
         regpair: Reg16::HL
     },
