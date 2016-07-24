@@ -21,7 +21,7 @@ impl Instruction for Instruction_DEC {
         let oldregval = cpu.read_reg16(self.regpair);
         cpu.write_reg16(self.regpair, oldregval - 1);
 
-        println!("{:#x}: DEC {:?}", cpu.get_pc(), self.regpair);
+        println!("{:#06x}: DEC {:?}", cpu.get_pc(), self.regpair);
         cpu.inc_pc(1);
     }
 }
@@ -35,7 +35,7 @@ impl Instruction for Instruction_LD_R_N {
         let n = cpu.read_word(cpu.get_pc() + 1);
         cpu.write_reg8(self.r, n);
 
-        println!("{:#x}: LD {:?}, ${:x}", cpu.get_pc(), self.r, n);
+        println!("{:#06x}: LD {:?}, ${:x}", cpu.get_pc(), self.r, n);
         cpu.inc_pc(2);
     }
 }
@@ -50,7 +50,7 @@ impl Instruction for Instruction_LD_DD_NN {
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
         cpu.write_reg16(self.regpair, nn);
 
-        println!("{:#x}: LD {:?}, ${:x}", cpu.get_pc(), self.regpair, nn);
+        println!("{:#06x}: LD {:?}, ${:x}", cpu.get_pc(), self.regpair, nn);
         cpu.inc_pc(3);
     }
 }
@@ -64,7 +64,7 @@ impl Instruction for Instruction_LD_R_R {
     fn execute(&self, cpu: &mut Cpu) {
         let rsval = cpu.read_reg8(self.rs);
         cpu.write_reg8(self.rt, rsval);
-        println!("{:#x}: LD {:?}, {:?}", cpu.get_pc(), self.rt, self.rs);
+        println!("{:#06x}: LD {:?}, {:?}", cpu.get_pc(), self.rt, self.rs);
         cpu.inc_pc(1);
     }
 }
@@ -92,7 +92,7 @@ impl Instruction for Instruction_OR_R {
         } else {
             cpu.clear_flag(SIGN_FLAG);
         }
-        println!("{:#x}: OR {:?}", cpu.get_pc(), self.r);
+        println!("{:#06x}: OR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -103,7 +103,7 @@ impl Instruction for Instruction_DI {
     fn execute(&self, cpu: &mut Cpu) {
         cpu.clear_iff1();
         cpu.clear_iff2();
-        println!("{:#x}: DI", cpu.get_pc());
+        println!("{:#06x}: DI", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -115,12 +115,12 @@ impl Instruction for Instruction_JR_NZ {
         let curr_pc = cpu.get_pc();
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
+        println!("{:#06x}: JR NZ {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(ZERO_FLAG) {
             cpu.inc_pc(2);
         } else {
             cpu.set_pc(target);
         }
-        println!("{:#x}: JR NZ {:#06X}", cpu.get_pc(), target);
     }
 }
 
@@ -130,6 +130,7 @@ impl Instruction for Instruction_JP_NN {
     fn execute(&self, cpu: &mut Cpu) {
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+        println!("{:#06x}: JP {:#06X}", cpu.get_pc(), nn);
         cpu.set_pc(nn);
     }
 }
