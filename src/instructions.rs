@@ -40,11 +40,11 @@ impl Instruction for Instruction_LD_R_N {
     }
 }
 
-struct Instruction_LD_NN {
+struct Instruction_LD_DD_NN {
     regpair: Reg16
 }
 
-impl Instruction for Instruction_LD_NN {
+impl Instruction for Instruction_LD_DD_NN {
     fn execute(&self, cpu: &mut Cpu) {
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
@@ -136,7 +136,7 @@ impl Instruction for Instruction_JP_NN {
 
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
-    &Instruction_LD_NN {      /* 0b00000001 */
+    &Instruction_LD_DD_NN {   /* 0b00000001 */
         regpair: Reg16::BC
     },
     &Instruction_UNSUPPORTED, /* 0b00000010 */
@@ -160,7 +160,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00001111 */
     &Instruction_UNSUPPORTED, /* 0b00010000 */
-    &Instruction_LD_NN {      /* 0b00010001 */
+    &Instruction_LD_DD_NN {   /* 0b00010001 */
         regpair: Reg16::DE
     },
     &Instruction_UNSUPPORTED, /* 0b00010010 */
@@ -184,7 +184,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00011111 */
     &Instruction_JR_NZ      , /* 0b00100000 */
-    &Instruction_LD_NN {      /* 0b00100001 */
+    &Instruction_LD_DD_NN {   /* 0b00100001 */
         regpair: Reg16::HL
     },
     &Instruction_UNSUPPORTED, /* 0b00100010 */
@@ -208,7 +208,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00101111 */
     &Instruction_UNSUPPORTED, /* 0b00110000 */
-    &Instruction_LD_NN {      /* 0b00110001 */
+    &Instruction_LD_DD_NN {   /* 0b00110001 */
         regpair: Reg16::SP
     },
     &Instruction_UNSUPPORTED, /* 0b00110010 */
