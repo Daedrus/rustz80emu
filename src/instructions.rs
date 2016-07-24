@@ -1,6 +1,4 @@
-use super::cpu::Reg8;
-use super::cpu::Reg16;
-use super::cpu::Cpu;
+use super::cpu::*;
 
 pub trait Instruction {
     fn execute(&self, &mut Cpu);

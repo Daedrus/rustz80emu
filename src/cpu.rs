@@ -25,15 +25,26 @@ pub enum Reg8 {
 }
 }
 
+bitflags! {
+    pub flags StatusIndicatorFlags: u8 {
+        const CARRY_FLAG           = 0b00000001,
+        const ADD_SUBTRACT_FLAG    = 0b00000010,
+        const PARITY_OVERFLOW_FLAG = 0b00000100,
+        const HALF_CARRY_FLAG      = 0b00010000,
+        const ZERO_FLAG            = 0b01000000,
+        const SIGN_FLAG            = 0b10000000
+    }
+}
+
 pub struct Cpu {
     // main register set
-    a: u8, f: u8,
+    a: u8, f: StatusIndicatorFlags,
     b: u8, c: u8,
     d: u8, e: u8,
     h: u8, l: u8,
 
     // alternate register set
-    a_alt: u8, f_alt: u8,
+    a_alt: u8, f_alt: StatusIndicatorFlags,
     b_alt: u8, c_alt: u8,
     d_alt: u8, e_alt: u8,
     h_alt: u8, l_alt: u8,
@@ -66,20 +77,25 @@ pub struct Cpu {
 impl fmt::Debug for Cpu {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "
-                         -----------
-                     af: | {:02X} | {:02X} |
+                         ------
+                     a:  | {:02X} |
+                         ------------
+                         | SZ_H_PNC |
+                     f:  | {:08b} |
+                         ------------
                      bc: | {:02X} | {:02X} |
                      de: | {:02X} | {:02X} |
                      hl: | {:02X} | {:02X} |
                          -----------
-                     ir  | {:02X} | {:02X} |
+                     ir: | {:02X} | {:02X} |
                          -----------
-                     ix  |   {:04X}  |
-                     iy  |   {:04X}  |
-                     sp  |   {:04X}  |
-                     pc  |   {:04X}  |
+                     ix: |   {:04X}  |
+                     iy: |   {:04X}  |
+                     sp: |   {:04X}  |
+                     pc: |   {:04X}  |
                          -----------",
-                      self.a, self.f,
+                      self.a,
+                      self.f.bits(),
                       self.b, self.c,
                       self.d, self.e,
                       self.h, self.l,
@@ -94,11 +110,11 @@ impl fmt::Debug for Cpu {
 impl Cpu {
     pub fn new(memory: memory::Memory) -> Cpu {
         Cpu {
-            a: 0, f: 0,
+            a: 0, f: StatusIndicatorFlags::empty(),
             b: 0, c: 0,
             d: 0, e: 0,
             h: 0, l: 0,
-            a_alt: 0, f_alt: 0,
+            a_alt: 0, f_alt: StatusIndicatorFlags::empty(),
             b_alt: 0, c_alt: 0,
             d_alt: 0, e_alt: 0,
             h_alt: 0, l_alt: 0,
@@ -179,6 +195,10 @@ impl Cpu {
     pub fn clear_iff1(&mut self) { self.iff1 = false; }
     pub fn set_iff2(&mut self)   { self.iff2 = true;  }
     pub fn clear_iff2(&mut self) { self.iff2 = false; }
+
+    pub fn set_flag(&mut self, flag: StatusIndicatorFlags) { self.f.insert(flag); }
+    pub fn clear_flag(&mut self, flag: StatusIndicatorFlags) { self.f.remove(flag); }
+    pub fn get_flag(&self, flag: StatusIndicatorFlags) -> bool { self.f.contains(flag) }
 
     fn run_instruction(&mut self) {
         let instruction = self.read_word(self.pc);
