@@ -38,16 +38,16 @@ bitflags! {
 
 pub struct Cpu {
     // main register set
-    a: u8, f: StatusIndicatorFlags,
-    b: u8, c: u8,
-    d: u8, e: u8,
-    h: u8, l: u8,
+    a: i8, f: StatusIndicatorFlags,
+    b: i8, c: i8,
+    d: i8, e: i8,
+    h: i8, l: i8,
 
     // alternate register set
-    a_alt: u8, f_alt: StatusIndicatorFlags,
-    b_alt: u8, c_alt: u8,
-    d_alt: u8, e_alt: u8,
-    h_alt: u8, l_alt: u8,
+    a_alt: i8, f_alt: StatusIndicatorFlags,
+    b_alt: i8, c_alt: i8,
+    d_alt: i8, e_alt: i8,
+    h_alt: i8, l_alt: i8,
 
     // interrupt vector
     i: u8,
@@ -56,10 +56,10 @@ pub struct Cpu {
     r: u8,
 
     // index register X
-    ix: u16,
+    ix: i16,
 
     // index register Y
-    iy: u16,
+    iy: i16,
 
     // stack pointer
     sp: u16,
@@ -137,7 +137,7 @@ impl Cpu {
         }
     }
 
-    pub fn read_reg8(&self, reg: Reg8) -> u8 {
+    pub fn read_reg8(&self, reg: Reg8) -> i8 {
         match reg {
             Reg8::A => self.a,
             Reg8::B => self.b,
@@ -149,7 +149,7 @@ impl Cpu {
         }
     }
 
-    pub fn write_reg8(&mut self, reg: Reg8, val: u8) {
+    pub fn write_reg8(&mut self, reg: Reg8, val: i8) {
         match reg {
             Reg8::A => self.a = val,
             Reg8::B => self.b = val,
@@ -161,9 +161,9 @@ impl Cpu {
         }
     }
 
-    pub fn read_reg16(&self, reg: Reg16) -> u16 {
+    pub fn read_reg16(&self, reg: Reg16) -> i16 {
         let value = match reg {
-            Reg16::SP => self.sp,
+            Reg16::SP => self.sp as i16,
             _ => {
                 let (high, low) = match reg {
                     Reg16::BC => (self.b, self.c),
@@ -171,19 +171,19 @@ impl Cpu {
                     Reg16::HL => (self.h, self.l),
                     _ => unreachable!()
                 };
-                (((high as u16) << 8 ) + low as u16)
+                (((high as i16) << 8 ) | low as i16)
             }
         };
         value
     }
 
-    pub fn write_reg16(&mut self, reg: Reg16, val: u16) {
-        let (high, low) = (((val & 0xFF00) >> 8) as u8, (val & 0x00FF) as u8);
+    pub fn write_reg16(&mut self, reg: Reg16, val: i16) {
+        let (high, low) = (((val & 0xFF00) >> 8) as i8, (val & 0x00FF) as i8);
         match reg {
             Reg16::BC => { self.b = high; self.c = low; }
             Reg16::DE => { self.d = high; self.e = low; }
             Reg16::HL => { self.h = high; self.l = low; }
-            Reg16::SP => { self.sp = val }
+            Reg16::SP => { self.sp = val as u16 }
         }
     }
 

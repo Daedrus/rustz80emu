@@ -32,8 +32,8 @@ struct Instruction_LD_NN {
 
 impl Instruction for Instruction_LD_NN {
     fn execute(&self, cpu: &mut Cpu) {
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) +
-                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as i16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as i16) << 8);
         cpu.write_reg16(self.regpair, nn);
 
         println!("{:#x}: LD {:?}, ${:x}", cpu.get_pc(), self.regpair, nn);
@@ -51,6 +51,34 @@ impl Instruction for Instruction_LD_R_R {
         let rsval = cpu.read_reg8(self.rs);
         cpu.write_reg8(self.rt, rsval);
         println!("{:#x}: LD {:?}, {:?}", cpu.get_pc(), self.rt, self.rs);
+        cpu.inc_pc(1);
+    }
+}
+
+struct Instruction_OR_R {
+    r: Reg8
+}
+
+impl Instruction for Instruction_OR_R {
+    fn execute(&self, cpu: &mut Cpu) {
+        let orval = cpu.read_reg8(self.r) | cpu.read_reg8(Reg8::A);
+        cpu.write_reg8(self.r, orval);
+        if orval.count_ones() % 2 == 0 {
+            cpu.set_flag(PARITY_OVERFLOW_FLAG);
+        } else {
+            cpu.clear_flag(PARITY_OVERFLOW_FLAG);
+        }
+        if orval == 0 {
+            cpu.set_flag(ZERO_FLAG);
+        } else {
+            cpu.clear_flag(ZERO_FLAG);
+        }
+        if orval < 0 {
+            cpu.set_flag(SIGN_FLAG);
+        } else {
+            cpu.clear_flag(SIGN_FLAG);
+        }
+        println!("{:#x}: OR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -406,14 +434,28 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b10101101 */
     &Instruction_UNSUPPORTED, /* 0b10101110 */
     &Instruction_UNSUPPORTED, /* 0b10101111 */
-    &Instruction_UNSUPPORTED, /* 0b10110000 */
-    &Instruction_UNSUPPORTED, /* 0b10110001 */
-    &Instruction_UNSUPPORTED, /* 0b10110010 */
-    &Instruction_UNSUPPORTED, /* 0b10110011 */
-    &Instruction_UNSUPPORTED, /* 0b10110100 */
-    &Instruction_UNSUPPORTED, /* 0b10110101 */
+    &Instruction_OR_R {       /* 0b10110000 */
+        r: Reg8::B
+    },
+    &Instruction_OR_R {       /* 0b10110001 */
+        r: Reg8::C
+    },
+    &Instruction_OR_R {       /* 0b10110010 */
+        r: Reg8::D
+    },
+    &Instruction_OR_R {       /* 0b10110011 */
+        r: Reg8::E
+    },
+    &Instruction_OR_R {       /* 0b10110100 */
+        r: Reg8::H
+    },
+    &Instruction_OR_R {       /* 0b10110101 */
+        r: Reg8::L
+    },
     &Instruction_UNSUPPORTED, /* 0b10110110 */
-    &Instruction_UNSUPPORTED, /* 0b10110111 */
+    &Instruction_OR_R {       /* 0b10110111 */
+        r: Reg8::A
+    },
     &Instruction_UNSUPPORTED, /* 0b10111000 */
     &Instruction_UNSUPPORTED, /* 0b10111001 */
     &Instruction_UNSUPPORTED, /* 0b10111010 */
