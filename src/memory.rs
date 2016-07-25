@@ -42,6 +42,8 @@ impl Memory {
                 1 => self.rom1[addr as usize],
                 _ => unreachable!()
             }
+        } else if addr >= 0xC000 && addr <= 0xFFFF {
+            self.bank[self.ram_0xC000_0xFFFF][(addr - 0xC000) as usize]
         } else {
             panic!("Trying to read from unrecognized address: {:#x}", addr);
         }

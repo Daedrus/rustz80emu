@@ -108,6 +108,7 @@ impl Instruction for Instruction_JR_NZ {
         let curr_pc = cpu.get_pc();
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
+
         println!("{:#06x}: JR NZ {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(ZERO_FLAG) {
             cpu.inc_pc(2);
@@ -201,6 +202,26 @@ impl Instruction for Instruction_LD_HL_R {
         cpu.write_word(addr, val);
 
         println!("{:#06x}: LD (HL), {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+    }
+}
+
+struct Instruction_CP_HL;
+
+impl Instruction for Instruction_CP_HL {
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(addr);
+        let accval = cpu.read_reg8(Reg8::A);
+
+        cpu.set_flag(ADD_SUBTRACT_FLAG);
+        if memval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if memval == accval { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if accval < memval { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+        if (accval & 0x0F) < (memval & 0x0F) { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        //TODO: Parity flag?
+
+        println!("{:#06x}: CP (HL)", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -615,7 +636,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b10111011 */
     &Instruction_UNSUPPORTED, /* 0b10111100 */
     &Instruction_UNSUPPORTED, /* 0b10111101 */
-    &Instruction_UNSUPPORTED, /* 0b10111110 */
+    &Instruction_CP_HL      , /* 0b10111110 */
     &Instruction_UNSUPPORTED, /* 0b10111111 */
     &Instruction_UNSUPPORTED, /* 0b11000000 */
     &Instruction_UNSUPPORTED, /* 0b11000001 */
