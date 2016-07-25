@@ -29,6 +29,4 @@ fn main() {
     let mut cpu = cpu::Cpu::new(memory);
 
     cpu.run();
-
-    println!("{:?}", cpu);
 }

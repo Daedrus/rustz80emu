@@ -1,5 +1,7 @@
 use super::memory;
 use std::fmt;
+use std::io::{stdin, stdout};
+use std::io::Write;
 use super::instructions;
 
 enum_from_primitive! {
@@ -132,8 +134,27 @@ impl Cpu {
     }
 
     pub fn run(&mut self) {
+        let mut debug_on = true;
+
         loop {
-            self.run_instruction();
+            if debug_on {
+                print!("z80> ");
+                stdout().flush().unwrap();
+
+                let mut input = String::new();
+                stdin().read_line(&mut input).unwrap();
+                let input: String = input.trim().into();
+
+                match input.as_ref() {
+                    "step" => self.run_instruction(),
+                    "regs" => println!("{:?}", self),
+                    "continue" => debug_on = false,
+                    "exit" => break,
+                    _ => println!("Unknown command")
+                };
+            } else {
+                self.run_instruction();
+            }
         }
     }
 
@@ -207,7 +228,7 @@ impl Cpu {
 
         instrs.execute(self);
 
-        println!("{:?}", self);
+
     }
 
     pub fn read_word(&self, addr: u16) -> u8 {
