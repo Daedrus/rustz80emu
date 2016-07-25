@@ -12,11 +12,11 @@ impl Instruction for Instruction_UNSUPPORTED {
     }
 }
 
-struct Instruction_DEC {
+struct Instruction_DEC_SS {
     regpair: Reg16
 }
 
-impl Instruction for Instruction_DEC {
+impl Instruction for Instruction_DEC_SS {
     fn execute(&self, cpu: &mut Cpu) {
         let oldregval = cpu.read_reg16(self.regpair);
         cpu.write_reg16(self.regpair, oldregval - 1);
@@ -177,7 +177,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00001000 */
     &Instruction_UNSUPPORTED, /* 0b00001001 */
     &Instruction_UNSUPPORTED, /* 0b00001010 */
-    &Instruction_DEC {        /* 0b00001011 */
+    &Instruction_DEC_SS {        /* 0b00001011 */
         regpair: Reg16::BC
     },
     &Instruction_UNSUPPORTED, /* 0b00001100 */
@@ -201,7 +201,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00011000 */
     &Instruction_UNSUPPORTED, /* 0b00011001 */
     &Instruction_UNSUPPORTED, /* 0b00011010 */
-    &Instruction_DEC {        /* 0b00011011 */
+    &Instruction_DEC_SS {        /* 0b00011011 */
         regpair: Reg16::DE
     },
     &Instruction_UNSUPPORTED, /* 0b00011100 */
@@ -225,7 +225,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00101000 */
     &Instruction_UNSUPPORTED, /* 0b00101001 */
     &Instruction_UNSUPPORTED, /* 0b00101010 */
-    &Instruction_DEC {        /* 0b00101011 */
+    &Instruction_DEC_SS {        /* 0b00101011 */
         regpair: Reg16::HL
     },
     &Instruction_UNSUPPORTED, /* 0b00101100 */
@@ -247,7 +247,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00111000 */
     &Instruction_UNSUPPORTED, /* 0b00111001 */
     &Instruction_UNSUPPORTED, /* 0b00111010 */
-    &Instruction_DEC {        /* 0b00111011 */
+    &Instruction_DEC_SS {        /* 0b00111011 */
         regpair: Reg16::SP
     },
     &Instruction_UNSUPPORTED, /* 0b00111100 */
