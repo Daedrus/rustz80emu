@@ -189,6 +189,22 @@ impl Instruction for Instruction_OUT_C_R {
     }
 }
 
+struct Instruction_LD_HL_R {
+    r: Reg8
+}
+
+impl Instruction for Instruction_LD_HL_R {
+    fn execute(&self, cpu: &mut Cpu) {
+        let val = cpu.read_reg8(self.r);
+        let addr = cpu.read_reg16(Reg16::HL);
+
+        cpu.write_word(addr, val);
+
+        println!("{:#06x}: LD (HL), {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+    }
+}
+
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
     &Instruction_LD_DD_NN {   /* 0b00000001 */
@@ -472,14 +488,28 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         rt: Reg8::L,
         rs: Reg8::A
     },
-    &Instruction_UNSUPPORTED, /* 0b01110000 */
-    &Instruction_UNSUPPORTED, /* 0b01110001 */
-    &Instruction_UNSUPPORTED, /* 0b01110010 */
-    &Instruction_UNSUPPORTED, /* 0b01110011 */
-    &Instruction_UNSUPPORTED, /* 0b01110100 */
-    &Instruction_UNSUPPORTED, /* 0b01110101 */
+    &Instruction_LD_HL_R {    /* 0b01110000 */
+        r: Reg8::B
+    },
+    &Instruction_LD_HL_R {    /* 0b01110001 */
+        r: Reg8::C
+    },
+    &Instruction_LD_HL_R {    /* 0b01110010 */
+        r: Reg8::D
+    },
+    &Instruction_LD_HL_R {    /* 0b01110011 */
+        r: Reg8::E
+    },
+    &Instruction_LD_HL_R {    /* 0b01110100 */
+        r: Reg8::H
+    },
+    &Instruction_LD_HL_R {    /* 0b01110101 */
+        r: Reg8::L
+    },
     &Instruction_UNSUPPORTED, /* 0b01110110 */
-    &Instruction_UNSUPPORTED, /* 0b01110111 */
+    &Instruction_LD_HL_R {    /* 0b01110111 */
+        r: Reg8::A
+    },
     &Instruction_LD_R_R {     /* 0b01111000 */
         rt: Reg8::A,
         rs: Reg8::B

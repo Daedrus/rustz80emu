@@ -254,6 +254,10 @@ impl Cpu {
         self.memory.read_word(addr)
     }
 
+    pub fn write_word(&mut self, addr: u16, val: u8) {
+        self.memory.write_word(addr, val);
+    }
+
     pub fn read_port(&self, port: Port) -> u8 {
         match port {
             Port::MEMORY => 0x42,
