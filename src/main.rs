@@ -19,12 +19,13 @@ fn read_bin<P: AsRef<Path>>(path: P) -> Vec<u8> {
 }
 
 fn main() {
-    let rom_file_name = env::args().nth(1).unwrap();
+    let rom0_file_name = env::args().nth(1).unwrap();
+    let rom1_file_name = env::args().nth(2).unwrap();
 
-    let rom = read_bin(rom_file_name);
-    let ram = vec![0; 4 * 1024];
+    let rom0 = read_bin(rom0_file_name);
+    let rom1 = read_bin(rom1_file_name);
 
-    let mut memory = memory::Memory::new(rom, ram);
+    let mut memory = memory::Memory::new(rom0, rom1);
 
     let mut cpu = cpu::Cpu::new(memory);
 

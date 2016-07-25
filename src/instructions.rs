@@ -178,11 +178,11 @@ struct Instruction_OUT_C_R;
 
 impl Instruction for Instruction_OUT_C_R {
     fn execute(&self, cpu: &mut Cpu) {
-        let r = Reg8::from_u8(cpu.read_word(cpu.get_pc() + 1) & 0b00111000 >> 3).unwrap();
+        let r = Reg8::from_u8((cpu.read_word(cpu.get_pc() + 1) & 0b00111000) >> 3).unwrap();
         let rval = cpu.read_reg8(r);
-        let cval = cpu.read_reg8(Reg8::C);
+        let port = Port::from_u16(cpu.read_reg16(Reg16::BC)).unwrap();
 
-        cpu.write_port(rval, cval);
+        cpu.write_port(port, rval);
 
         println!("{:#06x}: OUT (C), {:?}", cpu.get_pc(), r);
         cpu.inc_pc(2);

@@ -31,6 +31,13 @@ pub enum Reg8 {
 }
 }
 
+enum_from_primitive! {
+#[derive(Debug, Clone, Copy)]
+pub enum Port {
+    MEMORY = 0x7ffd
+}
+}
+
 bitflags! {
     pub flags StatusIndicatorFlags: u8 {
         const CARRY_FLAG           = 0b00000001, // C
@@ -247,13 +254,20 @@ impl Cpu {
         self.memory.read_word(addr)
     }
 
-    pub fn read_port(&self, port: u8) -> u8 {
-        // TODO
-        0
+    pub fn read_port(&self, port: Port) -> u8 {
+        match port {
+            Port::MEMORY => 0x42,
+        }
     }
 
-    pub fn write_port(&self, port: u8, val: u8) {
-        // TODO
+    pub fn write_port(&mut self, port: Port, val: u8) {
+        match port {
+            Port::MEMORY =>
+                match val {
+                    0 => self.memory.change_bank(val),
+                    _ => ()
+                },
+        }
     }
 }
 
