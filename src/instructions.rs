@@ -310,6 +310,39 @@ impl Instruction for Instruction_LD_NN_A {
     }
 }
 
+struct Instruction_JR_E;
+
+impl Instruction for Instruction_JR_E {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
+        let target = (curr_pc as i16 + offset as i16) as u16;
+
+        println!("{:#06x}: JR ({:#06X})", cpu.get_pc(), target);
+        cpu.set_pc(target);
+    }
+}
+
+struct Instruction_CALL_NN;
+
+impl Instruction for Instruction_CALL_NN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let mut curr_pc = cpu.get_pc();
+        let nn =  (cpu.read_word(curr_pc + 1) as u16) |
+                 ((cpu.read_word(curr_pc + 2) as u16) << 8);
+        let curr_sp = cpu.read_reg16(Reg16::SP);
+
+        curr_pc += 3;
+        cpu.write_word(curr_sp - 1, ((curr_pc & 0xFF00) >> 8) as u8);
+        cpu.write_word(curr_sp - 2,  (curr_pc & 0x00FF)       as u8);
+
+        cpu.write_reg16(Reg16::SP, curr_sp - 2);
+
+        println!("{:#06x}: CALL {:#06X}", cpu.get_pc(), nn);
+        cpu.set_pc(nn);
+    }
+}
+
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
     &Instruction_LD_DD_NN {   /* 0b00000001 */
@@ -353,7 +386,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         r: Reg8::D
     },
     &Instruction_UNSUPPORTED, /* 0b00010111 */
-    &Instruction_UNSUPPORTED, /* 0b00011000 */
+    &Instruction_JR_E       , /* 0b00011000 */
     &Instruction_UNSUPPORTED, /* 0b00011001 */
     &Instruction_UNSUPPORTED, /* 0b00011010 */
     &Instruction_DEC_SS {     /* 0b00011011 */
@@ -749,7 +782,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11001010 */
     &Instruction_UNSUPPORTED, /* 0b11001011 */
     &Instruction_UNSUPPORTED, /* 0b11001100 */
-    &Instruction_UNSUPPORTED, /* 0b11001101 */
+    &Instruction_CALL_NN    , /* 0b11001101 */
     &Instruction_UNSUPPORTED, /* 0b11001110 */
     &Instruction_UNSUPPORTED, /* 0b11001111 */
     &Instruction_UNSUPPORTED, /* 0b11010000 */
