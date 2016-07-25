@@ -241,12 +241,19 @@ impl Cpu {
         let instrs = &instructions::INSTR_TABLE[instruction as usize];
 
         instrs.execute(self);
-
-
     }
 
     pub fn read_word(&self, addr: u16) -> u8 {
         self.memory.read_word(addr)
+    }
+
+    pub fn read_port(&self, port: u8) -> u8 {
+        // TODO
+        0
+    }
+
+    pub fn write_port(&self, port: u8, val: u8) {
+        // TODO
     }
 }
 

@@ -1,4 +1,5 @@
 use super::cpu::*;
+use num::FromPrimitive;
 
 pub trait Instruction {
     fn execute(&self, &mut Cpu);
@@ -8,6 +9,8 @@ struct Instruction_UNSUPPORTED;
 
 impl Instruction for Instruction_UNSUPPORTED {
     fn execute(&self, cpu: &mut Cpu) {
+        println!("{:?}", cpu);
+
         panic!("Unsupported instruction {:#x}", cpu.read_word(cpu.get_pc()));
     }
 }
@@ -171,6 +174,20 @@ impl Instruction for Instruction_DEC_R {
     }
 }
 
+struct Instruction_OUT_C_R;
+
+impl Instruction for Instruction_OUT_C_R {
+    fn execute(&self, cpu: &mut Cpu) {
+        let r = Reg8::from_u8(cpu.read_word(cpu.get_pc() + 1) & 0b00111000 >> 3).unwrap();
+        let rval = cpu.read_reg8(r);
+        let cval = cpu.read_reg8(Reg8::C);
+
+        cpu.write_port(rval, cval);
+
+        println!("{:#06x}: OUT (C), {:?}", cpu.get_pc(), r);
+        cpu.inc_pc(2);
+    }
+}
 
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
@@ -615,7 +632,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11101010 */
     &Instruction_UNSUPPORTED, /* 0b11101011 */
     &Instruction_UNSUPPORTED, /* 0b11101100 */
-    &Instruction_UNSUPPORTED, /* 0b11101101 */
+    &Instruction_OUT_C_R    , /* 0b11101101 */
     &Instruction_UNSUPPORTED, /* 0b11101110 */
     &Instruction_UNSUPPORTED, /* 0b11101111 */
     &Instruction_UNSUPPORTED, /* 0b11110000 */
