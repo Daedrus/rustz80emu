@@ -163,7 +163,7 @@ impl Cpu {
                 match input.as_ref() {
                     "step" => self.run_instruction(),
                     "regs" => println!("{:?}", self),
-                    "continue" => debug_on = false,
+                    "run"  => debug_on = false,
                     "exit" => break,
                     _ => println!("Unknown command")
                 };

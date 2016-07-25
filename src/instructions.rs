@@ -226,6 +226,27 @@ impl Instruction for Instruction_CP_HL {
     }
 }
 
+struct Instruction_XOR_R {
+    r: Reg8
+}
+
+impl Instruction for Instruction_XOR_R {
+    fn execute(&self, cpu: &mut Cpu) {
+        let xorval = cpu.read_reg8(self.r) ^ cpu.read_reg8(Reg8::A);
+        cpu.write_reg8(Reg8::A, xorval);
+
+        cpu.clear_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        cpu.clear_flag(CARRY_FLAG);
+        if xorval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if xorval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if xorval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+
+        println!("{:#06x}: XOR {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+    }
+}
+
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
     &Instruction_LD_DD_NN {   /* 0b00000001 */
@@ -600,14 +621,28 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b10100101 */
     &Instruction_UNSUPPORTED, /* 0b10100110 */
     &Instruction_UNSUPPORTED, /* 0b10100111 */
-    &Instruction_UNSUPPORTED, /* 0b10101000 */
-    &Instruction_UNSUPPORTED, /* 0b10101001 */
-    &Instruction_UNSUPPORTED, /* 0b10101010 */
-    &Instruction_UNSUPPORTED, /* 0b10101011 */
-    &Instruction_UNSUPPORTED, /* 0b10101100 */
-    &Instruction_UNSUPPORTED, /* 0b10101101 */
+    &Instruction_XOR_R {      /* 0b10101000 */
+        r: Reg8::B
+    },
+    &Instruction_XOR_R {      /* 0b10101001 */
+        r: Reg8::C
+    },
+    &Instruction_XOR_R {      /* 0b10101010 */
+        r: Reg8::D
+    },
+    &Instruction_XOR_R {      /* 0b10101011 */
+        r: Reg8::E
+    },
+    &Instruction_XOR_R {      /* 0b10101100 */
+        r: Reg8::H
+    },
+    &Instruction_XOR_R {      /* 0b10101101 */
+        r: Reg8::L
+    },
     &Instruction_UNSUPPORTED, /* 0b10101110 */
-    &Instruction_UNSUPPORTED, /* 0b10101111 */
+    &Instruction_XOR_R {      /* 0b10101111 */
+        r: Reg8::A
+    },
     &Instruction_OR_R {       /* 0b10110000 */
         r: Reg8::B
     },
