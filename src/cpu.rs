@@ -33,12 +33,12 @@ pub enum Reg8 {
 
 bitflags! {
     pub flags StatusIndicatorFlags: u8 {
-        const CARRY_FLAG           = 0b00000001,
-        const ADD_SUBTRACT_FLAG    = 0b00000010,
-        const PARITY_OVERFLOW_FLAG = 0b00000100,
-        const HALF_CARRY_FLAG      = 0b00010000,
-        const ZERO_FLAG            = 0b01000000,
-        const SIGN_FLAG            = 0b10000000
+        const CARRY_FLAG           = 0b00000001, // C
+        const ADD_SUBTRACT_FLAG    = 0b00000010, // N
+        const PARITY_OVERFLOW_FLAG = 0b00000100, // P/V
+        const HALF_CARRY_FLAG      = 0b00010000, // H
+        const ZERO_FLAG            = 0b01000000, // Z
+        const SIGN_FLAG            = 0b10000000  // S
     }
 }
 

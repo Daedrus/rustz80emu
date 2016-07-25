@@ -77,21 +77,11 @@ impl Instruction for Instruction_OR_R {
     fn execute(&self, cpu: &mut Cpu) {
         let orval = cpu.read_reg8(self.r) | cpu.read_reg8(Reg8::A);
         cpu.write_reg8(Reg8::A, orval);
-        if orval.count_ones() % 2 == 0 {
-            cpu.set_flag(PARITY_OVERFLOW_FLAG);
-        } else {
-            cpu.clear_flag(PARITY_OVERFLOW_FLAG);
-        }
-        if orval == 0 {
-            cpu.set_flag(ZERO_FLAG);
-        } else {
-            cpu.clear_flag(ZERO_FLAG);
-        }
-        if orval < 0 {
-            cpu.set_flag(SIGN_FLAG);
-        } else {
-            cpu.clear_flag(SIGN_FLAG);
-        }
+
+        if orval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+        if orval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if orval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+
         println!("{:#06x}: OR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
@@ -161,6 +151,27 @@ impl Instruction for Instruction_EXX {
     }
 }
 
+struct Instruction_DEC_R {
+    r: Reg8
+}
+
+impl Instruction for Instruction_DEC_R {
+    fn execute(&self, cpu: &mut Cpu) {
+        let decval = cpu.read_reg8(self.r) - 1;
+        cpu.write_reg8(self.r, decval);
+
+        cpu.set_flag(ADD_SUBTRACT_FLAG);
+        if decval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if decval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if decval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        if decval == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+
+        println!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+    }
+}
+
+
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
     &Instruction_LD_DD_NN {   /* 0b00000001 */
@@ -169,7 +180,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000010 */
     &Instruction_UNSUPPORTED, /* 0b00000011 */
     &Instruction_UNSUPPORTED, /* 0b00000100 */
-    &Instruction_UNSUPPORTED, /* 0b00000101 */
+    &Instruction_DEC_R {      /* 0b00000101 */
+        r: Reg8::B
+    },
     &Instruction_LD_R_N {     /* 0b00000110 */
         r: Reg8::B
     },
@@ -177,11 +190,13 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00001000 */
     &Instruction_UNSUPPORTED, /* 0b00001001 */
     &Instruction_UNSUPPORTED, /* 0b00001010 */
-    &Instruction_DEC_SS {        /* 0b00001011 */
+    &Instruction_DEC_SS {     /* 0b00001011 */
         regpair: Reg16::BC
     },
     &Instruction_UNSUPPORTED, /* 0b00001100 */
-    &Instruction_UNSUPPORTED, /* 0b00001101 */
+    &Instruction_DEC_R {      /* 0b00001101 */
+        r: Reg8::C
+    },
     &Instruction_LD_R_N {     /* 0b00001110 */
         r: Reg8::C
     },
@@ -193,7 +208,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00010010 */
     &Instruction_UNSUPPORTED, /* 0b00010011 */
     &Instruction_UNSUPPORTED, /* 0b00010100 */
-    &Instruction_UNSUPPORTED, /* 0b00010101 */
+    &Instruction_DEC_R {      /* 0b00010101 */
+        r: Reg8::D
+    },
     &Instruction_LD_R_N {     /* 0b00010110 */
         r: Reg8::D
     },
@@ -201,11 +218,13 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00011000 */
     &Instruction_UNSUPPORTED, /* 0b00011001 */
     &Instruction_UNSUPPORTED, /* 0b00011010 */
-    &Instruction_DEC_SS {        /* 0b00011011 */
+    &Instruction_DEC_SS {     /* 0b00011011 */
         regpair: Reg16::DE
     },
     &Instruction_UNSUPPORTED, /* 0b00011100 */
-    &Instruction_UNSUPPORTED, /* 0b00011101 */
+    &Instruction_DEC_R {      /* 0b00011101 */
+        r: Reg8::E
+    },
     &Instruction_LD_R_N {     /* 0b00011110 */
         r: Reg8::E
     },
@@ -217,7 +236,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00100010 */
     &Instruction_UNSUPPORTED, /* 0b00100011 */
     &Instruction_UNSUPPORTED, /* 0b00100100 */
-    &Instruction_UNSUPPORTED, /* 0b00100101 */
+    &Instruction_DEC_R {      /* 0b00100101 */
+        r: Reg8::H
+    },
     &Instruction_LD_R_N {     /* 0b00100110 */
         r: Reg8::H
     },
@@ -225,11 +246,13 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00101000 */
     &Instruction_UNSUPPORTED, /* 0b00101001 */
     &Instruction_UNSUPPORTED, /* 0b00101010 */
-    &Instruction_DEC_SS {        /* 0b00101011 */
+    &Instruction_DEC_SS {     /* 0b00101011 */
         regpair: Reg16::HL
     },
     &Instruction_UNSUPPORTED, /* 0b00101100 */
-    &Instruction_UNSUPPORTED, /* 0b00101101 */
+    &Instruction_DEC_R {      /* 0b00101101 */
+        r: Reg8::L
+    },
     &Instruction_LD_R_N {     /* 0b00101110 */
         r: Reg8::L
     },
@@ -247,11 +270,13 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00111000 */
     &Instruction_UNSUPPORTED, /* 0b00111001 */
     &Instruction_UNSUPPORTED, /* 0b00111010 */
-    &Instruction_DEC_SS {        /* 0b00111011 */
+    &Instruction_DEC_SS {     /* 0b00111011 */
         regpair: Reg16::SP
     },
     &Instruction_UNSUPPORTED, /* 0b00111100 */
-    &Instruction_UNSUPPORTED, /* 0b00111101 */
+    &Instruction_DEC_R {      /* 0b00111101 */
+        r: Reg8::A
+    },
     &Instruction_LD_R_N {     /* 0b00111110 */
         r: Reg8::A
     },
