@@ -34,7 +34,9 @@ pub enum Reg8 {
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy)]
 pub enum Port {
-    MEMORY = 0x7ffd
+    MEMORY = 0x7ffd,
+    AY38912_REG14 = 0xfffd,
+    AY38912_REG14_W = 0xbffd
 }
 }
 
@@ -169,6 +171,8 @@ impl Cpu {
                 };
             } else {
                 self.run_instruction();
+                // Poor man's breakpoint:
+                // if self.get_pc() == 0x00f4 { debug_on = true };
             }
         }
     }
@@ -259,18 +263,24 @@ impl Cpu {
     }
 
     pub fn read_port(&self, port: Port) -> u8 {
+        // TODO
         match port {
             Port::MEMORY => 0x42,
+            Port::AY38912_REG14 => 0x42,
+            Port::AY38912_REG14_W => unreachable!()
         }
     }
 
     pub fn write_port(&mut self, port: Port, val: u8) {
+        // TODO
         match port {
             Port::MEMORY =>
                 match val {
                     0 => self.memory.change_bank(val),
                     _ => ()
                 },
+            Port::AY38912_REG14 => (),
+            Port::AY38912_REG14_W => ()
         }
     }
 }

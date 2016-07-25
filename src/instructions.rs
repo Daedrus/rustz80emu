@@ -38,7 +38,7 @@ impl Instruction for Instruction_LD_R_N {
         let n = cpu.read_word(cpu.get_pc() + 1);
         cpu.write_reg8(self.r, n);
 
-        println!("{:#06x}: LD {:?}, ${:x}", cpu.get_pc(), self.r, n);
+        println!("{:#06x}: LD {:?}, {:#04X}", cpu.get_pc(), self.r, n);
         cpu.inc_pc(2);
     }
 }
@@ -53,7 +53,7 @@ impl Instruction for Instruction_LD_DD_NN {
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
         cpu.write_reg16(self.regpair, nn);
 
-        println!("{:#06x}: LD {:?}, ${:x}", cpu.get_pc(), self.regpair, nn);
+        println!("{:#06x}: LD {:?}, {:#06X}", cpu.get_pc(), self.regpair, nn);
         cpu.inc_pc(3);
     }
 }
@@ -275,6 +275,41 @@ impl Instruction for Instruction_XOR_R {
     }
 }
 
+struct Instruction_DJNZ;
+
+impl Instruction for Instruction_DJNZ {
+    fn execute(&self, cpu: &mut Cpu) {
+        let bval = cpu.read_reg8(Reg8::B) - 1;
+        cpu.write_reg8(Reg8::B, bval);
+        let curr_pc = cpu.get_pc();
+        let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
+        let target = (curr_pc as i16 + offset as i16) as u16;
+
+        if bval > 0 {
+            cpu.set_pc(target);
+        } else {
+            cpu.inc_pc(2);
+        }
+
+        println!("{:#06x}: DJNZ {:#06X}", cpu.get_pc(), target);
+    }
+}
+
+struct Instruction_LD_NN_A;
+
+impl Instruction for Instruction_LD_NN_A {
+    fn execute(&self, cpu: &mut Cpu) {
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+        let aval = cpu.read_reg8(Reg8::A);
+
+        cpu.write_word(nn, aval);
+
+        println!("{:#06x}: LD ({:#06X}), a", cpu.get_pc(), nn);
+        cpu.inc_pc(3);
+    }
+}
+
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
     &Instruction_LD_DD_NN {   /* 0b00000001 */
@@ -304,7 +339,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         r: Reg8::C
     },
     &Instruction_UNSUPPORTED, /* 0b00001111 */
-    &Instruction_UNSUPPORTED, /* 0b00010000 */
+    &Instruction_DJNZ       , /* 0b00010000 */
     &Instruction_LD_DD_NN {   /* 0b00010001 */
         regpair: Reg16::DE
     },
@@ -364,7 +399,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_LD_DD_NN {   /* 0b00110001 */
         regpair: Reg16::SP
     },
-    &Instruction_UNSUPPORTED, /* 0b00110010 */
+    &Instruction_LD_NN_A    , /* 0b00110010 */
     &Instruction_UNSUPPORTED, /* 0b00110011 */
     &Instruction_UNSUPPORTED, /* 0b00110100 */
     &Instruction_UNSUPPORTED, /* 0b00110101 */
