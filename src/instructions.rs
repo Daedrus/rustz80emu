@@ -135,6 +135,32 @@ impl Instruction for Instruction_JP_NN {
     }
 }
 
+struct Instruction_EXX;
+
+impl Instruction for Instruction_EXX {
+    fn execute(&self, cpu: &mut Cpu) {
+        let bcval = cpu.read_reg16(Reg16::BC);
+        let deval = cpu.read_reg16(Reg16::DE);
+        let hlval = cpu.read_reg16(Reg16::HL);
+
+        let bcaltval = cpu.read_reg16(Reg16::BC_ALT);
+        let dealtval = cpu.read_reg16(Reg16::DE_ALT);
+        let hlaltval = cpu.read_reg16(Reg16::HL_ALT);
+
+        cpu.write_reg16(Reg16::BC, bcaltval);
+        cpu.write_reg16(Reg16::DE, dealtval);
+        cpu.write_reg16(Reg16::HL, hlaltval);
+
+        cpu.write_reg16(Reg16::BC_ALT, bcval);
+        cpu.write_reg16(Reg16::DE_ALT, deval);
+        cpu.write_reg16(Reg16::HL_ALT, hlval);
+
+        println!("{:#06x}: EXX", cpu.get_pc());
+
+        cpu.inc_pc(1);
+    }
+}
+
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
     &Instruction_LD_DD_NN {   /* 0b00000001 */
@@ -544,7 +570,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11010110 */
     &Instruction_UNSUPPORTED, /* 0b11010111 */
     &Instruction_UNSUPPORTED, /* 0b11011000 */
-    &Instruction_UNSUPPORTED, /* 0b11011001 */
+    &Instruction_EXX        , /* 0b11011001 */
     &Instruction_UNSUPPORTED, /* 0b11011010 */
     &Instruction_UNSUPPORTED, /* 0b11011011 */
     &Instruction_UNSUPPORTED, /* 0b11011100 */

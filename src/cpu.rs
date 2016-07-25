@@ -10,7 +10,11 @@ pub enum Reg16 {
     BC = 0b00,
     DE = 0b01,
     HL = 0b10,
-    SP = 0b11
+    SP = 0b11,
+
+    BC_ALT = 0b100,
+    DE_ALT = 0b101,
+    HL_ALT = 0b110
 }
 }
 
@@ -79,28 +83,32 @@ pub struct Cpu {
 impl fmt::Debug for Cpu {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "
-                         ------
-                     a:  | {:02X} |
-                         ------------
-                         | SZ_H_PNC |
-                     f:  | {:08b} |
-                         ------------
-                     bc: | {:02X} | {:02X} |
-                     de: | {:02X} | {:02X} |
-                     hl: | {:02X} | {:02X} |
+                                               ------------
+                         ------                | SZ_H_PNC |
+                     a:  | {:02X} |             f: | {:08b} |
+                         ------                ------------
+
+                         -----------           -----------
+                     bc: | {:02X} | {:02X} |   bc_alt: | {:02X} | {:02X} |
+                     de: | {:02X} | {:02X} |   de_alt: | {:02X} | {:02X} |
+                     hl: | {:02X} | {:02X} |   hl_alt: | {:02X} | {:02X} |
+                         -----------           -----------
+
                          -----------
                      ir: | {:02X} | {:02X} |
                          -----------
-                     ix: |   {:04X}  |
-                     iy: |   {:04X}  |
-                     sp: |   {:04X}  |
-                     pc: |   {:04X}  |
-                         -----------",
+
+                         ----------
+                     ix: |  {:04X}  |
+                     iy: |  {:04X}  |
+                     sp: |  {:04X}  |
+                     pc: |  {:04X}  |
+                         ----------",
                       self.a,
                       self.f.bits(),
-                      self.b, self.c,
-                      self.d, self.e,
-                      self.h, self.l,
+                      self.b, self.c, self.b_alt, self.c_alt,
+                      self.d, self.e, self.d_alt, self.e_alt,
+                      self.h, self.l, self.h_alt, self.l_alt,
                       self.i, self.r,
                       self.ix,
                       self.iy,
@@ -190,6 +198,9 @@ impl Cpu {
                     Reg16::BC => (self.b, self.c),
                     Reg16::DE => (self.d, self.e),
                     Reg16::HL => (self.h, self.l),
+                    Reg16::BC_ALT => (self.b_alt, self.c_alt),
+                    Reg16::DE_ALT => (self.d_alt, self.e_alt),
+                    Reg16::HL_ALT => (self.h_alt, self.l_alt),
                     _ => unreachable!()
                 };
                 (((high as u16) << 8 ) | low as u16)
@@ -204,6 +215,9 @@ impl Cpu {
             Reg16::BC => { self.b = high; self.c = low; }
             Reg16::DE => { self.d = high; self.e = low; }
             Reg16::HL => { self.h = high; self.l = low; }
+            Reg16::BC_ALT => { self.b_alt = high; self.c_alt = low; }
+            Reg16::DE_ALT => { self.d_alt = high; self.e_alt = low; }
+            Reg16::HL_ALT => { self.h_alt = high; self.l_alt = low; }
             Reg16::SP => { self.sp = val }
         }
     }
