@@ -179,13 +179,41 @@ struct Instruction_OUT_C_R;
 
 impl Instruction for Instruction_OUT_C_R {
     fn execute(&self, cpu: &mut Cpu) {
-        let r = Reg8::from_u8((cpu.read_word(cpu.get_pc() + 1) & 0b00111000) >> 3).unwrap();
-        let rval = cpu.read_reg8(r);
-        let port = Port::from_u16(cpu.read_reg16(Reg16::BC)).unwrap();
+        let r = cpu.read_word(cpu.get_pc() + 1);
+        match r {
+            0b10110000 => {
+                let mut counter = cpu.read_reg16(Reg16::BC);
+                while counter > 0 {
+                    let bcval = cpu.read_reg16(Reg16::BC);
+                    let deval = cpu.read_reg16(Reg16::DE);
+                    let hlval = cpu.read_reg16(Reg16::HL);
 
-        cpu.write_port(port, rval);
+                    let memval = cpu.read_word(hlval);
+                    cpu.write_word(deval, memval);
 
-        println!("{:#06x}: OUT (C), {:?}", cpu.get_pc(), r);
+                    cpu.write_reg16(Reg16::DE, deval.wrapping_add(1));
+                    cpu.write_reg16(Reg16::HL, hlval.wrapping_add(1));
+
+                    counter -= 1;
+                    cpu.write_reg16(Reg16::BC, counter);
+                }
+
+                cpu.clear_flag(HALF_CARRY_FLAG);
+                cpu.clear_flag(PARITY_OVERFLOW_FLAG);
+                cpu.clear_flag(ADD_SUBTRACT_FLAG);
+
+                println!("{:#06x}: LDIR", cpu.get_pc());
+            }
+            _ => {
+                let r = Reg8::from_u8((r & 0b00111000) >> 3).unwrap();
+                let rval = cpu.read_reg8(r);
+                let port = Port::from_u16(cpu.read_reg16(Reg16::BC)).unwrap();
+
+                cpu.write_port(port, rval);
+
+                println!("{:#06x}: OUT (C), {:?}", cpu.get_pc(), r);
+            }
+        }
         cpu.inc_pc(2);
     }
 }
