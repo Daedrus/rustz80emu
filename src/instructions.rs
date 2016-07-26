@@ -327,8 +327,7 @@ struct Instruction_OUT_C_R;
 
 impl Instruction for Instruction_OUT_C_R {
     fn execute(&self, cpu: &mut Cpu) {
-        let r = cpu.read_word(cpu.get_pc() + 1);
-        match r {
+        match cpu.read_word(cpu.get_pc() + 1) {
             0b10110000 => {
                 let mut counter = cpu.read_reg16(Reg16::BC);
                 while counter > 0 {
@@ -350,6 +349,7 @@ impl Instruction for Instruction_OUT_C_R {
                 cpu.clear_flag(ADD_SUBTRACT_FLAG);
 
                 println!("{:#06x}: LDIR", cpu.get_pc());
+                cpu.inc_pc(2);
             },
             0b10111000 => {
                 let mut counter = cpu.read_reg16(Reg16::BC);
@@ -372,18 +372,35 @@ impl Instruction for Instruction_OUT_C_R {
                 cpu.clear_flag(ADD_SUBTRACT_FLAG);
 
                 println!("{:#06x}: LDDR", cpu.get_pc());
+                cpu.inc_pc(2);
             },
-            _ => {
-                let r = Reg8::from_u8((r & 0b00111000) >> 3).unwrap();
+            opcode if opcode & 0b11000111 == 0b01000001 => {
+                let r = Reg8::from_u8((opcode & 0b00111000) >> 3).unwrap();
                 let rval = cpu.read_reg8(r);
                 let port = Port::from_u16(cpu.read_reg16(Reg16::BC)).unwrap();
 
                 cpu.write_port(port, rval);
 
                 println!("{:#06x}: OUT (C), {:?}", cpu.get_pc(), r);
-            }
+                cpu.inc_pc(2);
+            },
+            opcode if opcode & 0b11001111 == 0b01000011 => {
+                let regpair = Reg16::from_u8((opcode & 0b00110000) >> 4).unwrap();
+                let rval = cpu.read_reg16(regpair);
+                let (rhigh, rlow) = (((rval & 0xFF00) >> 8) as u8,
+                                     ((rval & 0x00FF)       as u8));
+
+                let nn =  (cpu.read_word(cpu.get_pc() + 2) as u16) |
+                         ((cpu.read_word(cpu.get_pc() + 3) as u16) << 8);
+
+                cpu.write_word(nn, rlow);
+                cpu.write_word(nn + 1, rhigh);
+
+                println!("{:#06x}: LD ({:#06X}), {:?}", cpu.get_pc(), nn, regpair);
+                cpu.inc_pc(4);
+            },
+            _ => unreachable!()
         }
-        cpu.inc_pc(2);
     }
 }
 
