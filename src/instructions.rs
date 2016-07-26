@@ -384,6 +384,21 @@ impl Instruction for Instruction_ADD_HL_SS {
     }
 }
 
+struct Instruction_LD_R_HL {
+    r: Reg8
+}
+
+impl Instruction for Instruction_LD_R_HL {
+    fn execute(&self, cpu: &mut Cpu) {
+        let hlmemval = cpu.read_word(cpu.read_reg16(Reg16::HL));
+        cpu.write_reg8(self.r, hlmemval);
+
+        println!("{:#06x}: LD {:?}, (HL)", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+    }
+}
+
+
 
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
@@ -526,7 +541,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         rt: Reg8::B,
         rs: Reg8::L
     },
-    &Instruction_UNSUPPORTED, /* 0b01000110 */
+    &Instruction_LD_R_HL {    /* 0b01000110 */
+        r: Reg8::B
+    },
     &Instruction_LD_R_R {     /* 0b01000111 */
         rt: Reg8::B,
         rs: Reg8::A
@@ -555,7 +572,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         rt: Reg8::C,
         rs: Reg8::L
     },
-    &Instruction_UNSUPPORTED, /* 0b01001110 */
+    &Instruction_LD_R_HL {    /* 0b01001110 */
+        r: Reg8::C
+    },
     &Instruction_LD_R_R {     /* 0b01001111 */
         rt: Reg8::C,
         rs: Reg8::A
@@ -584,7 +603,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         rt: Reg8::D,
         rs: Reg8::L
     },
-    &Instruction_UNSUPPORTED, /* 0b01010110 */
+    &Instruction_LD_R_HL {    /* 0b01010110 */
+        r: Reg8::D
+    },
     &Instruction_LD_R_R {     /* 0b01010111 */
         rt: Reg8::D,
         rs: Reg8::A
@@ -613,7 +634,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         rt: Reg8::E,
         rs: Reg8::L
     },
-    &Instruction_UNSUPPORTED, /* 0b01011110 */
+    &Instruction_LD_R_HL {    /* 0b01011110 */
+        r: Reg8::E
+    },
     &Instruction_LD_R_R {     /* 0b01011111 */
         rt: Reg8::E,
         rs: Reg8::A
@@ -642,7 +665,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         rt: Reg8::H,
         rs: Reg8::L
     },
-    &Instruction_UNSUPPORTED, /* 0b01100110 */
+    &Instruction_LD_R_HL {    /* 0b01100110 */
+        r: Reg8::H
+    },
     &Instruction_LD_R_R {     /* 0b01100111 */
         rt: Reg8::H,
         rs: Reg8::A
@@ -722,7 +747,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         rt: Reg8::A,
         rs: Reg8::L
     },
-    &Instruction_UNSUPPORTED, /* 0b01111110 */
+    &Instruction_LD_R_HL {    /* 0b01111110 */
+        r: Reg8::A
+    },
     &Instruction_LD_R_R {     /* 0b01111111 *//*TODO: Valid?*/
         rt: Reg8::A,
         rs: Reg8::A
