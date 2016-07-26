@@ -58,6 +58,50 @@ impl Instruction for Instruction_LD_DD_NN {
     }
 }
 
+struct Instruction_LD_IX_NN;
+
+impl Instruction for Instruction_LD_IX_NN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let d = cpu.read_word(curr_pc + 2);
+        let n = cpu.read_word(curr_pc + 3);
+        let nn = (d as u16) | ((n as u16) << 8);
+
+        match cpu.read_word(curr_pc + 1) {
+            0b00100001 => {
+                cpu.set_ix(nn);
+                println!("{:#06x}: LD IX, {:#06X}", cpu.get_pc(), nn);
+            }
+            0b00101010 => {
+                let nnmemval = (cpu.read_word(nn    ) as u16) |
+                              ((cpu.read_word(nn + 1) as u16) << 8);
+
+                cpu.set_ix(nnmemval);
+
+                println!("{:#06x}: LD IX, {:#06X}", cpu.get_pc(), nnmemval);
+            },
+            0b00100010 => {
+                let (ixhigh, ixlow) = (((cpu.get_ix() & 0xFF00) >> 8) as u8, 
+                                       ((cpu.get_ix() & 0x00FF)       as u8));
+
+                cpu.write_word(nn, ixlow);
+                cpu.write_word(nn + 1, ixhigh);
+
+                println!("{:#06x}: LD ({:#06X}), IX", cpu.get_pc(), nn);
+            },
+            0b00110110 => {
+                let addr = cpu.get_ix() as i16 + d as i16;
+                cpu.write_word(addr as u16, n);
+
+                println!("{:#06x}: LD (IX+{:#04X}), {:#04X}", cpu.get_pc(), d, n);
+            }
+            _ => unreachable!()
+        }
+
+        cpu.inc_pc(4);
+    }
+}
+
 struct Instruction_LD_R_R {
     rt: Reg8,
     rs: Reg8
@@ -969,7 +1013,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11011010 */
     &Instruction_UNSUPPORTED, /* 0b11011011 */
     &Instruction_UNSUPPORTED, /* 0b11011100 */
-    &Instruction_UNSUPPORTED, /* 0b11011101 */
+    &Instruction_LD_IX_NN   , /* 0b11011101 */
     &Instruction_UNSUPPORTED, /* 0b11011110 */
     &Instruction_UNSUPPORTED, /* 0b11011111 */
     &Instruction_UNSUPPORTED, /* 0b11100000 */
