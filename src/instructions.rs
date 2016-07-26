@@ -498,11 +498,11 @@ struct Instruction_RST {
 
 impl Instruction for Instruction_RST {
     fn execute(&self, cpu: &mut Cpu) {
-        let curr_pc = cpu.get_pc();
+        let next_pc = cpu.get_pc() + 1;
         let curr_sp = cpu.read_reg16(Reg16::SP);
 
-        cpu.write_word(curr_sp - 1, ((curr_pc & 0xFF00) >> 8) as u8);
-        cpu.write_word(curr_sp - 2,  (curr_pc & 0x00FF)       as u8);
+        cpu.write_word(curr_sp - 1, ((next_pc & 0xFF00) >> 8) as u8);
+        cpu.write_word(curr_sp - 2,  (next_pc & 0x00FF)       as u8);
 
         cpu.write_reg16(Reg16::SP, curr_sp - 2);
 
