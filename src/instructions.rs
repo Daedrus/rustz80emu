@@ -189,6 +189,20 @@ impl Instruction for Instruction_JP_NN {
     }
 }
 
+struct Instruction_EX_DE_HL;
+
+impl Instruction for Instruction_EX_DE_HL {
+    fn execute(&self, cpu: &mut Cpu) {
+        let deval = cpu.read_reg16(Reg16::DE);
+        let hlval = cpu.read_reg16(Reg16::HL);
+
+        cpu.write_reg16(Reg16::DE, hlval);
+        cpu.write_reg16(Reg16::HL, deval);
+
+        cpu.inc_pc(1);
+    }
+}
+
 struct Instruction_EXX;
 
 impl Instruction for Instruction_EXX {
@@ -1049,7 +1063,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11101000 */
     &Instruction_UNSUPPORTED, /* 0b11101001 */
     &Instruction_UNSUPPORTED, /* 0b11101010 */
-    &Instruction_UNSUPPORTED, /* 0b11101011 */
+    &Instruction_EX_DE_HL   , /* 0b11101011 */
     &Instruction_UNSUPPORTED, /* 0b11101100 */
     &Instruction_OUT_C_R    , /* 0b11101101 */
     &Instruction_UNSUPPORTED, /* 0b11101110 */
