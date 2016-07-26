@@ -362,6 +362,29 @@ impl Instruction for Instruction_PUSH_QQ {
     }
 }
 
+struct Instruction_ADD_HL_SS {
+    regpair: Reg16
+}
+
+impl Instruction for Instruction_ADD_HL_SS {
+    fn execute(&self, cpu: &mut Cpu) {
+        let hlval = cpu.read_reg16(Reg16::HL);
+        let regpairval = cpu.read_reg16(self.regpair);
+
+        let sum = hlval as u32 + regpairval as u32;
+
+        cpu.write_reg16(Reg16::HL, sum as u16);
+
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        if sum & 0x10000 != 0 { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); };
+        if ((hlval & 0xfff) + (regpairval & 0xfff)) & 0x1000 != 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+
+        println!("{:#06x}: ADD HL, {:?}", cpu.get_pc(), self.regpair);
+        cpu.inc_pc(1);
+    }
+}
+
+
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
     &Instruction_LD_DD_NN {   /* 0b00000001 */
@@ -378,7 +401,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00000111 */
     &Instruction_UNSUPPORTED, /* 0b00001000 */
-    &Instruction_UNSUPPORTED, /* 0b00001001 */
+    &Instruction_ADD_HL_SS {  /* 0b00001001 */
+        regpair: Reg16::BC
+    },
     &Instruction_UNSUPPORTED, /* 0b00001010 */
     &Instruction_DEC_SS {     /* 0b00001011 */
         regpair: Reg16::BC
@@ -406,7 +431,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00010111 */
     &Instruction_JR_E       , /* 0b00011000 */
-    &Instruction_UNSUPPORTED, /* 0b00011001 */
+    &Instruction_ADD_HL_SS {  /* 0b00011001 */
+        regpair: Reg16::DE
+    },
     &Instruction_UNSUPPORTED, /* 0b00011010 */
     &Instruction_DEC_SS {     /* 0b00011011 */
         regpair: Reg16::DE
@@ -434,7 +461,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00100111 */
     &Instruction_UNSUPPORTED, /* 0b00101000 */
-    &Instruction_UNSUPPORTED, /* 0b00101001 */
+    &Instruction_ADD_HL_SS {  /* 0b00101001 */
+        regpair: Reg16::HL
+    },
     &Instruction_UNSUPPORTED, /* 0b00101010 */
     &Instruction_DEC_SS {     /* 0b00101011 */
         regpair: Reg16::HL
@@ -458,7 +487,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00110110 */
     &Instruction_UNSUPPORTED, /* 0b00110111 */
     &Instruction_UNSUPPORTED, /* 0b00111000 */
-    &Instruction_UNSUPPORTED, /* 0b00111001 */
+    &Instruction_ADD_HL_SS {  /* 0b00111001 */
+        regpair: Reg16::SP
+    },
     &Instruction_UNSUPPORTED, /* 0b00111010 */
     &Instruction_DEC_SS {     /* 0b00111011 */
         regpair: Reg16::SP
