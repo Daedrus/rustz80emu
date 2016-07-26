@@ -398,6 +398,19 @@ impl Instruction for Instruction_LD_R_HL {
     }
 }
 
+struct Instruction_LD_A_NN;
+
+impl Instruction for Instruction_LD_A_NN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+        let memval = cpu.read_word(nn);
+        cpu.write_reg8(Reg8::A, memval);
+
+        println!("{:#06x}: LD A, ({:#06X})", cpu.get_pc(), nn);
+        cpu.inc_pc(3);
+    }
+}
 
 
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
@@ -505,7 +518,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_ADD_HL_SS {  /* 0b00111001 */
         regpair: Reg16::SP
     },
-    &Instruction_UNSUPPORTED, /* 0b00111010 */
+    &Instruction_LD_A_NN    , /* 0b00111010 */
     &Instruction_DEC_SS {     /* 0b00111011 */
         regpair: Reg16::SP
     },
