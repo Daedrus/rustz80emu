@@ -96,6 +96,9 @@ pub struct Cpu {
     iff1: bool,
     iff2: bool,
 
+    // interrupt mode
+    im: u8,
+
     memory: memory::Memory
 }
 
@@ -158,6 +161,7 @@ impl Cpu {
             pc: 0,
             iff1: false,
             iff2: false,
+            im: 0,
 
             memory: memory
         }
@@ -282,6 +286,9 @@ impl Cpu {
     pub fn clear_iff1(&mut self) { self.iff1 = false; }
     pub fn set_iff2(&mut self)   { self.iff2 = true;  }
     pub fn clear_iff2(&mut self) { self.iff2 = false; }
+
+    // TODO: Properly model interrupt modes
+    pub fn set_im(&mut self, val: u8) { self.im = val; }
 
     pub fn set_flag(&mut self, flag: StatusIndicatorFlags) { self.f.insert(flag); }
     pub fn clear_flag(&mut self, flag: StatusIndicatorFlags) { self.f.remove(flag); }

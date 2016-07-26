@@ -374,6 +374,21 @@ impl Instruction for Instruction_OUT_C_R {
                 println!("{:#06x}: LDDR", cpu.get_pc());
                 cpu.inc_pc(2);
             },
+            0b01000110 => {
+                cpu.set_im(0);
+                println!("{:#06x}: IM 0", cpu.get_pc());
+                cpu.inc_pc(2);
+            },
+            0b01010110 => {
+                cpu.set_im(1);
+                println!("{:#06x}: IM 1", cpu.get_pc());
+                cpu.inc_pc(2);
+            },
+            0b01011110 => {
+                cpu.set_im(2);
+                println!("{:#06x}: IM 2", cpu.get_pc());
+                cpu.inc_pc(2);
+            },
             opcode if opcode & 0b11000111 == 0b01000001 => {
                 let r = Reg8::from_u8((opcode & 0b00111000) >> 3).unwrap();
                 let rval = cpu.read_reg8(r);
