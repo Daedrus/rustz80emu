@@ -293,6 +293,20 @@ impl Instruction for Instruction_INC_R {
     }
 }
 
+struct Instruction_INC_SS {
+    regpair: Reg16
+}
+
+impl Instruction for Instruction_INC_SS {
+    fn execute(&self, cpu: &mut Cpu) {
+        let incval = cpu.read_reg16(self.regpair) + 1;
+        cpu.write_reg16(self.regpair, incval);
+
+        println!("{:#06x}: INC {:?}", cpu.get_pc(), self.regpair);
+        cpu.inc_pc(1);
+    }
+}
+
 struct Instruction_OUT_C_R;
 
 impl Instruction for Instruction_OUT_C_R {
@@ -631,7 +645,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         regpair: Reg16::BC
     },
     &Instruction_UNSUPPORTED, /* 0b00000010 */
-    &Instruction_UNSUPPORTED, /* 0b00000011 */
+    &Instruction_INC_SS {     /* 0b00000011 */
+        regpair: Reg16::BC
+    },
     &Instruction_INC_R {      /* 0b00000100 */
         r: Reg8::B
     },
@@ -665,7 +681,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         regpair: Reg16::DE
     },
     &Instruction_UNSUPPORTED, /* 0b00010010 */
-    &Instruction_UNSUPPORTED, /* 0b00010011 */
+    &Instruction_INC_SS {     /* 0b00010011 */
+        regpair: Reg16::DE
+    },
     &Instruction_INC_R {      /* 0b00010100 */
         r: Reg8::D
     },
@@ -699,7 +717,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         regpair: Reg16::HL
     },
     &Instruction_LD_NN_HL   , /* 0b00100010 */
-    &Instruction_UNSUPPORTED, /* 0b00100011 */
+    &Instruction_INC_SS {     /* 0b00100011 */
+        regpair: Reg16::HL
+    },
     &Instruction_INC_R {      /* 0b00100100 */
         r: Reg8::H
     },
@@ -733,7 +753,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         regpair: Reg16::SP
     },
     &Instruction_LD_NN_A    , /* 0b00110010 */
-    &Instruction_UNSUPPORTED, /* 0b00110011 */
+    &Instruction_INC_SS {     /* 0b00110011 */
+        regpair: Reg16::SP
+    },
     &Instruction_UNSUPPORTED, /* 0b00110100 */
     &Instruction_UNSUPPORTED, /* 0b00110101 */
     &Instruction_UNSUPPORTED, /* 0b00110110 */
