@@ -273,6 +273,26 @@ impl Instruction for Instruction_DEC_R {
     }
 }
 
+struct Instruction_INC_R {
+    r: Reg8
+}
+
+impl Instruction for Instruction_INC_R {
+    fn execute(&self, cpu: &mut Cpu) {
+        let incval = cpu.read_reg8(self.r) + 1;
+        cpu.write_reg8(self.r, incval);
+
+        if incval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if incval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if incval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        if (incval - 1) == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+
+        println!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+    }
+}
+
 struct Instruction_OUT_C_R;
 
 impl Instruction for Instruction_OUT_C_R {
@@ -612,7 +632,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00000010 */
     &Instruction_UNSUPPORTED, /* 0b00000011 */
-    &Instruction_UNSUPPORTED, /* 0b00000100 */
+    &Instruction_INC_R {      /* 0b00000100 */
+        r: Reg8::B
+    },
     &Instruction_DEC_R {      /* 0b00000101 */
         r: Reg8::B
     },
@@ -628,7 +650,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_DEC_SS {     /* 0b00001011 */
         regpair: Reg16::BC
     },
-    &Instruction_UNSUPPORTED, /* 0b00001100 */
+    &Instruction_INC_R {      /* 0b00001100 */
+        r: Reg8::C
+    },
     &Instruction_DEC_R {      /* 0b00001101 */
         r: Reg8::C
     },
@@ -642,7 +666,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_UNSUPPORTED, /* 0b00010010 */
     &Instruction_UNSUPPORTED, /* 0b00010011 */
-    &Instruction_UNSUPPORTED, /* 0b00010100 */
+    &Instruction_INC_R {      /* 0b00010100 */
+        r: Reg8::D
+    },
     &Instruction_DEC_R {      /* 0b00010101 */
         r: Reg8::D
     },
@@ -658,7 +684,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_DEC_SS {     /* 0b00011011 */
         regpair: Reg16::DE
     },
-    &Instruction_UNSUPPORTED, /* 0b00011100 */
+    &Instruction_INC_R {      /* 0b00011100 */
+        r: Reg8::E
+    },
     &Instruction_DEC_R {      /* 0b00011101 */
         r: Reg8::E
     },
@@ -672,7 +700,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     },
     &Instruction_LD_NN_HL   , /* 0b00100010 */
     &Instruction_UNSUPPORTED, /* 0b00100011 */
-    &Instruction_UNSUPPORTED, /* 0b00100100 */
+    &Instruction_INC_R {      /* 0b00100100 */
+        r: Reg8::H
+    },
     &Instruction_DEC_R {      /* 0b00100101 */
         r: Reg8::H
     },
@@ -688,7 +718,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_DEC_SS {     /* 0b00101011 */
         regpair: Reg16::HL
     },
-    &Instruction_UNSUPPORTED, /* 0b00101100 */
+    &Instruction_INC_R {      /* 0b00101100 */
+        r: Reg8::L
+    },
     &Instruction_DEC_R {      /* 0b00101101 */
         r: Reg8::L
     },
@@ -714,7 +746,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_DEC_SS {     /* 0b00111011 */
         regpair: Reg16::SP
     },
-    &Instruction_UNSUPPORTED, /* 0b00111100 */
+    &Instruction_INC_R {      /* 0b00111100 */
+        r: Reg8::A
+    },
     &Instruction_DEC_R {      /* 0b00111101 */
         r: Reg8::A
     },
