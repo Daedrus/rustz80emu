@@ -99,7 +99,20 @@ impl Instruction for Instruction_DI {
     fn execute(&self, cpu: &mut Cpu) {
         cpu.clear_iff1();
         cpu.clear_iff2();
+
         println!("{:#06x}: DI", cpu.get_pc());
+        cpu.inc_pc(1);
+    }
+}
+
+struct Instruction_EI;
+
+impl Instruction for Instruction_EI {
+    fn execute(&self, cpu: &mut Cpu) {
+        cpu.set_iff1();
+        cpu.set_iff2();
+
+        println!("{:#06x}: EI", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -950,7 +963,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11111000 */
     &Instruction_UNSUPPORTED, /* 0b11111001 */
     &Instruction_UNSUPPORTED, /* 0b11111010 */
-    &Instruction_UNSUPPORTED, /* 0b11111011 */
+    &Instruction_EI         , /* 0b11111011 */
     &Instruction_UNSUPPORTED, /* 0b11111100 */
     &Instruction_UNSUPPORTED, /* 0b11111101 */
     &Instruction_UNSUPPORTED, /* 0b11111110 */
