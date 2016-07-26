@@ -81,6 +81,9 @@ impl Instruction for Instruction_OR_R {
         let orval = cpu.read_reg8(self.r) | cpu.read_reg8(Reg8::A);
         cpu.write_reg8(Reg8::A, orval);
 
+        cpu.clear_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        cpu.clear_flag(CARRY_FLAG);
         if orval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
         if orval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if orval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
@@ -305,7 +308,7 @@ impl Instruction for Instruction_LD_NN_A {
 
         cpu.write_word(nn, aval);
 
-        println!("{:#06x}: LD ({:#06X}), a", cpu.get_pc(), nn);
+        println!("{:#06x}: LD ({:#06X}), A", cpu.get_pc(), nn);
         cpu.inc_pc(3);
     }
 }
@@ -409,6 +412,27 @@ impl Instruction for Instruction_LD_A_NN {
 
         println!("{:#06x}: LD A, ({:#06X})", cpu.get_pc(), nn);
         cpu.inc_pc(3);
+    }
+}
+
+struct Instruction_AND_N;
+
+impl Instruction for Instruction_AND_N {
+    fn execute(&self, cpu: &mut Cpu) {
+        let n = cpu.read_word(cpu.get_pc() + 1);
+        let andval = n & cpu.read_reg8(Reg8::A);
+
+        cpu.write_reg8(Reg8::A, andval);
+
+        cpu.set_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        cpu.clear_flag(CARRY_FLAG);
+        if andval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+        if andval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if andval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+
+        println!("{:#06x}: AND {:#04X}", cpu.get_pc(), n);
+        cpu.inc_pc(2);
     }
 }
 
@@ -903,7 +927,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_PUSH_QQ {    /* 0b11100101 */
         regpair: Reg16qq::HL
     },
-    &Instruction_UNSUPPORTED, /* 0b11100110 */
+    &Instruction_AND_N      , /* 0b11100110 */
     &Instruction_UNSUPPORTED, /* 0b11100111 */
     &Instruction_UNSUPPORTED, /* 0b11101000 */
     &Instruction_UNSUPPORTED, /* 0b11101001 */
