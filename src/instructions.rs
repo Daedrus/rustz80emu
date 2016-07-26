@@ -397,6 +397,25 @@ impl Instruction for Instruction_JR_E {
     }
 }
 
+struct Instruction_RST {
+    addr: u8
+}
+
+impl Instruction for Instruction_RST {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let curr_sp = cpu.read_reg16(Reg16::SP);
+
+        cpu.write_word(curr_sp - 1, ((curr_pc & 0xFF00) >> 8) as u8);
+        cpu.write_word(curr_sp - 2,  (curr_pc & 0x00FF)       as u8);
+
+        cpu.write_reg16(Reg16::SP, curr_sp - 2);
+
+        println!("{:#06x}: RST {:#04X}", cpu.get_pc(), self.addr);
+        cpu.set_pc(self.addr as u16);
+    }
+}
+
 struct Instruction_CALL_NN;
 
 impl Instruction for Instruction_CALL_NN {
@@ -1019,7 +1038,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         regpair: Reg16qq::BC
     },
     &Instruction_UNSUPPORTED, /* 0b11000110 */
-    &Instruction_UNSUPPORTED, /* 0b11000111 */
+    &Instruction_RST {        /* 0b11000111 */
+        addr: 0x00
+    },
     &Instruction_UNSUPPORTED, /* 0b11001000 */
     &Instruction_RET        , /* 0b11001001 */
     &Instruction_UNSUPPORTED, /* 0b11001010 */
@@ -1027,7 +1048,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11001100 */
     &Instruction_CALL_NN    , /* 0b11001101 */
     &Instruction_UNSUPPORTED, /* 0b11001110 */
-    &Instruction_UNSUPPORTED, /* 0b11001111 */
+    &Instruction_RST {        /* 0b11001111 */
+        addr: 0x08
+    },
     &Instruction_UNSUPPORTED, /* 0b11010000 */
     &Instruction_POP_QQ {     /* 0b11010001 */
         regpair: Reg16qq::DE
@@ -1039,7 +1062,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         regpair: Reg16qq::DE
     },
     &Instruction_UNSUPPORTED, /* 0b11010110 */
-    &Instruction_UNSUPPORTED, /* 0b11010111 */
+    &Instruction_RST {        /* 0b11010111 */
+        addr: 0x10
+    },
     &Instruction_UNSUPPORTED, /* 0b11011000 */
     &Instruction_EXX        , /* 0b11011001 */
     &Instruction_UNSUPPORTED, /* 0b11011010 */
@@ -1047,7 +1072,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11011100 */
     &Instruction_LD_IX_NN   , /* 0b11011101 */
     &Instruction_UNSUPPORTED, /* 0b11011110 */
-    &Instruction_UNSUPPORTED, /* 0b11011111 */
+    &Instruction_RST {        /* 0b11011111 */
+        addr: 0x18
+    },
     &Instruction_UNSUPPORTED, /* 0b11100000 */
     &Instruction_POP_QQ {     /* 0b11100001 */
         regpair: Reg16qq::HL
@@ -1059,7 +1086,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         regpair: Reg16qq::HL
     },
     &Instruction_AND_N      , /* 0b11100110 */
-    &Instruction_UNSUPPORTED, /* 0b11100111 */
+    &Instruction_RST {        /* 0b11100111 */
+        addr: 0x20
+    },
     &Instruction_UNSUPPORTED, /* 0b11101000 */
     &Instruction_UNSUPPORTED, /* 0b11101001 */
     &Instruction_UNSUPPORTED, /* 0b11101010 */
@@ -1067,7 +1096,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11101100 */
     &Instruction_OUT_C_R    , /* 0b11101101 */
     &Instruction_UNSUPPORTED, /* 0b11101110 */
-    &Instruction_UNSUPPORTED, /* 0b11101111 */
+    &Instruction_RST {        /* 0b11101111 */
+        addr: 0x28
+    },
     &Instruction_UNSUPPORTED, /* 0b11110000 */
     &Instruction_POP_QQ {     /* 0b11110001 */
         regpair: Reg16qq::AF
@@ -1079,7 +1110,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         regpair: Reg16qq::AF
     },
     &Instruction_UNSUPPORTED, /* 0b11110110 */
-    &Instruction_UNSUPPORTED, /* 0b11110111 */
+    &Instruction_RST {        /* 0b11110111 */
+        addr: 0x30
+    },
     &Instruction_UNSUPPORTED, /* 0b11111000 */
     &Instruction_UNSUPPORTED, /* 0b11111001 */
     &Instruction_UNSUPPORTED, /* 0b11111010 */
@@ -1087,6 +1120,8 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11111100 */
     &Instruction_UNSUPPORTED, /* 0b11111101 */
     &Instruction_UNSUPPORTED, /* 0b11111110 */
-    &Instruction_UNSUPPORTED  /* 0b11111111 */
+    &Instruction_RST {        /* 0b11111111 */
+        addr: 0x38
+    }
 ];
 
