@@ -487,7 +487,7 @@ impl Instruction for Instruction_JR_E {
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
 
-        println!("{:#06x}: JR ({:#06X})", cpu.get_pc(), target);
+        println!("{:#06x}: JR {:#06X}", cpu.get_pc(), target);
         cpu.set_pc(target);
     }
 }
