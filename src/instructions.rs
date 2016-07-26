@@ -184,8 +184,31 @@ impl Instruction for Instruction_JP_NN {
     fn execute(&self, cpu: &mut Cpu) {
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+
         println!("{:#06x}: JP {:#06X}", cpu.get_pc(), nn);
         cpu.set_pc(nn);
+    }
+}
+
+struct Instruction_EX_SP_HL;
+
+impl Instruction for Instruction_EX_SP_HL {
+    fn execute(&self, cpu: &mut Cpu) {
+        let spval = cpu.read_reg16(Reg16::SP);
+        let hlval = cpu.read_reg16(Reg16::HL);
+        let (hlhigh, hllow) = (((hlval & 0xFF00) >> 8) as u8,
+                               ((hlval & 0x00FF)       as u8));
+
+        let memval =  (cpu.read_word(spval    ) as u16) |
+                     ((cpu.read_word(spval + 1) as u16) << 8);
+
+        cpu.write_reg16(Reg16::HL, memval);
+
+        cpu.write_word(spval, hllow);
+        cpu.write_word(spval + 1, hlhigh);
+
+        println!("{:#06x}: EX (SP), HL", cpu.get_pc());
+        cpu.inc_pc(1);
     }
 }
 
@@ -199,6 +222,7 @@ impl Instruction for Instruction_EX_DE_HL {
         cpu.write_reg16(Reg16::DE, hlval);
         cpu.write_reg16(Reg16::HL, deval);
 
+        println!("{:#06x}: EX DE, HL", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -1080,7 +1104,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         regpair: Reg16qq::HL
     },
     &Instruction_UNSUPPORTED, /* 0b11100010 */
-    &Instruction_UNSUPPORTED, /* 0b11100011 */
+    &Instruction_EX_SP_HL   , /* 0b11100011 */
     &Instruction_UNSUPPORTED, /* 0b11100100 */
     &Instruction_PUSH_QQ {    /* 0b11100101 */
         regpair: Reg16qq::HL
