@@ -332,7 +332,6 @@ impl Instruction for Instruction_OUT_C_R {
             0b10110000 => {
                 let mut counter = cpu.read_reg16(Reg16::BC);
                 while counter > 0 {
-                    let bcval = cpu.read_reg16(Reg16::BC);
                     let deval = cpu.read_reg16(Reg16::DE);
                     let hlval = cpu.read_reg16(Reg16::HL);
 
@@ -351,7 +350,29 @@ impl Instruction for Instruction_OUT_C_R {
                 cpu.clear_flag(ADD_SUBTRACT_FLAG);
 
                 println!("{:#06x}: LDIR", cpu.get_pc());
-            }
+            },
+            0b10111000 => {
+                let mut counter = cpu.read_reg16(Reg16::BC);
+                while counter > 0 {
+                    let deval = cpu.read_reg16(Reg16::DE);
+                    let hlval = cpu.read_reg16(Reg16::HL);
+
+                    let memval = cpu.read_word(hlval);
+                    cpu.write_word(deval, memval);
+
+                    cpu.write_reg16(Reg16::DE, deval.wrapping_sub(1));
+                    cpu.write_reg16(Reg16::HL, hlval.wrapping_sub(1));
+
+                    counter -= 1;
+                    cpu.write_reg16(Reg16::BC, counter);
+                }
+
+                cpu.clear_flag(HALF_CARRY_FLAG);
+                cpu.clear_flag(PARITY_OVERFLOW_FLAG);
+                cpu.clear_flag(ADD_SUBTRACT_FLAG);
+
+                println!("{:#06x}: LDDR", cpu.get_pc());
+            },
             _ => {
                 let r = Reg8::from_u8((r & 0b00111000) >> 3).unwrap();
                 let rval = cpu.read_reg8(r);
