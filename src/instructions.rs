@@ -409,6 +409,7 @@ struct Instruction_XOR_R {
 impl Instruction for Instruction_XOR_R {
     fn execute(&self, cpu: &mut Cpu) {
         let xorval = cpu.read_reg8(self.r) ^ cpu.read_reg8(Reg8::A);
+
         cpu.write_reg8(Reg8::A, xorval);
 
         cpu.clear_flag(HALF_CARRY_FLAG);
@@ -423,6 +424,27 @@ impl Instruction for Instruction_XOR_R {
     }
 }
 
+struct Instruction_XOR_N;
+
+impl Instruction for Instruction_XOR_N {
+    fn execute(&self, cpu: &mut Cpu) {
+        let n = cpu.read_word(cpu.get_pc() + 1);
+        let xorval = cpu.read_reg8(Reg8::A) ^ n;
+
+        cpu.write_reg8(Reg8::A, xorval);
+
+        cpu.clear_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        cpu.clear_flag(CARRY_FLAG);
+        if xorval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if xorval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if xorval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+
+        println!("{:#06x}: XOR {:#04X}", cpu.get_pc(), n);
+        cpu.inc_pc(2);
+    }
+}
+
 struct Instruction_DJNZ;
 
 impl Instruction for Instruction_DJNZ {
@@ -433,13 +455,12 @@ impl Instruction for Instruction_DJNZ {
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
 
+        println!("{:#06x}: DJNZ {:#06X}", cpu.get_pc(), target);
         if bval > 0 {
             cpu.set_pc(target);
         } else {
             cpu.inc_pc(2);
         }
-
-        println!("{:#06x}: DJNZ {:#06X}", cpu.get_pc(), target);
     }
 }
 
@@ -522,6 +543,7 @@ impl Instruction for Instruction_RET {
         cpu.write_reg16(Reg16::SP, curr_sp + 2);
 
         println!("{:#06x}: RET", cpu.get_pc());
+
         cpu.set_pc(((high as u16) << 8 ) | low as u16);
     }
 }
@@ -1191,7 +1213,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_EX_DE_HL   , /* 0b11101011 */
     &Instruction_UNSUPPORTED, /* 0b11101100 */
     &Instruction_OUT_C_R    , /* 0b11101101 */
-    &Instruction_UNSUPPORTED, /* 0b11101110 */
+    &Instruction_XOR_N      , /* 0b11101110 */
     &Instruction_RST {        /* 0b11101111 */
         addr: 0x28
     },
