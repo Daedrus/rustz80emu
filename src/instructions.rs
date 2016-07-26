@@ -343,6 +343,25 @@ impl Instruction for Instruction_CALL_NN {
     }
 }
 
+struct Instruction_PUSH_QQ {
+    regpair: Reg16qq
+}
+
+impl Instruction for Instruction_PUSH_QQ {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_sp = cpu.read_reg16(Reg16::SP);
+        let regpairval = cpu.read_reg16qq(self.regpair);
+
+        cpu.write_word(curr_sp - 1, ((regpairval & 0xFF00) >> 8) as u8);
+        cpu.write_word(curr_sp - 2,  (regpairval & 0x00FF)       as u8);
+
+        cpu.write_reg16(Reg16::SP, curr_sp - 2);
+
+        println!("{:#06x}: PUSH {:?}", cpu.get_pc(), self.regpair);
+        cpu.inc_pc(1);
+    }
+}
+
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b00000000 */
     &Instruction_LD_DD_NN {   /* 0b00000001 */
@@ -774,7 +793,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11000010 */
     &Instruction_JP_NN      , /* 0b11000011 */
     &Instruction_UNSUPPORTED, /* 0b11000100 */
-    &Instruction_UNSUPPORTED, /* 0b11000101 */
+    &Instruction_PUSH_QQ {    /* 0b11000101 */
+        regpair: Reg16qq::BC
+    },
     &Instruction_UNSUPPORTED, /* 0b11000110 */
     &Instruction_UNSUPPORTED, /* 0b11000111 */
     &Instruction_UNSUPPORTED, /* 0b11001000 */
@@ -790,7 +811,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11010010 */
     &Instruction_UNSUPPORTED, /* 0b11010011 */
     &Instruction_UNSUPPORTED, /* 0b11010100 */
-    &Instruction_UNSUPPORTED, /* 0b11010101 */
+    &Instruction_PUSH_QQ {    /* 0b11010101 */
+        regpair: Reg16qq::DE
+    },
     &Instruction_UNSUPPORTED, /* 0b11010110 */
     &Instruction_UNSUPPORTED, /* 0b11010111 */
     &Instruction_UNSUPPORTED, /* 0b11011000 */
@@ -806,7 +829,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11100010 */
     &Instruction_UNSUPPORTED, /* 0b11100011 */
     &Instruction_UNSUPPORTED, /* 0b11100100 */
-    &Instruction_UNSUPPORTED, /* 0b11100101 */
+    &Instruction_PUSH_QQ {    /* 0b11100101 */
+        regpair: Reg16qq::HL
+    },
     &Instruction_UNSUPPORTED, /* 0b11100110 */
     &Instruction_UNSUPPORTED, /* 0b11100111 */
     &Instruction_UNSUPPORTED, /* 0b11101000 */
@@ -822,7 +847,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11110010 */
     &Instruction_DI,          /* 0b11110011 */
     &Instruction_UNSUPPORTED, /* 0b11110100 */
-    &Instruction_UNSUPPORTED, /* 0b11110101 */
+    &Instruction_PUSH_QQ {    /* 0b11110101 */
+        regpair: Reg16qq::AF
+    },
     &Instruction_UNSUPPORTED, /* 0b11110110 */
     &Instruction_UNSUPPORTED, /* 0b11110111 */
     &Instruction_UNSUPPORTED, /* 0b11111000 */

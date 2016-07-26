@@ -20,6 +20,16 @@ pub enum Reg16 {
 
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy)]
+pub enum Reg16qq {
+    BC = 0b00,
+    DE = 0b01,
+    HL = 0b10,
+    AF = 0b11,
+}
+}
+
+enum_from_primitive! {
+#[derive(Debug, Clone, Copy)]
 pub enum Reg8 {
     A = 0b111,
     B = 0b000,
@@ -230,6 +240,26 @@ impl Cpu {
             Reg16::DE_ALT => { self.d_alt = high; self.e_alt = low; }
             Reg16::HL_ALT => { self.h_alt = high; self.l_alt = low; }
             Reg16::SP => { self.sp = val }
+        }
+    }
+
+    pub fn read_reg16qq(&self, reg: Reg16qq) -> u16 {
+        let (high, low) = match reg {
+            Reg16qq::BC => (self.b, self.c),
+            Reg16qq::DE => (self.d, self.e),
+            Reg16qq::HL => (self.h, self.l),
+            Reg16qq::AF => (self.a, self.f.bits() as u8)
+        };
+        ((high as u16) << 8 ) | low as u16
+    }
+
+    pub fn write_reg16qq(&mut self, reg: Reg16qq, val: u16) {
+        let (high, low) = (((val & 0xFF00) >> 8) as u8, (val & 0x00FF) as u8);
+        match reg {
+            Reg16qq::BC => { self.b = high; self.c = low; }
+            Reg16qq::DE => { self.d = high; self.e = low; }
+            Reg16qq::HL => { self.h = high; self.l = low; }
+            Reg16qq::AF => { self.a = high; self.f = StatusIndicatorFlags::from_bits_truncate(low); }
         }
     }
 
