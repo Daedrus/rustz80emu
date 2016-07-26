@@ -69,7 +69,7 @@ impl Instruction for Instruction_LD_HL_NN {
 
         cpu.write_reg16(Reg16::HL, nnmemval);
 
-        println!("{:#06x}: LD HL, {:#06X}", cpu.get_pc(), nnmemval);
+        println!("{:#06x}: LD HL, ({:#06X})", cpu.get_pc(), nn);
         cpu.inc_pc(3);
     }
 }
