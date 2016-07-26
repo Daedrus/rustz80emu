@@ -359,6 +359,22 @@ impl Instruction for Instruction_CALL_NN {
     }
 }
 
+struct Instruction_RET;
+
+impl Instruction for Instruction_RET {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_sp = cpu.read_reg16(Reg16::SP);
+
+        let low = cpu.read_word(curr_sp);
+        let high = cpu.read_word(curr_sp + 1);
+
+        cpu.write_reg16(Reg16::SP, curr_sp + 2);
+
+        println!("{:#06x}: RET", cpu.get_pc());
+        cpu.set_pc(((high as u16) << 8 ) | low as u16);
+    }
+}
+
 struct Instruction_PUSH_QQ {
     regpair: Reg16qq
 }
@@ -929,7 +945,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11000110 */
     &Instruction_UNSUPPORTED, /* 0b11000111 */
     &Instruction_UNSUPPORTED, /* 0b11001000 */
-    &Instruction_UNSUPPORTED, /* 0b11001001 */
+    &Instruction_RET        , /* 0b11001001 */
     &Instruction_UNSUPPORTED, /* 0b11001010 */
     &Instruction_UNSUPPORTED, /* 0b11001011 */
     &Instruction_UNSUPPORTED, /* 0b11001100 */
