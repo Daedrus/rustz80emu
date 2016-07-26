@@ -64,10 +64,22 @@ impl Memory {
     pub fn change_bank(&mut self, val: u8) {
         self.ram_0xC000_0xFFFF = val as usize;
     }
+
+    pub fn change_rom_bank(&mut self, val: u8) {
+        self.rom = val;
+    }
 }
 
 impl fmt::Debug for Memory {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "TODO: Impl Debug for Memory")
+        writeln!(f, "ram_0xC000_0xFFFF: {}
+                     ram_0x8000_0xBFFF: {}
+                     ram_0x4000_0x7FFF: {}
+                     rom: {}
+                    ",
+                    self.ram_0xC000_0xFFFF,
+                    self.ram_0x8000_0xBFFF,
+                    self.ram_0x4000_0x7FFF,
+                    self.rom)
     }
 }

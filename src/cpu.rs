@@ -122,7 +122,9 @@ impl fmt::Debug for Cpu {
                      iy: |  {:04X}  |
                      sp: |  {:04X}  |
                      pc: |  {:04X}  |
-                         ----------",
+                         ----------
+
+                     {:?}",
                       self.a,
                       self.f.bits(),
                       self.b, self.c, self.b_alt, self.c_alt,
@@ -132,7 +134,8 @@ impl fmt::Debug for Cpu {
                       self.ix,
                       self.iy,
                       self.sp,
-                      self.pc)
+                      self.pc,
+                      self.memory)
     }
 }
 
@@ -185,7 +188,7 @@ impl Cpu {
             } else {
                 self.run_instruction();
                 // Poor man's breakpoint:
-                // if self.get_pc() == 0x00f4 { debug_on = true };
+                // if self.get_pc() == ???? { debug_on = true };
             }
         }
     }
@@ -312,11 +315,19 @@ impl Cpu {
     pub fn write_port(&mut self, port: Port, val: u8) {
         // TODO
         match port {
-            Port::MEMORY =>
-                match val {
-                    0 => self.memory.change_bank(val),
-                    _ => ()
-                },
+            Port::MEMORY => {
+                let bank = val & 0b00000111;
+                self.memory.change_bank(bank);
+
+                let rombank = (val & 0b00010000) >> 4;
+                self.memory.change_rom_bank(rombank);
+
+                let screen = (val & 0b00001000) >> 3;
+                if screen == 1 { panic!("Unhandled screen mode"); }
+
+                let disable = (val & 0b00100000) >> 5;
+                if disable == 1 { panic!("Unhandled disabled mode"); }
+            }
             Port::AY38912_REG14 => (),
             Port::AY38912_REG14_W => ()
         }
