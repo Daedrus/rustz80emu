@@ -172,11 +172,14 @@ impl Cpu {
                 stdin().read_line(&mut input).unwrap();
                 let input: String = input.trim().into();
 
-                match input.as_ref() {
+                let cmd: Vec<&str> = input.split(" ").collect();
+
+                match cmd[0].as_ref() {
                     "step" => self.run_instruction(),
                     "regs" => println!("{:?}", self),
                     "run"  => debug_on = false,
                     "exit" => break,
+                    "mem"  => println!("{:#04X}", self.read_word(u16::from_str_radix(cmd[1], 16).unwrap())),
                     _ => println!("Unknown command")
                 };
             } else {
