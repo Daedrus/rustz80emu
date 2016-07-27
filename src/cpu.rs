@@ -46,7 +46,8 @@ enum_from_primitive! {
 pub enum Port {
     MEMORY = 0x7ffd,
     AY38912_REG14 = 0xfffd,
-    AY38912_REG14_W = 0xbffd
+    AY38912_REG14_W = 0xbffd,
+    FE = 0xfe
 }
 }
 
@@ -315,7 +316,8 @@ impl Cpu {
         match port {
             Port::MEMORY => 0x42,
             Port::AY38912_REG14 => 0x42,
-            Port::AY38912_REG14_W => unreachable!()
+            Port::AY38912_REG14_W => unreachable!(),
+            Port::FE => 0x42
         }
     }
 
@@ -336,7 +338,8 @@ impl Cpu {
                 if disable == 1 { panic!("Unhandled disabled mode"); }
             }
             Port::AY38912_REG14 => (),
-            Port::AY38912_REG14_W => ()
+            Port::AY38912_REG14_W => (),
+            Port::FE => ()
         }
     }
 }

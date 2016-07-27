@@ -350,6 +350,21 @@ impl Instruction for Instruction_INC_SS {
     }
 }
 
+struct Instruction_OUT_N_A;
+
+impl Instruction for Instruction_OUT_N_A {
+    fn execute(&self, cpu: &mut Cpu) {
+        let n = cpu.read_word(cpu.get_pc() + 1);
+        let port = Port::from_u8(n).unwrap();
+        let accval = cpu.read_reg8(Reg8::A);
+
+        cpu.write_port(port, accval);
+
+        println!("{:#06x}: OUT ({:#04X}), A", cpu.get_pc(), n);
+        cpu.inc_pc(2);
+    }
+}
+
 struct Instruction_OUT_C_R;
 
 impl Instruction for Instruction_OUT_C_R {
@@ -1285,7 +1300,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
         regpair: Reg16qq::DE
     },
     &Instruction_UNSUPPORTED, /* 0b11010010 */
-    &Instruction_UNSUPPORTED, /* 0b11010011 */
+    &Instruction_OUT_N_A    , /* 0b11010011 */
     &Instruction_UNSUPPORTED, /* 0b11010100 */
     &Instruction_PUSH_QQ {    /* 0b11010101 */
         regpair: Reg16qq::DE
