@@ -296,11 +296,33 @@ impl Cpu {
     pub fn get_flag(&self, flag: StatusIndicatorFlags) -> bool { self.f.contains(flag) }
 
     fn run_instruction(&mut self) {
-        let instruction = self.read_word(self.pc);
+        let i0 = self.read_word(self.pc);
+        let i1 = self.read_word(self.pc + 1);
+        let i2 = self.read_word(self.pc + 2);
 
-        let instrs = &instructions::INSTR_TABLE[instruction as usize];
-
-        instrs.execute(self);
+        match (i0, i1) {
+            (0xDD, 0xCB) => {
+                &instructions::INSTR_TABLE_DDCB [i2 as usize].execute(self);
+            },
+            (0xDD, _   ) => {
+                &instructions::INSTR_TABLE_DD   [i1 as usize].execute(self);
+            },
+            (0xFD, 0xCB) => {
+                &instructions::INSTR_TABLE_FDCB [i2 as usize].execute(self);
+            },
+            (0xFD, _   ) => {
+                &instructions::INSTR_TABLE_FD   [i1 as usize].execute(self);
+            },
+            (0xCB, _   ) => {
+                &instructions::INSTR_TABLE_CB   [i1 as usize].execute(self);
+            },
+            (0xED, _   ) => {
+                &instructions::INSTR_TABLE_ED   [i1 as usize].execute(self);
+            },
+            (_   , _   ) => {
+                &instructions::INSTR_TABLE      [i0 as usize].execute(self);
+            }
+        }
     }
 
     pub fn read_word(&self, addr: u16) -> u8 {
