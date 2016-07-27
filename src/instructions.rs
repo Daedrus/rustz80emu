@@ -136,6 +136,7 @@ impl Instruction for Instruction_LD_IX_NN {
                 let addr = cpu.get_ix() as i16 + d as i16;
                 cpu.write_word(addr as u16, n);
 
+                // TODO Create println for negative d
                 println!("{:#06x}: LD (IX+{:#04X}), {:#04X}", cpu.get_pc(), d, n);
             }
             _ => unreachable!()
@@ -750,9 +751,9 @@ impl Instruction for Instruction_LD_A_NN {
     }
 }
 
-struct Instruction_LD_IY_NN;
+struct Instruction_FD;
 
-impl Instruction for Instruction_LD_IY_NN {
+impl Instruction for Instruction_FD {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
         match cpu.read_word(curr_pc + 1) {
@@ -776,6 +777,28 @@ impl Instruction for Instruction_LD_IY_NN {
                 println!("{:#06x}: SET {}, (IY+{:#04X})", curr_pc, b, d);
                 cpu.inc_pc(4);
             },
+            0b00110101 => {
+                let d = cpu.read_word(curr_pc + 2) as i8 as i16;
+                let addr = ((cpu.get_iy() as i16) + d) as u16;
+
+                let decval = cpu.read_word(addr).wrapping_sub(1);
+                cpu.write_word(addr, decval);
+
+                if decval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+                if decval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+                if decval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+                if decval == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+                cpu.set_flag(ADD_SUBTRACT_FLAG);
+
+                let mut d = d as i8;
+                if d & 0b10000000 != 0 {
+                    d = (d ^ 0xFF) + 1;
+                    println!("{:#06x}: DEC (IY-{:#04X})", curr_pc, d);
+                } else {
+                    println!("{:#06x}: DEC (IY+{:#04X})", curr_pc, d);
+                }
+                cpu.inc_pc(3);
+            }
             _ => unreachable!()
         }
     }
@@ -1362,7 +1385,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11111010 */
     &Instruction_EI         , /* 0b11111011 */
     &Instruction_UNSUPPORTED, /* 0b11111100 */
-    &Instruction_LD_IY_NN   , /* 0b11111101 */
+    &Instruction_FD         , /* 0b11111101 */
     &Instruction_UNSUPPORTED, /* 0b11111110 */
     &Instruction_RST {        /* 0b11111111 */
         addr: 0x38
