@@ -720,6 +720,37 @@ impl Instruction for Instruction_LD_A_NN {
     }
 }
 
+struct Instruction_LD_IY_NN;
+
+impl Instruction for Instruction_LD_IY_NN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        match cpu.read_word(curr_pc + 1) {
+            0b00100001 => {
+                let nn =  (cpu.read_word(curr_pc + 2) as u16) |
+                         ((cpu.read_word(curr_pc + 3) as u16) << 8);
+                cpu.set_iy(nn);
+
+                println!("{:#06x}: LD IY, {:#06X}", curr_pc, nn);
+                cpu.inc_pc(4);
+            },
+            0b11001011 => {
+                let d = cpu.read_word(curr_pc + 2) as i16;
+                let addr = ((cpu.get_iy() as i16) + d) as u16;
+
+                let b = (cpu.read_word(curr_pc + 3) & 0b00111000) >> 3;
+
+                let memval = cpu.read_word(addr);
+                cpu.write_word(addr, memval | (1 << b));
+
+                println!("{:#06x}: SET {}, (IY+{:#04X})", curr_pc, b, d);
+                cpu.inc_pc(4);
+            },
+            _ => unreachable!()
+        }
+    }
+}
+
 struct Instruction_AND_N;
 
 impl Instruction for Instruction_AND_N {
@@ -1301,7 +1332,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11111010 */
     &Instruction_EI         , /* 0b11111011 */
     &Instruction_UNSUPPORTED, /* 0b11111100 */
-    &Instruction_UNSUPPORTED, /* 0b11111101 */
+    &Instruction_LD_IY_NN   , /* 0b11111101 */
     &Instruction_UNSUPPORTED, /* 0b11111110 */
     &Instruction_RST {        /* 0b11111111 */
         addr: 0x38
