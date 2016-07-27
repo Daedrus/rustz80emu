@@ -101,9 +101,9 @@ impl Instruction for Instruction_LD_SP_HL {
     }
 }
 
-struct Instruction_LD_IX_NN;
+struct Instruction_DD;
 
-impl Instruction for Instruction_LD_IX_NN {
+impl Instruction for Instruction_DD {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
         let d = cpu.read_word(curr_pc + 2);
@@ -366,9 +366,9 @@ impl Instruction for Instruction_OUT_N_A {
     }
 }
 
-struct Instruction_OUT_C_R;
+struct Instruction_ED;
 
-impl Instruction for Instruction_OUT_C_R {
+impl Instruction for Instruction_ED {
     fn execute(&self, cpu: &mut Cpu) {
         match cpu.read_word(cpu.get_pc() + 1) {
             0b10110000 => {
@@ -1311,7 +1311,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11001000 */
     &Instruction_RET        , /* 0b11001001 */
     &Instruction_UNSUPPORTED, /* 0b11001010 */
-    &Instruction_UNSUPPORTED, /* 0b11001011 */
+    &Instruction_UNSUPPORTED, /* 0b11001011 */ /* TODO: This is a prefix */
     &Instruction_UNSUPPORTED, /* 0b11001100 */
     &Instruction_CALL_NN    , /* 0b11001101 */
     &Instruction_UNSUPPORTED, /* 0b11001110 */
@@ -1337,7 +1337,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11011010 */
     &Instruction_UNSUPPORTED, /* 0b11011011 */
     &Instruction_UNSUPPORTED, /* 0b11011100 */
-    &Instruction_LD_IX_NN   , /* 0b11011101 */
+    &Instruction_DD         , /* 0b11011101 */ /*TODO: This is a prefix */
     &Instruction_UNSUPPORTED, /* 0b11011110 */
     &Instruction_RST {        /* 0b11011111 */
         addr: 0x18
@@ -1361,7 +1361,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11101010 */
     &Instruction_EX_DE_HL   , /* 0b11101011 */
     &Instruction_UNSUPPORTED, /* 0b11101100 */
-    &Instruction_OUT_C_R    , /* 0b11101101 */
+    &Instruction_ED         , /* 0b11101101 */ /*TODO: This is a prefix */
     &Instruction_XOR_N      , /* 0b11101110 */
     &Instruction_RST {        /* 0b11101111 */
         addr: 0x28
@@ -1385,7 +1385,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Instruction_UNSUPPORTED, /* 0b11111010 */
     &Instruction_EI         , /* 0b11111011 */
     &Instruction_UNSUPPORTED, /* 0b11111100 */
-    &Instruction_FD         , /* 0b11111101 */
+    &Instruction_FD         , /* 0b11111101 */ /*TODO: This is a prefix */
     &Instruction_UNSUPPORTED, /* 0b11111110 */
     &Instruction_RST {        /* 0b11111111 */
         addr: 0x38
