@@ -1506,9 +1506,9 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0x58 */                                 /* 0x59 */                               /* 0x5A */                          /* 0x5B */
     &LdRR{rt:Reg8::E,rs:Reg8::B}             , &LdRR{rt:Reg8::E,rs:Reg8::C}           , &LdRR{rt:Reg8::E,rs:Reg8::D}      , &LdRR{rt:Reg8::E,rs:Reg8::E},
     /* 0x5C */                                 /* 0x5D */                               /* 0x5E */                          /* 0x5F */
-    &LdRR{rt:Reg8::H,rs:Reg8::B}             , &LdRR{rt:Reg8::H,rs:Reg8::C}           , &LdRR{rt:Reg8::H,rs:Reg8::D}      , &LdRR{rt:Reg8::H,rs:Reg8::E},
-    /* 0x60 */                                 /* 0x61 */                               /* 0x62 */                          /* 0x63 */
     &LdRR{rt:Reg8::E,rs:Reg8::H}             , &LdRR{rt:Reg8::E,rs:Reg8::L}           , &LdRMemHl{r:Reg8::E}              , &LdRR{rt:Reg8::E,rs:Reg8::A},
+    /* 0x60 */                                 /* 0x61 */                               /* 0x62 */                          /* 0x63 */
+    &LdRR{rt:Reg8::H,rs:Reg8::B}             , &LdRR{rt:Reg8::H,rs:Reg8::C}           , &LdRR{rt:Reg8::H,rs:Reg8::D}      , &LdRR{rt:Reg8::H,rs:Reg8::E},
     /* 0x64 */                                 /* 0x65 */                               /* 0x66 */                          /* 0x67 */
     &LdRR{rt:Reg8::H,rs:Reg8::H}             , &LdRR{rt:Reg8::H,rs:Reg8::L}           , &LdRMemHl{r:Reg8::H}              , &LdRR{rt:Reg8::H,rs:Reg8::A},
     /* 0x68 */                                 /* 0x69 */                               /* 0x6A */                          /* 0x6B */
