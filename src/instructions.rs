@@ -101,48 +101,72 @@ impl Instruction for LdSpHl {
     }
 }
 
-struct Instruction_DD;
+struct LdIxNn;
 
-impl Instruction for Instruction_DD {
+impl Instruction for LdIxNn {
+    fn execute(&self, cpu: &mut Cpu) {
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+
+        cpu.set_ix(nn);
+
+        println!("{:#06x}: LD IX, {:#06X}", cpu.get_pc() - 1, nn);
+        cpu.inc_pc(3);
+    }
+}
+
+struct LdIxMemNn;
+
+impl Instruction for LdIxMemNn {
+    fn execute(&self, cpu: &mut Cpu) {
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+        let nnmemval = (cpu.read_word(nn    ) as u16) |
+                      ((cpu.read_word(nn + 1) as u16) << 8);
+
+        cpu.set_ix(nnmemval);
+
+        println!("{:#06x}: LD IX, TODO {:#06X}", cpu.get_pc() - 1, nnmemval);
+        cpu.inc_pc(3);
+    }
+}
+
+struct LdMemNnIx;
+
+impl Instruction for LdMemNnIx {
+    fn execute(&self, cpu: &mut Cpu) {
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+        let (ixhigh, ixlow) = (((cpu.get_ix() & 0xFF00) >> 8) as u8,
+                               ((cpu.get_ix() & 0x00FF)       as u8));
+
+        cpu.write_word(nn, ixlow);
+        cpu.write_word(nn + 1, ixhigh);
+
+        println!("{:#06x}: LD ({:#06X}), IX", cpu.get_pc() - 1, nn);
+        cpu.inc_pc(3);
+    }
+}
+
+struct LdMemIxDN;
+
+impl Instruction for LdMemIxDN {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
-        let d = cpu.read_word(curr_pc + 2);
-        let n = cpu.read_word(curr_pc + 3);
-        let nn = (d as u16) | ((n as u16) << 8);
+        let d = cpu.read_word(curr_pc + 1);
+        let n = cpu.read_word(curr_pc + 2);
+        let addr = cpu.get_ix() as i16 + d as i16;
+        cpu.write_word(addr as u16, n);
 
-        match cpu.read_word(curr_pc + 1) {
-            0b00100001 => {
-                cpu.set_ix(nn);
-                println!("{:#06x}: LD IX, {:#06X}", cpu.get_pc(), nn);
-            }
-            0b00101010 => {
-                let nnmemval = (cpu.read_word(nn    ) as u16) |
-                              ((cpu.read_word(nn + 1) as u16) << 8);
-
-                cpu.set_ix(nnmemval);
-
-                println!("{:#06x}: LD IX, {:#06X}", cpu.get_pc(), nnmemval);
-            },
-            0b00100010 => {
-                let (ixhigh, ixlow) = (((cpu.get_ix() & 0xFF00) >> 8) as u8, 
-                                       ((cpu.get_ix() & 0x00FF)       as u8));
-
-                cpu.write_word(nn, ixlow);
-                cpu.write_word(nn + 1, ixhigh);
-
-                println!("{:#06x}: LD ({:#06X}), IX", cpu.get_pc(), nn);
-            },
-            0b00110110 => {
-                let addr = cpu.get_ix() as i16 + d as i16;
-                cpu.write_word(addr as u16, n);
-
-                // TODO Create println for negative d
-                println!("{:#06x}: LD (IX+{:#04X}), {:#04X}", cpu.get_pc(), d, n);
-            }
-            _ => unreachable!()
+        let mut d = d as i8;
+        if d & 0b10000000 != 0 {
+            d = (d ^ 0xFF) + 1;
+            println!("{:#06x}: DEC (IX-{:#04X})", curr_pc, d);
+        } else {
+            println!("{:#06x}: DEC (IX+{:#04X})", curr_pc, d);
         }
 
-        cpu.inc_pc(4);
+        cpu.inc_pc(3);
     }
 }
 
@@ -947,13 +971,13 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x20 */    /* 0x21 */    /* 0x22 */    /* 0x23 */    /* 0x24 */    /* 0x25 */    /* 0x26 */    /* 0x27 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &LdIxNn     , &LdMemNnIx  , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x28 */    /* 0x29 */    /* 0x2A */    /* 0x2B */    /* 0x2C */    /* 0x2D */    /* 0x2E */    /* 0x2F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &LdIxMemNn  , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdMemIxDN  , &Unsupported,
 
     /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
