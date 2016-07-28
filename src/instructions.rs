@@ -785,58 +785,73 @@ impl Instruction for LdAMemNn {
     }
 }
 
-struct Instruction_FD;
+struct LdIyNn;
 
-impl Instruction for Instruction_FD {
+impl Instruction for LdIyNn {
     fn execute(&self, cpu: &mut Cpu) {
-        let curr_pc = cpu.get_pc();
-        match cpu.read_word(curr_pc + 1) {
-            0b00100001 => {
-                let nn =  (cpu.read_word(curr_pc + 2) as u16) |
-                         ((cpu.read_word(curr_pc + 3) as u16) << 8);
-                cpu.set_iy(nn);
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
 
-                println!("{:#06x}: LD IY, {:#06X}", curr_pc, nn);
-                cpu.inc_pc(4);
-            },
-            0b11001011 => {
-                let d = cpu.read_word(curr_pc + 2) as i16;
-                let addr = ((cpu.get_iy() as i16) + d) as u16;
+        cpu.set_ix(nn);
 
-                let b = (cpu.read_word(curr_pc + 3) & 0b00111000) >> 3;
-
-                let memval = cpu.read_word(addr);
-                cpu.write_word(addr, memval | (1 << b));
-
-                println!("{:#06x}: SET {}, (IY+{:#04X})", curr_pc, b, d);
-                cpu.inc_pc(4);
-            },
-            0b00110101 => {
-                let d = cpu.read_word(curr_pc + 2) as i8 as i16;
-                let addr = ((cpu.get_iy() as i16) + d) as u16;
-
-                let decval = cpu.read_word(addr).wrapping_sub(1);
-                cpu.write_word(addr, decval);
-
-                if decval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
-                if decval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
-                if decval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
-                if decval == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
-                cpu.set_flag(ADD_SUBTRACT_FLAG);
-
-                let mut d = d as i8;
-                if d & 0b10000000 != 0 {
-                    d = (d ^ 0xFF) + 1;
-                    println!("{:#06x}: DEC (IY-{:#04X})", curr_pc, d);
-                } else {
-                    println!("{:#06x}: DEC (IY+{:#04X})", curr_pc, d);
-                }
-                cpu.inc_pc(3);
-            }
-            _ => unreachable!()
-        }
+        println!("{:#06x}: LD IY, {:#06X}", cpu.get_pc() - 1, nn);
+        cpu.inc_pc(3);
     }
 }
+
+struct SetBMemIyD;
+
+impl Instruction for SetBMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let d = cpu.read_word(curr_pc + 1) as i16;
+        let addr = ((cpu.get_iy() as i16) + d) as u16;
+
+        let b = (cpu.read_word(curr_pc + 2) & 0b00111000) >> 3;
+
+        let memval = cpu.read_word(addr);
+        cpu.write_word(addr, memval | (1 << b));
+
+        let mut d = d as i8;
+        if d & 0b10000000 != 0 {
+            d = (d ^ 0xFF) + 1;
+            println!("{:#06x}: SET {}, (IY-{:#04X})", curr_pc - 1, b, d);
+        } else {
+            println!("{:#06x}: SET {}, (IY+{:#04X})", curr_pc - 1, b, d);
+        }
+
+        cpu.inc_pc(3);
+    }
+}
+
+struct DecIyD;
+
+impl Instruction for DecIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let d = cpu.read_word(curr_pc + 1) as i8 as i16;
+        let addr = ((cpu.get_iy() as i16) + d) as u16;
+
+        let decval = cpu.read_word(addr).wrapping_sub(1);
+        cpu.write_word(addr, decval);
+
+        if decval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if decval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if decval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        if decval == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+        cpu.set_flag(ADD_SUBTRACT_FLAG);
+
+        let mut d = d as i8;
+        if d & 0b10000000 != 0 {
+            d = (d ^ 0xFF) + 1;
+            println!("{:#06x}: DEC (IY-{:#04X})", curr_pc, d);
+        } else {
+            println!("{:#06x}: DEC (IY+{:#04X})", curr_pc, d);
+        }
+        cpu.inc_pc(2);
+    }
+}
+
 
 struct AndN;
 
@@ -1167,13 +1182,13 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x20 */    /* 0x21 */    /* 0x22 */    /* 0x23 */    /* 0x24 */    /* 0x25 */    /* 0x26 */    /* 0x27 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &LdIyNn     , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x28 */    /* 0x29 */    /* 0x2A */    /* 0x2B */    /* 0x2C */    /* 0x2D */    /* 0x2E */    /* 0x2F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &DecIyD     , &Unsupported, &Unsupported,
 
     /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -1230,7 +1245,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xC8 */    /* 0xC9 */    /* 0xCA */    /* 0xCB */    /* 0xCC */    /* 0xCD */    /* 0xCE */    /* 0xCF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &SetBMemIyD , &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xD0 */    /* 0xD1 */    /* 0xD2 */    /* 0xD3 */    /* 0xD4 */    /* 0xD5 */    /* 0xD6 */    /* 0xD7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
