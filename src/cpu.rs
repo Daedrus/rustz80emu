@@ -302,21 +302,27 @@ impl Cpu {
 
         match (i0, i1) {
             (0xDD, 0xCB) => {
+                self.pc += 2;
                 &instructions::INSTR_TABLE_DDCB [i2 as usize].execute(self);
             },
             (0xDD, _   ) => {
+                self.pc += 1;
                 &instructions::INSTR_TABLE_DD   [i1 as usize].execute(self);
             },
             (0xFD, 0xCB) => {
+                self.pc += 2;
                 &instructions::INSTR_TABLE_FDCB [i2 as usize].execute(self);
             },
             (0xFD, _   ) => {
+                self.pc += 1;
                 &instructions::INSTR_TABLE_FD   [i1 as usize].execute(self);
             },
             (0xCB, _   ) => {
+                self.pc += 1;
                 &instructions::INSTR_TABLE_CB   [i1 as usize].execute(self);
             },
             (0xED, _   ) => {
+                self.pc += 1;
                 &instructions::INSTR_TABLE_ED   [i1 as usize].execute(self);
             },
             (_   , _   ) => {

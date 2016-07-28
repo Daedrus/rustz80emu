@@ -366,99 +366,109 @@ impl Instruction for OutPortNA {
     }
 }
 
-struct Instruction_ED;
+struct Ldir;
 
-impl Instruction for Instruction_ED {
+impl Instruction for Ldir {
     fn execute(&self, cpu: &mut Cpu) {
-        match cpu.read_word(cpu.get_pc() + 1) {
-            0b10110000 => {
-                let mut counter = cpu.read_reg16(Reg16::BC);
-                while counter > 0 {
-                    let deval = cpu.read_reg16(Reg16::DE);
-                    let hlval = cpu.read_reg16(Reg16::HL);
+        let mut counter = cpu.read_reg16(Reg16::BC);
+        while counter > 0 {
+            let deval = cpu.read_reg16(Reg16::DE);
+            let hlval = cpu.read_reg16(Reg16::HL);
 
-                    let memval = cpu.read_word(hlval);
-                    cpu.write_word(deval, memval);
+            let memval = cpu.read_word(hlval);
+            cpu.write_word(deval, memval);
 
-                    cpu.write_reg16(Reg16::DE, deval.wrapping_add(1));
-                    cpu.write_reg16(Reg16::HL, hlval.wrapping_add(1));
+            cpu.write_reg16(Reg16::DE, deval.wrapping_add(1));
+            cpu.write_reg16(Reg16::HL, hlval.wrapping_add(1));
 
-                    counter -= 1;
-                    cpu.write_reg16(Reg16::BC, counter);
-                }
-
-                cpu.clear_flag(HALF_CARRY_FLAG);
-                cpu.clear_flag(PARITY_OVERFLOW_FLAG);
-                cpu.clear_flag(ADD_SUBTRACT_FLAG);
-
-                println!("{:#06x}: LDIR", cpu.get_pc());
-                cpu.inc_pc(2);
-            },
-            0b10111000 => {
-                let mut counter = cpu.read_reg16(Reg16::BC);
-                while counter > 0 {
-                    let deval = cpu.read_reg16(Reg16::DE);
-                    let hlval = cpu.read_reg16(Reg16::HL);
-
-                    let memval = cpu.read_word(hlval);
-                    cpu.write_word(deval, memval);
-
-                    cpu.write_reg16(Reg16::DE, deval.wrapping_sub(1));
-                    cpu.write_reg16(Reg16::HL, hlval.wrapping_sub(1));
-
-                    counter -= 1;
-                    cpu.write_reg16(Reg16::BC, counter);
-                }
-
-                cpu.clear_flag(HALF_CARRY_FLAG);
-                cpu.clear_flag(PARITY_OVERFLOW_FLAG);
-                cpu.clear_flag(ADD_SUBTRACT_FLAG);
-
-                println!("{:#06x}: LDDR", cpu.get_pc());
-                cpu.inc_pc(2);
-            },
-            0b01000110 => {
-                cpu.set_im(0);
-                println!("{:#06x}: IM 0", cpu.get_pc());
-                cpu.inc_pc(2);
-            },
-            0b01010110 => {
-                cpu.set_im(1);
-                println!("{:#06x}: IM 1", cpu.get_pc());
-                cpu.inc_pc(2);
-            },
-            0b01011110 => {
-                cpu.set_im(2);
-                println!("{:#06x}: IM 2", cpu.get_pc());
-                cpu.inc_pc(2);
-            },
-            opcode if opcode & 0b11000111 == 0b01000001 => {
-                let r = Reg8::from_u8((opcode & 0b00111000) >> 3).unwrap();
-                let rval = cpu.read_reg8(r);
-                let port = Port::from_u16(cpu.read_reg16(Reg16::BC)).unwrap();
-
-                cpu.write_port(port, rval);
-
-                println!("{:#06x}: OUT (C), {:?}", cpu.get_pc(), r);
-                cpu.inc_pc(2);
-            },
-            opcode if opcode & 0b11001111 == 0b01000011 => {
-                let regpair = Reg16::from_u8((opcode & 0b00110000) >> 4).unwrap();
-                let rval = cpu.read_reg16(regpair);
-                let (rhigh, rlow) = (((rval & 0xFF00) >> 8) as u8,
-                                     ((rval & 0x00FF)       as u8));
-
-                let nn =  (cpu.read_word(cpu.get_pc() + 2) as u16) |
-                         ((cpu.read_word(cpu.get_pc() + 3) as u16) << 8);
-
-                cpu.write_word(nn, rlow);
-                cpu.write_word(nn + 1, rhigh);
-
-                println!("{:#06x}: LD ({:#06X}), {:?}", cpu.get_pc(), nn, regpair);
-                cpu.inc_pc(4);
-            },
-            _ => unreachable!()
+            counter -= 1;
+            cpu.write_reg16(Reg16::BC, counter);
         }
+
+        cpu.clear_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(PARITY_OVERFLOW_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+
+        println!("{:#06x}: LDIR", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+    }
+}
+
+struct Lddr;
+
+impl Instruction for Lddr {
+    fn execute(&self, cpu: &mut Cpu) {
+        let mut counter = cpu.read_reg16(Reg16::BC);
+        while counter > 0 {
+            let deval = cpu.read_reg16(Reg16::DE);
+            let hlval = cpu.read_reg16(Reg16::HL);
+
+            let memval = cpu.read_word(hlval);
+            cpu.write_word(deval, memval);
+
+            cpu.write_reg16(Reg16::DE, deval.wrapping_sub(1));
+            cpu.write_reg16(Reg16::HL, hlval.wrapping_sub(1));
+
+            counter -= 1;
+            cpu.write_reg16(Reg16::BC, counter);
+        }
+
+        cpu.clear_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(PARITY_OVERFLOW_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+
+        println!("{:#06x}: LDDR", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+    }
+}
+
+struct Im {
+    mode: u8
+}
+
+impl Instruction for Im {
+    fn execute(&self, cpu: &mut Cpu) {
+        cpu.set_im(self.mode);
+
+        println!("{:#06x}: IM {}", cpu.get_pc() - 1, self.mode);
+        cpu.inc_pc(1);
+    }
+}
+
+struct OutPortCR {
+    r: Reg8
+}
+
+impl Instruction for OutPortCR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let rval = cpu.read_reg8(self.r);
+        let port = Port::from_u16(cpu.read_reg16(Reg16::BC)).unwrap();
+
+        cpu.write_port(port, rval);
+
+        println!("{:#06x}: OUT (C), {:?}", cpu.get_pc() - 1, self.r);
+        cpu.inc_pc(1);
+    }
+}
+
+struct LdMemNnDd {
+    r: Reg16
+}
+
+impl Instruction for LdMemNnDd {
+    fn execute(&self, cpu: &mut Cpu) {
+        let rval = cpu.read_reg16(self.r);
+        let (rhigh, rlow) = (((rval & 0xFF00) >> 8) as u8,
+                             ((rval & 0x00FF)       as u8));
+
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+
+        cpu.write_word(nn, rlow);
+        cpu.write_word(nn + 1, rhigh);
+
+        println!("{:#06x}: LD ({:#06X}), {:?}", cpu.get_pc() - 1, nn, self.r);
+        cpu.inc_pc(3);
     }
 }
 
@@ -1046,29 +1056,29 @@ pub const INSTR_TABLE_ED: [&'static Instruction; 256] = [
     /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x40 */    /* 0x41 */    /* 0x42 */    /* 0x43 */    /* 0x44 */    /* 0x45 */    /* 0x46 */    /* 0x47 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x40 */    /* 0x41 */             /* 0x42 */    /* 0x43 */               /* 0x44 */    /* 0x45 */    /* 0x46 */    /* 0x47 */
+    &Unsupported, &OutPortCR{r:Reg8::B}, &Unsupported, &LdMemNnDd{r:Reg16::BC}, &Unsupported, &Unsupported, &Im{mode:0} , &Unsupported,
 
-    /* 0x48 */    /* 0x49 */    /* 0x4A */    /* 0x4B */    /* 0x4C */    /* 0x4D */    /* 0x4E */    /* 0x4F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x48 */    /* 0x49 */             /* 0x4A */    /* 0x4B */               /* 0x4C */    /* 0x4D */    /* 0x4E */    /* 0x4F */
+    &Unsupported, &OutPortCR{r:Reg8::C}, &Unsupported, &Unsupported           , &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x50 */    /* 0x51 */    /* 0x52 */    /* 0x53 */    /* 0x54 */    /* 0x55 */    /* 0x56 */    /* 0x57 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x50 */    /* 0x51 */             /* 0x52 */    /* 0x53 */               /* 0x54 */    /* 0x55 */    /* 0x56 */    /* 0x57 */
+    &Unsupported, &OutPortCR{r:Reg8::D}, &Unsupported, &LdMemNnDd{r:Reg16::DE}, &Unsupported, &Unsupported, &Im{mode:1} , &Unsupported,
 
-    /* 0x58 */    /* 0x59 */    /* 0x5A */    /* 0x5B */    /* 0x5C */    /* 0x5D */    /* 0x5E */    /* 0x5F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x58 */    /* 0x59 */             /* 0x5A */    /* 0x5B */               /* 0x5C */    /* 0x5D */    /* 0x5E */    /* 0x5F */
+    &Unsupported, &OutPortCR{r:Reg8::E}, &Unsupported, &Unsupported           , &Unsupported, &Unsupported, &Im{mode:2}, &Unsupported,
 
-    /* 0x60 */    /* 0x61 */    /* 0x62 */    /* 0x63 */    /* 0x64 */    /* 0x65 */    /* 0x66 */    /* 0x67 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x60 */    /* 0x61 */             /* 0x62 */    /* 0x63 */               /* 0x64 */    /* 0x65 */    /* 0x66 */    /* 0x67 */
+    &Unsupported, &OutPortCR{r:Reg8::H}, &Unsupported, &LdMemNnDd{r:Reg16::HL}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x68 */    /* 0x69 */    /* 0x6A */    /* 0x6B */    /* 0x6C */    /* 0x6D */    /* 0x6E */    /* 0x6F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x68 */    /* 0x69 */             /* 0x6A */    /* 0x6B */               /* 0x6C */    /* 0x6D */    /* 0x6E */    /* 0x6F */
+    &Unsupported, &OutPortCR{r:Reg8::L}, &Unsupported, &Unsupported           , &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x70 */    /* 0x71 */    /* 0x72 */    /* 0x73 */    /* 0x74 */    /* 0x75 */    /* 0x76 */    /* 0x77 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x70 */    /* 0x71 */             /* 0x72 */    /* 0x73 */               /* 0x74 */    /* 0x75 */    /* 0x76 */    /* 0x77 */
+    &Unsupported, &Unsupported         , &Unsupported, &LdMemNnDd{r:Reg16::SP}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x78 */    /* 0x79 */    /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */    /* 0x7F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x78 */    /* 0x79 */             /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */    /* 0x7F */
+    &Unsupported, &OutPortCR{r:Reg8::A}, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */    /* 0x85 */    /* 0x86 */    /* 0x87 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -1089,10 +1099,10 @@ pub const INSTR_TABLE_ED: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */    /* 0xB5 */    /* 0xB6 */    /* 0xB7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Ldir       , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xB8 */    /* 0xB9 */    /* 0xBA */    /* 0xBB */    /* 0xBC */    /* 0xBD */    /* 0xBE */    /* 0xBF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Lddr       , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xC0 */    /* 0xC1 */    /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */    /* 0xC6 */    /* 0xC7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
