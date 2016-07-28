@@ -298,12 +298,12 @@ impl Cpu {
     fn run_instruction(&mut self) {
         let i0 = self.read_word(self.pc);
         let i1 = self.read_word(self.pc + 1);
-        let i2 = self.read_word(self.pc + 2);
+        let i3 = self.read_word(self.pc + 3);
 
         match (i0, i1) {
             (0xDD, 0xCB) => {
                 self.pc += 2;
-                &instructions::INSTR_TABLE_DDCB [i2 as usize].execute(self);
+                &instructions::INSTR_TABLE_DDCB [i3 as usize].execute(self);
             },
             (0xDD, _   ) => {
                 self.pc += 1;
@@ -311,7 +311,7 @@ impl Cpu {
             },
             (0xFD, 0xCB) => {
                 self.pc += 2;
-                &instructions::INSTR_TABLE_FDCB [i2 as usize].execute(self);
+                &instructions::INSTR_TABLE_FDCB [i3 as usize].execute(self);
             },
             (0xFD, _   ) => {
                 self.pc += 1;
