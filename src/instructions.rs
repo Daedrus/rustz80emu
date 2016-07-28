@@ -161,9 +161,9 @@ impl Instruction for LdMemIxDN {
         let mut d = d as i8;
         if d & 0b10000000 != 0 {
             d = (d ^ 0xFF) + 1;
-            println!("{:#06x}: DEC (IX-{:#04X})", curr_pc, d);
+            println!("{:#06x}: LD (IX-{:#04X}), {:#04X}", curr_pc - 1, d, n);
         } else {
-            println!("{:#06x}: DEC (IX+{:#04X})", curr_pc, d);
+            println!("{:#06x}: LD (IX+{:#04X}), {:#04X}", curr_pc - 1, d, n);
         }
 
         cpu.inc_pc(3);
@@ -792,7 +792,7 @@ impl Instruction for LdIyNn {
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
 
-        cpu.set_ix(nn);
+        cpu.set_iy(nn);
 
         println!("{:#06x}: LD IY, {:#06X}", cpu.get_pc() - 1, nn);
         cpu.inc_pc(3);
