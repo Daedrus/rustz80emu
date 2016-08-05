@@ -89,6 +89,28 @@ impl Instruction for LdMemHlN {
     }
 }
 
+struct LdMemIyDN;
+
+impl Instruction for LdMemIyDN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let d = cpu.read_word(curr_pc + 1);
+        let n = cpu.read_word(curr_pc + 2);
+        let addr = cpu.get_iy() as i16 + d as i16;
+        cpu.write_word(addr as u16, n);
+
+        let mut d = d as i8;
+        if d & 0b10000000 != 0 {
+            d = (d ^ 0xFF) + 1;
+            println!("{:#06x}: LD (IY-{:#04X}), {:#04X}", curr_pc - 1, d, n);
+        } else {
+            println!("{:#06x}: LD (IY+{:#04X}), {:#04X}", curr_pc - 1, d, n);
+        }
+
+        cpu.inc_pc(3);
+    }
+}
+
 struct LdSpHl;
 
 impl Instruction for LdSpHl {
@@ -1214,7 +1236,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &DecIyD     , &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &DecIyD     , &LdMemIyDN,   &Unsupported,
 
     /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
