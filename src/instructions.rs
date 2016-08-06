@@ -731,6 +731,29 @@ impl Instruction for XorN {
     }
 }
 
+struct XorMemHl;
+
+impl Instruction for XorMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        let hlval = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hlval);
+
+        let xorval = cpu.read_reg8(Reg8::A) ^ memval;
+
+        cpu.write_reg8(Reg8::A, xorval);
+
+        cpu.clear_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        cpu.clear_flag(CARRY_FLAG);
+        if xorval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if xorval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if xorval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+
+        println!("{:#06x}: XOR (HL)", cpu.get_pc());
+        cpu.inc_pc(1);
+    }
+}
+
 struct Djnz;
 
 impl Instruction for Djnz {
@@ -1816,7 +1839,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0xA0 */         /* 0xA1 */         /* 0xA2 */         /* 0xA3 */         /* 0xA4 */         /* 0xA5 */         /* 0xA6 */    /* 0xA7 */
     &AndR{r:Reg8::B} , &AndR{r:Reg8::C} , &AndR{r:Reg8::D} , &AndR{r:Reg8::E} , &AndR{r:Reg8::H} , &AndR{r:Reg8::L} , &Unsupported, &AndR{r:Reg8::A} ,
     /* 0xA8 */         /* 0xA9 */         /* 0xAA */         /* 0xAB */         /* 0xAC */         /* 0xAD */         /* 0xAE */    /* 0xAF */
-    &XorR{r:Reg8::B} , &XorR{r:Reg8::C} , &XorR{r:Reg8::D} , &XorR{r:Reg8::E} , &XorR{r:Reg8::H} , &XorR{r:Reg8::L} , &Unsupported, &XorR{r:Reg8::A} ,
+    &XorR{r:Reg8::B} , &XorR{r:Reg8::C} , &XorR{r:Reg8::D} , &XorR{r:Reg8::E} , &XorR{r:Reg8::H} , &XorR{r:Reg8::L} , &XorMemHl   , &XorR{r:Reg8::A} ,
     /* 0xB0 */         /* 0xB1 */         /* 0xB2 */         /* 0xB3 */         /* 0xB4 */         /* 0xB5 */         /* 0xB6 */    /* 0xB7 */
     &OrR{r:Reg8::B}  , &OrR{r:Reg8::C}  , &OrR{r:Reg8::D}  , &OrR{r:Reg8::E}  , &OrR{r:Reg8::H}  , &OrR{r:Reg8::L}  , &Unsupported, &OrR{r:Reg8::A}  ,
     /* 0xB8 */         /* 0xB9 */         /* 0xBA */         /* 0xBB */         /* 0xBC */         /* 0xBD */         /* 0xBE */    /* 0xBF */
