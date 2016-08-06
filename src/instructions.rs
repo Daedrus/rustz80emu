@@ -801,6 +801,21 @@ impl Instruction for JrE {
     }
 }
 
+struct Ccf;
+
+impl Instruction for Ccf {
+    fn execute(&self, cpu: &mut Cpu) {
+        let cfval = cpu.get_flag(CARRY_FLAG);
+
+        if cfval { cpu.clear_flag(CARRY_FLAG); } else { cpu.set_flag(CARRY_FLAG); }
+        if cfval { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+
+        println!("{:#06x}: CCF", cpu.get_pc());
+        cpu.inc_pc(1);
+    }
+}
+
 struct Scf;
 
 impl Instruction for Scf {
@@ -1787,7 +1802,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Unsupported, &LdDdNn{regpair:Reg16::SP} , &LdMemNnA   , &IncSs{regpair:Reg16::SP}, &Unsupported    , &Unsupported    , &LdMemHlN       , &Scf        ,
 
     /* 0x38 */    /* 0x39 */                   /* 0x3A */    /* 0x3B */                 /* 0x3C */        /* 0x3D */        /* 0x3E */        /* 0x3F */
-    &Unsupported, &AddHlSs{regpair:Reg16::SP}, &LdAMemNn   , &DecSs{regpair:Reg16::SP}, &IncR{r:Reg8::A}, &DecR{r:Reg8::A}, &LdRN{r:Reg8::A}, &Unsupported,
+    &Unsupported, &AddHlSs{regpair:Reg16::SP}, &LdAMemNn   , &DecSs{regpair:Reg16::SP}, &IncR{r:Reg8::A}, &DecR{r:Reg8::A}, &LdRN{r:Reg8::A}, &Ccf        ,
 
     /* 0x40 */                                 /* 0x41 */                               /* 0x42 */                          /* 0x43 */
     &LdRR{rt:Reg8::B,rs:Reg8::B}             , &LdRR{rt:Reg8::B,rs:Reg8::C}           , &LdRR{rt:Reg8::B,rs:Reg8::D}      , &LdRR{rt:Reg8::B,rs:Reg8::E},
