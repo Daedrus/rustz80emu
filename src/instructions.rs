@@ -592,6 +592,27 @@ impl Instruction for LdMemHlR {
     }
 }
 
+struct CpR {
+    r: Reg8
+}
+
+impl Instruction for CpR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let rval = cpu.read_reg8(self.r);
+        let accval = cpu.read_reg8(Reg8::A);
+
+        cpu.set_flag(ADD_SUBTRACT_FLAG);
+        if rval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if rval == accval { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if accval < rval { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+        if (accval & 0x0F) < (rval & 0x0F) { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        //TODO: Parity flag?
+
+        println!("{:#06x}: CP {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+    }
+}
+
 struct CpMemHl;
 
 impl Instruction for CpMemHl {
@@ -1704,7 +1725,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0xB0 */         /* 0xB1 */         /* 0xB2 */         /* 0xB3 */         /* 0xB4 */         /* 0xB5 */         /* 0xB6 */    /* 0xB7 */
     &OrR{r:Reg8::B}  , &OrR{r:Reg8::C}  , &OrR{r:Reg8::D}  , &OrR{r:Reg8::E}  , &OrR{r:Reg8::H}  , &OrR{r:Reg8::L}  , &Unsupported, &OrR{r:Reg8::A}  ,
     /* 0xB8 */         /* 0xB9 */         /* 0xBA */         /* 0xBB */         /* 0xBC */         /* 0xBD */         /* 0xBE */    /* 0xBF */
-    &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &CpMemHl    , &Unsupported     ,
+    &CpR{r:Reg8::B}  , &CpR{r:Reg8::C}  , &CpR{r:Reg8::D}  , &CpR{r:Reg8::E}  , &CpR{r:Reg8::H}  , &CpR{r:Reg8::L}  , &CpMemHl    , &CpR{r:Reg8::A}  ,
 
     /* 0xC0 */                 /* 0xC1 */                   /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */                    /* 0xC6 */    /* 0xC7 */
     &RetCc{cond:FlagCond::NZ}, &PopQq{regpair:Reg16qq::BC}, &Unsupported, &JpNn       , &Unsupported, &PushQq{regpair:Reg16qq::BC}, &AddAN      , &Rst{addr:0x00},
