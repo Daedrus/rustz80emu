@@ -343,6 +343,34 @@ impl Instruction for Exx {
     }
 }
 
+struct AddAN;
+
+impl Instruction for AddAN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let aval = cpu.read_reg8(Reg8::A);
+        let n = cpu.read_word(cpu.get_pc() + 1);
+
+        let addval = aval.wrapping_add(n);
+        cpu.write_reg8(Reg8::A, addval);
+
+        if addval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if addval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if addval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        match (aval & 0b10000000   != 0,
+               n    & 0b10000000   != 0,
+               addval & 0b10000000 != 0) {
+            (true, true, false) | (false, false, true) => cpu.set_flag(PARITY_OVERFLOW_FLAG),
+            _ => cpu.clear_flag(PARITY_OVERFLOW_FLAG)
+        };
+        if addval == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        if (aval as i16 + n as i16 > 0xFF) { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+
+        println!("{:#06x}: ADD A, {:#04X}", cpu.get_pc(), n);
+        cpu.inc_pc(2);
+    }
+}
+
 struct AddAR {
     r: Reg8
 }
@@ -1622,7 +1650,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &CpMemHl    , &Unsupported     ,
 
     /* 0xC0 */        /* 0xC1 */                   /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */                    /* 0xC6 */    /* 0xC7 */
-    &Unsupported    , &PopQq{regpair:Reg16qq::BC}, &Unsupported, &JpNn       , &Unsupported, &PushQq{regpair:Reg16qq::BC}, &Unsupported, &Rst{addr:0x00},
+    &Unsupported    , &PopQq{regpair:Reg16qq::BC}, &Unsupported, &JpNn       , &Unsupported, &PushQq{regpair:Reg16qq::BC}, &AddAN      , &Rst{addr:0x00},
     /* 0xC8 */        /* 0xC9 */                   /* 0xCA */    /* 0xCB */    /* 0xCC */    /* 0xCD */                    /* 0xCE */    /* 0xCF */
     &Unsupported    , &Ret                       , &Unsupported, &Unsupported, &Unsupported, &CallNn                     , &Unsupported, &Rst{addr:0x08},
     /* 0xD0 */        /* 0xD1 */                   /* 0xD2 */    /* 0xD3 */    /* 0xD4 */    /* 0xD5 */                    /* 0xD6 */    /* 0xD7 */
