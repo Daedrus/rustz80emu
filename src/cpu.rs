@@ -51,6 +51,20 @@ pub enum Port {
 }
 }
 
+enum_from_primitive! {
+#[derive(Debug, Clone, Copy)]
+pub enum FlagCond {
+    NZ = 0b000,
+    Z  = 0b001,
+    NC = 0b010,
+    C  = 0b011,
+    PO = 0b100,
+    PE = 0b101,
+    P  = 0b110,
+    M  = 0b111
+}
+}
+
 bitflags! {
     pub flags StatusIndicatorFlags: u8 {
         const CARRY_FLAG           = 0b00000001, // C
