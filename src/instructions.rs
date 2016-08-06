@@ -343,6 +343,36 @@ impl Instruction for Exx {
     }
 }
 
+struct AddAR {
+    r: Reg8
+}
+
+impl Instruction for AddAR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let aval = cpu.read_reg8(Reg8::A);
+        let rval = cpu.read_reg8(self.r);
+
+        let addval = aval.wrapping_add(rval);
+        cpu.write_reg8(Reg8::A, addval);
+
+        if addval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if addval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if addval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        match (aval & 0b10000000   != 0,
+               rval & 0b10000000   != 0,
+               addval & 0b10000000 != 0) {
+            (true, true, false) | (false, false, true) => cpu.set_flag(PARITY_OVERFLOW_FLAG),
+            _ => cpu.clear_flag(PARITY_OVERFLOW_FLAG)
+        };
+        if addval == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        if (aval as i16 + rval as i16 > 0xFF) { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+
+        println!("{:#06x}: ADD A, {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+    }
+}
+
 struct DecR {
     r: Reg8
 }
@@ -1574,22 +1604,22 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0x7C */                                 /* 0x7D */                               /* 0x7E */                          /* 0x7F */
     &LdRR{rt:Reg8::A,rs:Reg8::H}             , &LdRR{rt:Reg8::A,rs:Reg8::L}           , &LdRMemHl{r:Reg8::A}              , &LdRR{rt:Reg8::A,rs:Reg8::A},
 
-    /* 0x80 */        /* 0x81 */        /* 0x82 */        /* 0x83 */        /* 0x84 */        /* 0x85 */        /* 0x86 */    /* 0x87 */
-    &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported, &Unsupported    ,
-    /* 0x88 */        /* 0x89 */        /* 0x8A */        /* 0x8B */        /* 0x8C */        /* 0x8D */        /* 0x8E */    /* 0x8F */
-    &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported, &Unsupported    ,
-    /* 0x90 */        /* 0x91 */        /* 0x92 */        /* 0x93 */        /* 0x94 */        /* 0x95 */        /* 0x96 */    /* 0x97 */
-    &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported, &Unsupported    ,
-    /* 0x98 */        /* 0x99 */        /* 0x9A */        /* 0x9B */        /* 0x9C */        /* 0x9D */        /* 0x9E */    /* 0x9F */
-    &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported, &Unsupported    ,
-    /* 0xA0 */        /* 0xA1 */        /* 0xA2 */        /* 0xA3 */        /* 0xA4 */        /* 0xA5 */        /* 0xA6 */    /* 0xA7 */
-    &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported, &Unsupported    ,
-    /* 0xA8 */        /* 0xA9 */        /* 0xAA */        /* 0xAB */        /* 0xAC */        /* 0xAD */        /* 0xAE */    /* 0xAF */
-    &XorR{r:Reg8::B}, &XorR{r:Reg8::C}, &XorR{r:Reg8::D}, &XorR{r:Reg8::E}, &XorR{r:Reg8::H}, &XorR{r:Reg8::L}, &Unsupported, &XorR{r:Reg8::A},
-    /* 0xB0 */        /* 0xB1 */        /* 0xB2 */        /* 0xB3 */        /* 0xB4 */        /* 0xB5 */        /* 0xB6 */    /* 0xB7 */
-    &OrR{r:Reg8::B} , &OrR{r:Reg8::C} , &OrR{r:Reg8::D} , &OrR{r:Reg8::E} , &OrR{r:Reg8::H} , &OrR{r:Reg8::L} , &Unsupported, &OrR{r:Reg8::A} ,
-    /* 0xB8 */        /* 0xB9 */        /* 0xBA */        /* 0xBB */        /* 0xBC */        /* 0xBD */        /* 0xBE */    /* 0xBF */
-    &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &CpMemHl    , &Unsupported    ,
+    /* 0x80 */         /* 0x81 */         /* 0x82 */         /* 0x83 */         /* 0x84 */         /* 0x85 */         /* 0x86 */    /* 0x87 */
+    &AddAR{r:Reg8::B}, &AddAR{r:Reg8::C}, &AddAR{r:Reg8::D}, &AddAR{r:Reg8::E}, &AddAR{r:Reg8::H}, &AddAR{r:Reg8::L}, &Unsupported, &AddAR{r:Reg8::A},
+    /* 0x88 */         /* 0x89 */         /* 0x8A */         /* 0x8B */         /* 0x8C */         /* 0x8D */         /* 0x8E */    /* 0x8F */
+    &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
+    /* 0x90 */         /* 0x91 */         /* 0x92 */         /* 0x93 */         /* 0x94 */         /* 0x95 */         /* 0x96 */    /* 0x97 */
+    &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
+    /* 0x98 */         /* 0x99 */         /* 0x9A */         /* 0x9B */         /* 0x9C */         /* 0x9D */         /* 0x9E */    /* 0x9F */
+    &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
+    /* 0xA0 */         /* 0xA1 */         /* 0xA2 */         /* 0xA3 */         /* 0xA4 */         /* 0xA5 */         /* 0xA6 */    /* 0xA7 */
+    &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
+    /* 0xA8 */         /* 0xA9 */         /* 0xAA */         /* 0xAB */         /* 0xAC */         /* 0xAD */         /* 0xAE */    /* 0xAF */
+    &XorR{r:Reg8::B} , &XorR{r:Reg8::C} , &XorR{r:Reg8::D} , &XorR{r:Reg8::E} , &XorR{r:Reg8::H} , &XorR{r:Reg8::L} , &Unsupported, &XorR{r:Reg8::A} ,
+    /* 0xB0 */         /* 0xB1 */         /* 0xB2 */         /* 0xB3 */         /* 0xB4 */         /* 0xB5 */         /* 0xB6 */    /* 0xB7 */
+    &OrR{r:Reg8::B}  , &OrR{r:Reg8::C}  , &OrR{r:Reg8::D}  , &OrR{r:Reg8::E}  , &OrR{r:Reg8::H}  , &OrR{r:Reg8::L}  , &Unsupported, &OrR{r:Reg8::A}  ,
+    /* 0xB8 */         /* 0xB9 */         /* 0xBA */         /* 0xBB */         /* 0xBC */         /* 0xBD */         /* 0xBE */    /* 0xBF */
+    &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &CpMemHl    , &Unsupported     ,
 
     /* 0xC0 */        /* 0xC1 */                   /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */                    /* 0xC6 */    /* 0xC7 */
     &Unsupported    , &PopQq{regpair:Reg16qq::BC}, &Unsupported, &JpNn       , &Unsupported, &PushQq{regpair:Reg16qq::BC}, &Unsupported, &Rst{addr:0x00},
