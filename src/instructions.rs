@@ -723,6 +723,19 @@ impl Instruction for JrE {
     }
 }
 
+struct Scf;
+
+impl Instruction for Scf {
+    fn execute(&self, cpu: &mut Cpu) {
+        cpu.set_flag(CARRY_FLAG);
+        cpu.clear_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+
+        println!("{:#06x}: SCF", cpu.get_pc());
+        cpu.inc_pc(1);
+    }
+}
+
 struct Rst {
     addr: u8
 }
@@ -1666,7 +1679,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Unsupported, &AddHlSs{regpair:Reg16::HL}, &LdHlMemNn  , &DecSs{regpair:Reg16::HL}, &IncR{r:Reg8::L}, &DecR{r:Reg8::L}, &LdRN{r:Reg8::L}, &Unsupported,
 
     /* 0x30 */    /* 0x31 */                   /* 0x32 */    /* 0x33 */                 /* 0x34 */        /* 0x35 */        /* 0x36 */        /* 0x37 */
-    &Unsupported, &LdDdNn{regpair:Reg16::SP} , &LdMemNnA   , &IncSs{regpair:Reg16::SP}, &Unsupported    , &Unsupported    , &LdMemHlN       , &Unsupported,
+    &Unsupported, &LdDdNn{regpair:Reg16::SP} , &LdMemNnA   , &IncSs{regpair:Reg16::SP}, &Unsupported    , &Unsupported    , &LdMemHlN       , &Scf        ,
 
     /* 0x38 */    /* 0x39 */                   /* 0x3A */    /* 0x3B */                 /* 0x3C */        /* 0x3D */        /* 0x3E */        /* 0x3F */
     &Unsupported, &AddHlSs{regpair:Reg16::SP}, &LdAMemNn   , &DecSs{regpair:Reg16::SP}, &IncR{r:Reg8::A}, &DecR{r:Reg8::A}, &LdRN{r:Reg8::A}, &Unsupported,
