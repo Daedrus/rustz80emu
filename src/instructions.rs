@@ -251,6 +251,24 @@ impl Instruction for Ei {
     }
 }
 
+struct JrZ;
+
+impl Instruction for JrZ {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
+        let target = (curr_pc as i16 + offset as i16) as u16;
+
+        println!("{:#06x}: JR Z {:#06X}", cpu.get_pc(), target);
+        if cpu.get_flag(ZERO_FLAG) {
+            cpu.set_pc(target);
+        } else {
+            cpu.inc_pc(2);
+        }
+    }
+}
+
+
 struct JrNz;
 
 impl Instruction for JrNz {
@@ -1714,7 +1732,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &JrNz       , &LdDdNn{regpair:Reg16::HL} , &LdMemNnHl  , &IncSs{regpair:Reg16::HL}, &IncR{r:Reg8::H}, &DecR{r:Reg8::H}, &LdRN{r:Reg8::H}, &Unsupported,
 
     /* 0x28 */    /* 0x29 */                   /* 0x2A */    /* 0x2B */                 /* 0x2C */        /* 0x2D */        /* 0x2E */        /* 0x2F */
-    &Unsupported, &AddHlSs{regpair:Reg16::HL}, &LdHlMemNn  , &DecSs{regpair:Reg16::HL}, &IncR{r:Reg8::L}, &DecR{r:Reg8::L}, &LdRN{r:Reg8::L}, &Unsupported,
+    &JrZ        , &AddHlSs{regpair:Reg16::HL}, &LdHlMemNn  , &DecSs{regpair:Reg16::HL}, &IncR{r:Reg8::L}, &DecR{r:Reg8::L}, &LdRN{r:Reg8::L}, &Unsupported,
 
     /* 0x30 */    /* 0x31 */                   /* 0x32 */    /* 0x33 */                 /* 0x34 */        /* 0x35 */        /* 0x36 */        /* 0x37 */
     &Unsupported, &LdDdNn{regpair:Reg16::SP} , &LdMemNnA   , &IncSs{regpair:Reg16::SP}, &Unsupported    , &Unsupported    , &LdMemHlN       , &Scf        ,
