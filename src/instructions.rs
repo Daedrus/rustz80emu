@@ -268,6 +268,17 @@ impl Instruction for JrNz {
     }
 }
 
+struct JpMemHl;
+
+impl Instruction for JpMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        let hlval = cpu.read_reg16(Reg16::HL);
+
+        println!("{:#06x}: JP (HL)", cpu.get_pc());
+        cpu.set_pc(hlval);
+    }
+}
+
 struct JpNn;
 
 impl Instruction for JpNn {
@@ -1751,7 +1762,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0xE0 */                 /* 0xE1 */                   /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */                    /* 0xE6 */    /* 0xE7 */
     &RetCc{cond:FlagCond::PO}, &PopQq{regpair:Reg16qq::HL}, &Unsupported, &ExMemSpHl  , &Unsupported, &PushQq{regpair:Reg16qq::HL}, &AndN       , &Rst{addr:0x20},
     /* 0xE8 */                 /* 0xE9 */                   /* 0xEA */    /* 0xEB */    /* 0xEC */    /* 0xED */                    /* 0xEE */    /* 0xEF */
-    &RetCc{cond:FlagCond::PE}, &Unsupported               , &Unsupported, &ExDeHl     , &Unsupported, &Unsupported                , &XorN       , &Rst{addr:0x28},
+    &RetCc{cond:FlagCond::PE}, &JpMemHl                   , &Unsupported, &ExDeHl     , &Unsupported, &Unsupported                , &XorN       , &Rst{addr:0x28},
     /* 0xF0 */                 /* 0xF1 */                   /* 0xF2 */    /* 0xF3 */    /* 0xF4 */    /* 0xF5 */                    /* 0xF6 */    /* 0xF7 */
     &RetCc{cond:FlagCond::P} , &PopQq{regpair:Reg16qq::AF}, &Unsupported, &Di         , &Unsupported, &PushQq{regpair:Reg16qq::AF}, &Unsupported, &Rst{addr:0x30},
     /* 0xF8 */                 /* 0xF9 */                   /* 0xFA */    /* 0xFB */    /* 0xFC */    /* 0xFD */                    /* 0xFE */    /* 0xFF */
