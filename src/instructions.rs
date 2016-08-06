@@ -958,6 +958,29 @@ impl Instruction for DecIyD {
     }
 }
 
+struct AndR {
+    r: Reg8
+}
+
+impl Instruction for AndR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let aval = cpu.read_reg8(Reg8::A);
+        let rval = cpu.read_reg8(self.r);
+        let andval = aval & rval;
+
+        cpu.write_reg8(Reg8::A, andval);
+
+        cpu.set_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        cpu.clear_flag(CARRY_FLAG);
+        if andval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+        if andval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if andval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+
+        println!("{:#06x}: AND {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+    }
+}
 
 struct AndN;
 
@@ -1641,7 +1664,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0x98 */         /* 0x99 */         /* 0x9A */         /* 0x9B */         /* 0x9C */         /* 0x9D */         /* 0x9E */    /* 0x9F */
     &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
     /* 0xA0 */         /* 0xA1 */         /* 0xA2 */         /* 0xA3 */         /* 0xA4 */         /* 0xA5 */         /* 0xA6 */    /* 0xA7 */
-    &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
+    &AndR{r:Reg8::B} , &AndR{r:Reg8::C} , &AndR{r:Reg8::D} , &AndR{r:Reg8::E} , &AndR{r:Reg8::H} , &AndR{r:Reg8::L} , &Unsupported, &AndR{r:Reg8::A} ,
     /* 0xA8 */         /* 0xA9 */         /* 0xAA */         /* 0xAB */         /* 0xAC */         /* 0xAD */         /* 0xAE */    /* 0xAF */
     &XorR{r:Reg8::B} , &XorR{r:Reg8::C} , &XorR{r:Reg8::D} , &XorR{r:Reg8::E} , &XorR{r:Reg8::H} , &XorR{r:Reg8::L} , &Unsupported, &XorR{r:Reg8::A} ,
     /* 0xB0 */         /* 0xB1 */         /* 0xB2 */         /* 0xB3 */         /* 0xB4 */         /* 0xB5 */         /* 0xB6 */    /* 0xB7 */
