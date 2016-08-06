@@ -788,6 +788,24 @@ impl Instruction for LdMemNnA {
     }
 }
 
+struct JrCE;
+
+impl Instruction for JrCE {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
+        let target = (curr_pc as i16 + offset as i16) as u16;
+
+        println!("{:#06x}: JR C, {:#06X}", cpu.get_pc(), target);
+
+        if cpu.get_flag(CARRY_FLAG) {
+            cpu.set_pc(target);
+        } else {
+            cpu.inc_pc(2);
+        }
+    }
+}
+
 struct JrE;
 
 impl Instruction for JrE {
@@ -1802,7 +1820,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Unsupported, &LdDdNn{regpair:Reg16::SP} , &LdMemNnA   , &IncSs{regpair:Reg16::SP}, &Unsupported    , &Unsupported    , &LdMemHlN       , &Scf        ,
 
     /* 0x38 */    /* 0x39 */                   /* 0x3A */    /* 0x3B */                 /* 0x3C */        /* 0x3D */        /* 0x3E */        /* 0x3F */
-    &Unsupported, &AddHlSs{regpair:Reg16::SP}, &LdAMemNn   , &DecSs{regpair:Reg16::SP}, &IncR{r:Reg8::A}, &DecR{r:Reg8::A}, &LdRN{r:Reg8::A}, &Ccf        ,
+    &JrCE       , &AddHlSs{regpair:Reg16::SP}, &LdAMemNn   , &DecSs{regpair:Reg16::SP}, &IncR{r:Reg8::A}, &DecR{r:Reg8::A}, &LdRN{r:Reg8::A}, &Ccf        ,
 
     /* 0x40 */                                 /* 0x41 */                               /* 0x42 */                          /* 0x43 */
     &LdRR{rt:Reg8::B,rs:Reg8::B}             , &LdRR{rt:Reg8::B,rs:Reg8::C}           , &LdRR{rt:Reg8::B,rs:Reg8::D}      , &LdRR{rt:Reg8::B,rs:Reg8::E},
