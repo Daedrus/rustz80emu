@@ -16,9 +16,10 @@ impl Instruction for Unsupported {
 }
 
 
-struct AddAN   ;
-struct AddAR   { r: Reg8  }
-struct AddHlSs { r: Reg16 }
+struct AddAN      ;
+struct AddAR      { r: Reg8  }
+struct AddHlSs    { r: Reg16 }
+struct AddAMemIyD ;
 
 impl Instruction for AddAN {
     fn execute(&self, cpu: &mut Cpu) {
@@ -54,16 +55,16 @@ impl Instruction for AddAR {
         let addval = aval.wrapping_add(rval);
         cpu.write_reg8(Reg8::A, addval);
 
+        // TODO: Check flags
         if addval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
         if addval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if addval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
-        match (aval & 0b10000000   != 0,
-               rval & 0b10000000   != 0,
+        match (aval   & 0b10000000 != 0,
+               rval   & 0b10000000 != 0,
                addval & 0b10000000 != 0) {
             (true, true, false) | (false, false, true) => cpu.set_flag(PARITY_OVERFLOW_FLAG),
             _ => cpu.clear_flag(PARITY_OVERFLOW_FLAG)
         };
-        if addval == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
         if (aval as i16 + rval as i16 > 0xFF) { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
 
@@ -87,6 +88,41 @@ impl Instruction for AddHlSs {
 
         println!("{:#06x}: ADD HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
+}
+
+impl Instruction for AddAMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let aval = cpu.read_reg8(Reg8::A);
+        let d = cpu.read_word(curr_pc + 1) as i16;
+        let addr = ((cpu.get_iy() as i16) + d) as u16;
+        let memval = cpu.read_word(addr);
+
+        let addval = aval.wrapping_add(memval);
+        cpu.write_reg8(Reg8::A, addval);
+
+        // TODO: Check flags
+        if addval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if addval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if addval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        match (aval   & 0b10000000 != 0,
+               memval & 0b10000000 != 0,
+               addval & 0b10000000 != 0) {
+            (true, true, false) | (false, false, true) => cpu.set_flag(PARITY_OVERFLOW_FLAG),
+            _ => cpu.clear_flag(PARITY_OVERFLOW_FLAG)
+        };
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        if (aval as i16 + memval as i16 > 0xFF) { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+
+        let mut d = d as i8;
+        if d & 0b10000000 != 0 {
+            d = (d ^ 0xFF) + 1;
+            println!("{:#06x}: ADD A, (IY-{:#04X})", curr_pc - 1, d);
+        } else {
+            println!("{:#06x}: ADD A, (IY+{:#04X})", curr_pc - 1, d);
+        }
+        cpu.inc_pc(2);
     }
 }
 
@@ -1492,7 +1528,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::A}, &Unsupported,
 
     /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */    /* 0x85 */    /* 0x86 */    /* 0x87 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddAMemIyD , &Unsupported,
 
     /* 0x88 */    /* 0x89 */    /* 0x8A */    /* 0x8B */    /* 0x8C */    /* 0x8D */    /* 0x8E */    /* 0x8F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
