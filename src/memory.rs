@@ -44,6 +44,8 @@ impl Memory {
             }
         } else if addr >= 0x4000 && addr <= 0x7FFF {
             self.bank[self.ram_0x4000_0x7FFF][(addr - 0x4000) as usize]
+        } else if addr >= 0x8000 && addr <= 0xBFFF {
+            self.bank[self.ram_0x8000_0xBFFF][(addr - 0x8000) as usize]
         } else if addr >= 0xC000 && addr <= 0xFFFF {
             self.bank[self.ram_0xC000_0xFFFF][(addr - 0xC000) as usize]
         } else {
@@ -54,6 +56,8 @@ impl Memory {
     pub fn write_word(&mut self, addr: u16, val: u8) {
         if addr >= 0xC000 && addr <= 0xFFFF {
             self.bank[self.ram_0xC000_0xFFFF][(addr - 0xC000) as usize] = val;
+        } else if addr >= 0x8000 && addr <= 0xBFFF {
+            self.bank[self.ram_0x8000_0xBFFF][(addr - 0x8000) as usize] = val;
         } else if addr >= 0x4000 && addr <= 0x7FFF {
             self.bank[self.ram_0x4000_0x7FFF][(addr - 0x4000) as usize] = val;
         } else {
