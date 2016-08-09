@@ -1120,6 +1120,33 @@ impl Instruction for SetBMemIyD {
 }
 
 
+struct SubN;
+
+impl Instruction for SubN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let aval = cpu.read_reg8(Reg8::A) as i8;
+        let n = cpu.read_word(cpu.get_pc() + 1) as i8;
+
+        let subval = aval.wrapping_sub(n);
+        cpu.write_reg8(Reg8::A, subval as u8);
+
+        if subval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if subval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if aval & 0x0F < n & 0x0F { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        match (aval   & 0b10000000 != 0,
+               n      & 0b10000000 != 0,
+               subval & 0b10000000 != 0) {
+            (true, false, false) | (false, true, true) => cpu.set_flag(PARITY_OVERFLOW_FLAG),
+            _ => cpu.clear_flag(PARITY_OVERFLOW_FLAG)
+        };
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        if aval < n { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+
+        println!("{:#06x}: SUB {:#04X}", cpu.get_pc(), n);
+        cpu.inc_pc(1);
+    }
+}
+
 
 struct XorR     { r: Reg8 }
 struct XorN     ;
@@ -1876,7 +1903,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &RetCc{cond:FlagCond::Z} , &Ret                 , &Unsupported, &Unsupported, &Unsupported, &CallNn               , &Unsupported, &Rst{addr:0x08},
 
     /* 0xD0 */                 /* 0xD1 */             /* 0xD2 */    /* 0xD3 */    /* 0xD4 */    /* 0xD5 */              /* 0xD6 */    /* 0xD7 */
-    &RetCc{cond:FlagCond::NC}, &PopQq{r:Reg16qq::DE}, &Unsupported, &OutPortNA  , &Unsupported, &PushQq{r:Reg16qq::DE}, &Unsupported, &Rst{addr:0x10},
+    &RetCc{cond:FlagCond::NC}, &PopQq{r:Reg16qq::DE}, &Unsupported, &OutPortNA  , &Unsupported, &PushQq{r:Reg16qq::DE}, &SubN       , &Rst{addr:0x10},
 
     /* 0xD8 */                 /* 0xD9 */             /* 0xDA */    /* 0xDB */    /* 0xDC */    /* 0xDD */              /* 0xDE */    /* 0xDF */
     &RetCc{cond:FlagCond::C} , &Exx                 , &Unsupported, &Unsupported, &Unsupported, &Unsupported          , &Unsupported, &Rst{addr:0x18},
