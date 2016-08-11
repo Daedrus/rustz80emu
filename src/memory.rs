@@ -36,7 +36,7 @@ impl Memory {
     }
 
     pub fn read_word(&self, addr: u16) -> u8 {
-        if addr >= 0x0000 && addr <= 0x3FFF {
+        if addr <= 0x3FFF {
             match self.rom {
                 0 => self.rom0[addr as usize],
                 1 => self.rom1[addr as usize],
@@ -46,7 +46,7 @@ impl Memory {
             self.bank[self.ram_0x4000_0x7FFF][(addr - 0x4000) as usize]
         } else if addr >= 0x8000 && addr <= 0xBFFF {
             self.bank[self.ram_0x8000_0xBFFF][(addr - 0x8000) as usize]
-        } else if addr >= 0xC000 && addr <= 0xFFFF {
+        } else if addr >= 0xC000 {
             self.bank[self.ram_0xC000_0xFFFF][(addr - 0xC000) as usize]
         } else {
             panic!("Trying to read from unrecognized address: {:#x}", addr);
@@ -54,7 +54,7 @@ impl Memory {
     }
 
     pub fn write_word(&mut self, addr: u16, val: u8) {
-        if addr >= 0xC000 && addr <= 0xFFFF {
+        if addr >= 0xC000 {
             self.bank[self.ram_0xC000_0xFFFF][(addr - 0xC000) as usize] = val;
         } else if addr >= 0x8000 && addr <= 0xBFFF {
             self.bank[self.ram_0x8000_0xBFFF][(addr - 0x8000) as usize] = val;
