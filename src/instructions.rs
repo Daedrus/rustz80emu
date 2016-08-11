@@ -461,13 +461,14 @@ struct IncSs { r: Reg16 }
 
 impl Instruction for IncR {
     fn execute(&self, cpu: &mut Cpu) {
-        let incval = cpu.read_reg8(self.r) + 1;
+        let rval = cpu.read_reg8(self.r);
+        let incval = rval.wrapping_add(1);
         cpu.write_reg8(self.r, incval);
 
         if incval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
         if incval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if incval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
-        if (incval - 1) == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+        if rval == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
 
         println!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
