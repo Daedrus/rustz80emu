@@ -1071,6 +1071,25 @@ impl Instruction for RetCc {
 }
 
 
+struct Rrca;
+
+impl Instruction for Rrca {
+    fn execute(&self, cpu: &mut Cpu) {
+        let aval = cpu.read_reg8(Reg8::A);
+
+        let rrval = aval.wrapping_shr(1);
+        cpu.write_reg8(Reg8::A, rrval);
+
+        cpu.clear_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        if rrval & 0b10000000 != 0 { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+
+        println!("{:#06x}: RRCA", cpu.get_pc());
+        cpu.inc_pc(1);
+    }
+}
+
+
 struct Rst { addr: u8 }
 
 impl Instruction for Rst {
@@ -1836,7 +1855,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Unsupported, &LdDdNn{r:Reg16::BC} , &Unsupported, &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &Unsupported,
 
     /* 0x08 */    /* 0x09 */             /* 0x0A */    /* 0x0B */           /* 0x0C */        /* 0x0D */        /* 0x0E */        /* 0x0F */
-    &Unsupported, &AddHlSs{r:Reg16::BC}, &Unsupported, &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &Unsupported,
+    &Unsupported, &AddHlSs{r:Reg16::BC}, &Unsupported, &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &Rrca       ,
 
     /* 0x10 */    /* 0x11 */             /* 0x12 */    /* 0x13 */           /* 0x14 */        /* 0x15 */        /* 0x16 */        /* 0x17 */
     &Djnz       , &LdDdNn{r:Reg16::DE} , &Unsupported, &IncSs{r:Reg16::DE}, &IncR{r:Reg8::D}, &DecR{r:Reg8::D}, &LdRN{r:Reg8::D}, &Unsupported,
