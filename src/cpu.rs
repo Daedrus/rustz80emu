@@ -356,10 +356,10 @@ impl Cpu {
     pub fn read_port(&self, port: Port) -> u8 {
         // TODO
         match port {
-            Port::MEMORY => 0x42,
-            Port::AY38912_REG14 => 0x42,
+            Port::MEMORY => 0x0,
+            Port::AY38912_REG14 => 0x0,
             Port::AY38912_REG14_W => unreachable!(),
-            Port::FE => 0x42
+            Port::FE => 0x0
         }
     }
 

@@ -456,6 +456,22 @@ impl Instruction for Im {
 }
 
 
+struct InAPortN;
+
+impl Instruction for InAPortN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let n = cpu.read_word(cpu.get_pc() + 1);
+        let port = Port::from_u8(n).unwrap();
+
+        let portval = cpu.read_port(port);
+        cpu.write_reg8(Reg8::A, portval);
+
+        println!("{:#06x}: IN A, ({:#04X})", cpu.get_pc(), n);
+        cpu.inc_pc(2);
+    }
+}
+
+
 struct IncR  { r: Reg8  }
 struct IncSs { r: Reg16 }
 
@@ -2003,7 +2019,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &RetCc{cond:FlagCond::NC}, &PopQq{r:Reg16qq::DE}, &Unsupported, &OutPortNA  , &Unsupported, &PushQq{r:Reg16qq::DE}, &SubN       , &Rst{addr:0x10},
 
     /* 0xD8 */                 /* 0xD9 */             /* 0xDA */    /* 0xDB */    /* 0xDC */    /* 0xDD */              /* 0xDE */    /* 0xDF */
-    &RetCc{cond:FlagCond::C} , &Exx                 , &Unsupported, &Unsupported, &Unsupported, &Unsupported          , &Unsupported, &Rst{addr:0x18},
+    &RetCc{cond:FlagCond::C} , &Exx                 , &Unsupported, &InAPortN   , &Unsupported, &Unsupported          , &Unsupported, &Rst{addr:0x18},
 
     /* 0xE0 */                 /* 0xE1 */             /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */              /* 0xE6 */    /* 0xE7 */
     &RetCc{cond:FlagCond::PO}, &PopQq{r:Reg16qq::HL}, &Unsupported, &ExMemSpHl  , &Unsupported, &PushQq{r:Reg16qq::HL}, &AndN       , &Rst{addr:0x20},
