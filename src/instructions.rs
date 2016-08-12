@@ -1149,7 +1149,7 @@ impl Instruction for SubN {
         if aval < n { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
 
         println!("{:#06x}: SUB {:#04X}", cpu.get_pc(), n);
-        cpu.inc_pc(1);
+        cpu.inc_pc(2);
     }
 }
 
