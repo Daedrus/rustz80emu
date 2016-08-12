@@ -1119,7 +1119,26 @@ impl Instruction for RetCc {
 }
 
 
+struct Rra;
 struct Rrca;
+
+impl Instruction for Rra {
+    fn execute(&self, cpu: &mut Cpu) {
+        let aval = cpu.read_reg8(Reg8::A);
+
+        let mut rrval = aval.wrapping_shr(1);
+        if cpu.get_flag(CARRY_FLAG) { rrval |= 0x80; } else { rrval &= 0x7F; }
+
+        cpu.clear_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        if aval & 0x01 != 0 { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+
+        cpu.write_reg8(Reg8::A, rrval);
+
+        println!("{:#06x}: RRA", cpu.get_pc());
+        cpu.inc_pc(1);
+    }
+}
 
 impl Instruction for Rrca {
     fn execute(&self, cpu: &mut Cpu) {
@@ -1923,7 +1942,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Djnz       , &LdDdNn{r:Reg16::DE} , &Unsupported, &IncSs{r:Reg16::DE}, &IncR{r:Reg8::D}, &DecR{r:Reg8::D}, &LdRN{r:Reg8::D}, &Unsupported,
 
     /* 0x18 */    /* 0x19 */             /* 0x1A */    /* 0x1B */           /* 0x1C */        /* 0x1D */        /* 0x1E */        /* 0x1F */
-    &JrE        , &AddHlSs{r:Reg16::DE}, &Unsupported, &DecSs{r:Reg16::DE}, &IncR{r:Reg8::E}, &DecR{r:Reg8::E}, &LdRN{r:Reg8::E}, &Unsupported,
+    &JrE        , &AddHlSs{r:Reg16::DE}, &Unsupported, &DecSs{r:Reg16::DE}, &IncR{r:Reg8::E}, &DecR{r:Reg8::E}, &LdRN{r:Reg8::E}, &Rra        ,
 
     /* 0x20 */    /* 0x21 */             /* 0x22 */    /* 0x23 */           /* 0x24 */        /* 0x25 */        /* 0x26 */        /* 0x27 */
     &JrNz       , &LdDdNn{r:Reg16::HL} , &LdMemNnHl  , &IncSs{r:Reg16::HL}, &IncR{r:Reg8::H}, &DecR{r:Reg8::H}, &LdRN{r:Reg8::H}, &Unsupported,
