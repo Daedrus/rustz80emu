@@ -1126,7 +1126,8 @@ impl Instruction for SetBMemIyD {
 }
 
 
-struct SubN;
+struct SubR { r: Reg8 }
+struct SubN ;
 
 impl Instruction for SubN {
     fn execute(&self, cpu: &mut Cpu) {
@@ -1150,6 +1151,31 @@ impl Instruction for SubN {
 
         println!("{:#06x}: SUB {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
+}
+
+impl Instruction for SubR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let aval = cpu.read_reg8(Reg8::A) as i8;
+        let r = cpu.read_reg8(self.r) as i8;
+
+        let subval = aval.wrapping_sub(r);
+        cpu.write_reg8(Reg8::A, subval as u8);
+
+        if subval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if subval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if aval & 0x0F < r & 0x0F { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        match (aval   & 0b10000000 != 0,
+               r      & 0b10000000 != 0,
+               subval & 0b10000000 != 0) {
+            (true, false, false) | (false, true, true) => cpu.set_flag(PARITY_OVERFLOW_FLAG),
+            _ => cpu.clear_flag(PARITY_OVERFLOW_FLAG)
+        };
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        if aval < r { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+
+        println!("{:#06x}: SUB {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
     }
 }
 
@@ -1885,7 +1911,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
 
     /* 0x90 */         /* 0x91 */         /* 0x92 */         /* 0x93 */         /* 0x94 */         /* 0x95 */         /* 0x96 */    /* 0x97 */
-    &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
+    &SubR{r:Reg8::B} , &SubR{r:Reg8::C} , &SubR{r:Reg8::D} , &SubR{r:Reg8::E} , &SubR{r:Reg8::H} , &SubR{r:Reg8::L} , &Unsupported, &SubR{r:Reg8::A} ,
 
     /* 0x98 */         /* 0x99 */         /* 0x9A */         /* 0x9B */         /* 0x9C */         /* 0x9D */         /* 0x9E */    /* 0x9F */
     &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
