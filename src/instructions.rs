@@ -915,6 +915,7 @@ impl Instruction for Ldir {
 
 
 struct OrR { r: Reg8 }
+struct OrN ;
 
 impl Instruction for OrR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -930,6 +931,24 @@ impl Instruction for OrR {
 
         println!("{:#06x}: OR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
+}
+
+impl Instruction for OrN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let n = cpu.read_word(cpu.get_pc() + 1);
+        let orval = n | cpu.read_reg8(Reg8::A);
+        cpu.write_reg8(Reg8::A, orval);
+
+        cpu.clear_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        cpu.clear_flag(CARRY_FLAG);
+        if orval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+        if orval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if orval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+
+        println!("{:#06x}: OR {:#04X}", cpu.get_pc(), n);
+        cpu.inc_pc(2);
     }
 }
 
@@ -1966,7 +1985,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &RetCc{cond:FlagCond::PE}, &JpMemHl             , &Unsupported, &ExDeHl     , &Unsupported, &Unsupported          , &XorN       , &Rst{addr:0x28},
 
     /* 0xF0 */                 /* 0xF1 */             /* 0xF2 */    /* 0xF3 */    /* 0xF4 */    /* 0xF5 */              /* 0xF6 */    /* 0xF7 */
-    &RetCc{cond:FlagCond::P} , &PopQq{r:Reg16qq::AF}, &Unsupported, &Di         , &Unsupported, &PushQq{r:Reg16qq::AF}, &Unsupported, &Rst{addr:0x30},
+    &RetCc{cond:FlagCond::P} , &PopQq{r:Reg16qq::AF}, &Unsupported, &Di         , &Unsupported, &PushQq{r:Reg16qq::AF}, &OrN        , &Rst{addr:0x30},
 
     /* 0xF8 */                 /* 0xF9 */             /* 0xFA */    /* 0xFB */    /* 0xFC */    /* 0xFD */              /* 0xFE */    /* 0xFF */
     &RetCc{cond:FlagCond::M} , &LdSpHl              , &Unsupported, &Ei         , &Unsupported, &Unsupported          , &Unsupported, &Rst{addr:0x38}
