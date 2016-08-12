@@ -283,8 +283,8 @@ struct DecIyD ;
 
 impl Instruction for DecSs {
     fn execute(&self, cpu: &mut Cpu) {
-        let oldregval = cpu.read_reg16(self.r);
-        cpu.write_reg16(self.r, oldregval - 1);
+        let decval = cpu.read_reg16(self.r).wrapping_sub(1);
+        cpu.write_reg16(self.r, decval);
 
         println!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -293,7 +293,7 @@ impl Instruction for DecSs {
 
 impl Instruction for DecR {
     fn execute(&self, cpu: &mut Cpu) {
-        let decval = cpu.read_reg8(self.r) - 1;
+        let decval = cpu.read_reg8(self.r).wrapping_sub(1);
         cpu.write_reg8(self.r, decval);
 
         cpu.set_flag(ADD_SUBTRACT_FLAG);
