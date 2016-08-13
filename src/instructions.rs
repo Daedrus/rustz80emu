@@ -488,8 +488,22 @@ impl Instruction for Ei {
 }
 
 
+struct ExAfAfAlt;
 struct ExMemSpHl;
 struct ExDeHl;
+
+impl Instruction for ExAfAfAlt {
+    fn execute(&self, cpu: &mut Cpu) {
+        let afval = cpu.read_reg16qq(Reg16qq::AF);
+        let afaltval = cpu.read_reg16qq(Reg16qq::AF_ALT);
+
+        cpu.write_reg16qq(Reg16qq::AF, afaltval);
+        cpu.write_reg16qq(Reg16qq::AF_ALT, afval);
+
+        println!("{:#06x}: EX AF, AF'", cpu.get_pc());
+        cpu.inc_pc(1);
+    }
+}
 
 impl Instruction for ExMemSpHl {
     fn execute(&self, cpu: &mut Cpu) {
@@ -2148,7 +2162,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Unsupported, &LdDdNn{r:Reg16::BC} , &Unsupported, &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &Unsupported,
 
     /* 0x08 */    /* 0x09 */             /* 0x0A */    /* 0x0B */           /* 0x0C */        /* 0x0D */        /* 0x0E */        /* 0x0F */
-    &Unsupported, &AddHlSs{r:Reg16::BC}, &Unsupported, &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &Rrca       ,
+    &ExAfAfAlt  , &AddHlSs{r:Reg16::BC}, &Unsupported, &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &Rrca       ,
 
     /* 0x10 */    /* 0x11 */             /* 0x12 */    /* 0x13 */           /* 0x14 */        /* 0x15 */        /* 0x16 */        /* 0x17 */
     &Djnz       , &LdDdNn{r:Reg16::DE} , &Unsupported, &IncSs{r:Reg16::DE}, &IncR{r:Reg8::D}, &DecR{r:Reg8::D}, &LdRN{r:Reg8::D}, &Unsupported,

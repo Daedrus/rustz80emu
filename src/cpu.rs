@@ -25,6 +25,8 @@ pub enum Reg16qq {
     DE = 0b01,
     HL = 0b10,
     AF = 0b11,
+
+    AF_ALT = 0b111
 }
 }
 
@@ -121,11 +123,12 @@ impl fmt::Debug for Cpu {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "
                                                ------------
-                         ------                | SZ_H_PNC |
-                     a:  | {:02X} |             f: | {:08b} |
-                         ------                ------------
+                                               | SZ_H_PNC |
+                                            f: | {:08b} |
+                                               ------------
 
                          -----------           -----------
+                     af: | {:02X} | {:02X} |   af_alt: | {:02X} | {:02X} |
                      bc: | {:02X} | {:02X} |   bc_alt: | {:02X} | {:02X} |
                      de: | {:02X} | {:02X} |   de_alt: | {:02X} | {:02X} |
                      hl: | {:02X} | {:02X} |   hl_alt: | {:02X} | {:02X} |
@@ -143,8 +146,8 @@ impl fmt::Debug for Cpu {
                          ----------
 
                      {:?}",
-                      self.a,
                       self.f.bits(),
+                      self.a, self.f.bits() as u8, self.a_alt, self.f_alt.bits() as u8,
                       self.b, self.c, self.b_alt, self.c_alt,
                       self.d, self.e, self.d_alt, self.e_alt,
                       self.h, self.l, self.h_alt, self.l_alt,
@@ -273,7 +276,8 @@ impl Cpu {
             Reg16qq::BC => (self.b, self.c),
             Reg16qq::DE => (self.d, self.e),
             Reg16qq::HL => (self.h, self.l),
-            Reg16qq::AF => (self.a, self.f.bits() as u8)
+            Reg16qq::AF     => (self.a,     self.f.bits() as u8),
+            Reg16qq::AF_ALT => (self.a_alt, self.f_alt.bits() as u8)
         };
         ((high as u16) << 8 ) | low as u16
     }
@@ -284,7 +288,8 @@ impl Cpu {
             Reg16qq::BC => { self.b = high; self.c = low; }
             Reg16qq::DE => { self.d = high; self.e = low; }
             Reg16qq::HL => { self.h = high; self.l = low; }
-            Reg16qq::AF => { self.a = high; self.f = StatusIndicatorFlags::from_bits_truncate(low); }
+            Reg16qq::AF =>     { self.a = high;     self.f = StatusIndicatorFlags::from_bits_truncate(low); }
+            Reg16qq::AF_ALT => { self.a_alt = high; self.f_alt = StatusIndicatorFlags::from_bits_truncate(low); }
         }
     }
 
