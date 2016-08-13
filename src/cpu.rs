@@ -314,7 +314,7 @@ impl Cpu {
     pub fn clear_flag(&mut self, flag: StatusIndicatorFlags) { self.f.remove(flag); }
     pub fn get_flag(&self, flag: StatusIndicatorFlags) -> bool { self.f.contains(flag) }
 
-    fn run_instruction(&mut self) {
+    pub fn run_instruction(&mut self) {
         let i0 = self.read_word(self.pc);
         let i1 = self.read_word(self.pc + 1);
         let i3 = self.read_word(self.pc + 3);

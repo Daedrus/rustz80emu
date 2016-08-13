@@ -4,8 +4,29 @@ extern crate z80emulib;
 mod test_zex {
     use z80emulib::memory::*;
     use z80emulib::cpu::*;
+    use z80emulib::instructions::{self};
 
     static ZEXDOC: &'static [u8] = include_bytes!("zexdoc.com");
+
+    fn cpm_bdos(cpu: &mut Cpu) {
+        match cpu.read_reg8(Reg8::C) {
+            2 => {
+                print!("{}", cpu.read_reg8(Reg8::E) as u8 as char);
+            },
+            9 => {
+                let mut addr = cpu.read_reg16(Reg16::DE);
+                loop {
+                    let c = cpu.read_word(addr);
+                    addr = addr.wrapping_add(1);
+                    if c != b'$' { print!("{}", c as char) } else { break; }
+                }
+            },
+            _ => unreachable!()
+        }
+
+        // Manually call RET
+        &instructions::INSTR_TABLE[0xC9].execute(cpu);
+    }
 
     #[test]
     fn test_zexdoc() {
@@ -24,6 +45,13 @@ mod test_zex {
         let mut cpu = Cpu::new(memory);
         cpu.set_pc(0x0100);
 
-        cpu.run();
+        loop {
+            cpu.run_instruction();
+            match cpu.get_pc() {
+                0x0005 => { cpm_bdos(&mut cpu); }
+                0x0000 => { break; }
+                _      => { }
+            }
+        }
     }
 }

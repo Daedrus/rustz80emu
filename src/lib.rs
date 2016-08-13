@@ -4,4 +4,4 @@ extern crate num;
 
 pub mod cpu;
 pub mod memory;
-mod instructions;
+pub mod instructions;
