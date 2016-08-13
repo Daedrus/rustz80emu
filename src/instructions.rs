@@ -591,6 +591,7 @@ impl Instruction for JrE {
 
 struct LdRN      { r: Reg8  }
 struct LdDdNn    { r: Reg16 }
+struct LdDdMemNn { r: Reg16 }
 struct LdHlMemNn ;
 struct LdMemHlN  ;
 struct LdRMemIyD { r: Reg8  }
@@ -626,6 +627,20 @@ impl Instruction for LdDdNn {
         cpu.write_reg16(self.r, nn);
 
         println!("{:#06x}: LD {:?}, {:#06X}", cpu.get_pc(), self.r, nn);
+        cpu.inc_pc(3);
+    }
+}
+
+impl Instruction for LdDdMemNn {
+    fn execute(&self, cpu: &mut Cpu) {
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+        let nnmemval = (cpu.read_word(nn    ) as u16) |
+                      ((cpu.read_word(nn + 1) as u16) << 8);
+
+        cpu.write_reg16(self.r, nnmemval);
+
+        println!("{:#06x}: LD {:?}, ({:#06X})", cpu.get_pc(), self.r, nn);
         cpu.inc_pc(3);
     }
 }
@@ -1568,25 +1583,25 @@ pub const INSTR_TABLE_ED: [&'static Instruction; 256] = [
     &Unsupported, &OutPortCR{r:Reg8::B}, &Unsupported, &LdMemNnDd{r:Reg16::BC}, &Unsupported, &Unsupported, &Im{mode:0} , &Unsupported,
 
     /* 0x48 */    /* 0x49 */             /* 0x4A */    /* 0x4B */               /* 0x4C */    /* 0x4D */    /* 0x4E */    /* 0x4F */
-    &Unsupported, &OutPortCR{r:Reg8::C}, &Unsupported, &Unsupported           , &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &OutPortCR{r:Reg8::C}, &Unsupported, &LdDdMemNn{r:Reg16::BC}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x50 */    /* 0x51 */             /* 0x52 */    /* 0x53 */               /* 0x54 */    /* 0x55 */    /* 0x56 */    /* 0x57 */
     &Unsupported, &OutPortCR{r:Reg8::D}, &Unsupported, &LdMemNnDd{r:Reg16::DE}, &Unsupported, &Unsupported, &Im{mode:1} , &Unsupported,
 
     /* 0x58 */    /* 0x59 */             /* 0x5A */    /* 0x5B */               /* 0x5C */    /* 0x5D */    /* 0x5E */    /* 0x5F */
-    &Unsupported, &OutPortCR{r:Reg8::E}, &Unsupported, &Unsupported           , &Unsupported, &Unsupported, &Im{mode:2}, &Unsupported,
+    &Unsupported, &OutPortCR{r:Reg8::E}, &Unsupported, &LdDdMemNn{r:Reg16::DE}, &Unsupported, &Unsupported, &Im{mode:2}, &Unsupported,
 
     /* 0x60 */    /* 0x61 */             /* 0x62 */    /* 0x63 */               /* 0x64 */    /* 0x65 */    /* 0x66 */    /* 0x67 */
     &Unsupported, &OutPortCR{r:Reg8::H}, &Unsupported, &LdMemNnDd{r:Reg16::HL}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x68 */    /* 0x69 */             /* 0x6A */    /* 0x6B */               /* 0x6C */    /* 0x6D */    /* 0x6E */    /* 0x6F */
-    &Unsupported, &OutPortCR{r:Reg8::L}, &Unsupported, &Unsupported           , &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &OutPortCR{r:Reg8::L}, &Unsupported, &LdDdMemNn{r:Reg16::HL}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x70 */    /* 0x71 */             /* 0x72 */    /* 0x73 */               /* 0x74 */    /* 0x75 */    /* 0x76 */    /* 0x77 */
     &Unsupported, &Unsupported         , &Unsupported, &LdMemNnDd{r:Reg16::SP}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x78 */    /* 0x79 */             /* 0x7A */    /* 0x7B */               /* 0x7C */    /* 0x7D */    /* 0x7E */    /* 0x7F */
-    &Unsupported, &OutPortCR{r:Reg8::A}, &Unsupported, &Unsupported,            &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &OutPortCR{r:Reg8::A}, &Unsupported, &LdDdMemNn{r:Reg16::SP}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */    /* 0x85 */    /* 0x86 */    /* 0x87 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
