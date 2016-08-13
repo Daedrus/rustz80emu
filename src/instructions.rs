@@ -771,6 +771,7 @@ struct LdMemNnA  ;
 struct LdRMemHl  { r: Reg8  }
 struct LdMemNnHl ;
 struct LdAMemNn  ;
+struct LdAMemDe  ;
 struct LdIyNn    ;
 
 impl Instruction for LdRN {
@@ -1034,6 +1035,17 @@ impl Instruction for LdAMemNn {
 
         println!("{:#06x}: LD A, ({:#06X})", cpu.get_pc(), nn);
         cpu.inc_pc(3);
+    }
+}
+
+impl Instruction for LdAMemDe {
+    fn execute(&self, cpu: &mut Cpu) {
+        let deval = cpu.read_reg16(Reg16::DE);
+        let memval = cpu.read_word(deval);
+        cpu.write_reg8(Reg8::A, memval);
+
+        println!("{:#06x}: LD A, (DE)", cpu.get_pc());
+        cpu.inc_pc(1);
     }
 }
 
@@ -2168,7 +2180,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Djnz       , &LdDdNn{r:Reg16::DE} , &Unsupported, &IncSs{r:Reg16::DE}, &IncR{r:Reg8::D}, &DecR{r:Reg8::D}, &LdRN{r:Reg8::D}, &Unsupported,
 
     /* 0x18 */    /* 0x19 */             /* 0x1A */    /* 0x1B */           /* 0x1C */        /* 0x1D */        /* 0x1E */        /* 0x1F */
-    &JrE        , &AddHlSs{r:Reg16::DE}, &Unsupported, &DecSs{r:Reg16::DE}, &IncR{r:Reg8::E}, &DecR{r:Reg8::E}, &LdRN{r:Reg8::E}, &Rra        ,
+    &JrE        , &AddHlSs{r:Reg16::DE}, &LdAMemDe   , &DecSs{r:Reg16::DE}, &IncR{r:Reg8::E}, &DecR{r:Reg8::E}, &LdRN{r:Reg8::E}, &Rra        ,
 
     /* 0x20 */    /* 0x21 */             /* 0x22 */    /* 0x23 */           /* 0x24 */        /* 0x25 */        /* 0x26 */        /* 0x27 */
     &JrNz       , &LdDdNn{r:Reg16::HL} , &LdMemNnHl  , &IncSs{r:Reg16::HL}, &IncR{r:Reg8::H}, &DecR{r:Reg8::H}, &LdRN{r:Reg8::H}, &Unsupported,
