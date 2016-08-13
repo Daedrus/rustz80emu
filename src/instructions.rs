@@ -238,9 +238,10 @@ impl Instruction for Ccf {
 }
 
 
-struct CpR     { r: Reg8 }
-struct CpN     ;
-struct CpMemHl ;
+struct CpR      { r: Reg8 }
+struct CpN      ;
+struct CpMemHl  ;
+struct CpMemIyD ;
 
 impl Instruction for CpR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -291,6 +292,32 @@ impl Instruction for CpMemHl {
 
         println!("{:#06x}: CP (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
+}
+
+impl Instruction for CpMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let d = cpu.read_word(curr_pc + 1) as i8 as i16;
+        let addr = ((cpu.get_iy() as i16) + d) as u16;
+        let memval = cpu.read_word(addr);
+        let accval = cpu.read_reg8(Reg8::A);
+
+        cpu.set_flag(ADD_SUBTRACT_FLAG);
+        if memval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if memval == accval { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if accval < memval { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+        if (accval & 0x0F) < (memval & 0x0F) { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        //TODO: Parity flag?
+
+        let mut d = d as i8;
+        if d & 0b10000000 != 0 {
+            d = (d ^ 0xFF) + 1;
+            println!("{:#06x}: CP (IY-{:#04X})", curr_pc - 1, d);
+        } else {
+            println!("{:#06x}: CP (IY+{:#04X})", curr_pc - 1, d);
+        }
+        cpu.inc_pc(2);
     }
 }
 
@@ -1782,7 +1809,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xB8 */    /* 0xB9 */    /* 0xBA */    /* 0xBB */    /* 0xBC */    /* 0xBD */    /* 0xBE */    /* 0xBF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &CpMemIyD   , &Unsupported,
 
     /* 0xC0 */    /* 0xC1 */    /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */    /* 0xC6 */    /* 0xC7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
