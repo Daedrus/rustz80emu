@@ -571,6 +571,7 @@ impl Instruction for JpCcNn {
 
 struct JrZ ;
 struct JrNz;
+struct JrNcE;
 struct JrCE;
 struct JrE ;
 
@@ -597,6 +598,21 @@ impl Instruction for JrNz {
 
         println!("{:#06x}: JR NZ {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(ZERO_FLAG) {
+            cpu.inc_pc(2);
+        } else {
+            cpu.set_pc(target);
+        }
+    }
+}
+
+impl Instruction for JrNcE {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
+        let target = (curr_pc as i16 + offset as i16) as u16;
+
+        println!("{:#06x}: JR NC, {:#06X}", cpu.get_pc(), target);
+        if cpu.get_flag(CARRY_FLAG) {
             cpu.inc_pc(2);
         } else {
             cpu.set_pc(target);
@@ -2009,7 +2025,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &JrZ        , &AddHlSs{r:Reg16::HL}, &LdHlMemNn  , &DecSs{r:Reg16::HL}, &IncR{r:Reg8::L}, &DecR{r:Reg8::L}, &LdRN{r:Reg8::L}, &Unsupported,
 
     /* 0x30 */    /* 0x31 */             /* 0x32 */    /* 0x33 */           /* 0x34 */        /* 0x35 */        /* 0x36 */        /* 0x37 */
-    &Unsupported, &LdDdNn{r:Reg16::SP} , &LdMemNnA   , &IncSs{r:Reg16::SP}, &Unsupported    , &Unsupported    , &LdMemHlN       , &Scf        ,
+    &JrNcE      , &LdDdNn{r:Reg16::SP} , &LdMemNnA   , &IncSs{r:Reg16::SP}, &Unsupported    , &Unsupported    , &LdMemHlN       , &Scf        ,
 
     /* 0x38 */    /* 0x39 */             /* 0x3A */    /* 0x3B */           /* 0x3C */        /* 0x3D */        /* 0x3E */        /* 0x3F */
     &JrCE       , &AddHlSs{r:Reg16::SP}, &LdAMemNn   , &DecSs{r:Reg16::SP}, &IncR{r:Reg8::A}, &DecR{r:Reg8::A}, &LdRN{r:Reg8::A}, &Ccf        ,
