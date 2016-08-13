@@ -239,6 +239,7 @@ impl Instruction for Ccf {
 
 
 struct CpR     { r: Reg8 }
+struct CpN     ;
 struct CpMemHl ;
 
 impl Instruction for CpR {
@@ -255,6 +256,23 @@ impl Instruction for CpR {
 
         println!("{:#06x}: CP {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
+}
+
+impl Instruction for CpN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let n = cpu.read_word(cpu.get_pc() + 1);
+        let accval = cpu.read_reg8(Reg8::A);
+
+        cpu.set_flag(ADD_SUBTRACT_FLAG);
+        if n & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if n == accval { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if accval < n { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+        if (accval & 0x0F) < (n & 0x0F) { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        //TODO: Parity flag?
+
+        println!("{:#06x}: CP {:#04X}", cpu.get_pc(), n);
+        cpu.inc_pc(2);
     }
 }
 
@@ -2065,6 +2083,6 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &RetCc{cond:FlagCond::P} , &PopQq{r:Reg16qq::AF}, &Unsupported, &Di         , &Unsupported, &PushQq{r:Reg16qq::AF}, &OrN        , &Rst{addr:0x30},
 
     /* 0xF8 */                 /* 0xF9 */             /* 0xFA */    /* 0xFB */    /* 0xFC */    /* 0xFD */              /* 0xFE */    /* 0xFF */
-    &RetCc{cond:FlagCond::M} , &LdSpHl              , &Unsupported, &Ei         , &Unsupported, &Unsupported          , &Unsupported, &Rst{addr:0x38}
+    &RetCc{cond:FlagCond::M} , &LdSpHl              , &Unsupported, &Ei         , &Unsupported, &Unsupported          , &CpN        , &Rst{addr:0x38}
 ];
 
