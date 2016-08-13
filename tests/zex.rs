@@ -15,12 +15,14 @@ mod test_zex {
         for (i, byte) in ZEXDOC.iter().enumerate() {
             dummyrom0[i + 0x100] = *byte;
         }
+        // The ZEXDOC test seems to get its SP from address 0x0006
+        dummyrom0[0x0006] = 0x00;
+        dummyrom0[0x0007] = 0xF0;
 
         let memory = Memory::new(dummyrom0, dummyrom1);
 
         let mut cpu = Cpu::new(memory);
         cpu.set_pc(0x0100);
-        cpu.write_reg16(Reg16::SP, 0xF000);
 
         cpu.run();
     }
