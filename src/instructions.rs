@@ -16,6 +16,36 @@ impl Instruction for Unsupported {
 }
 
 
+struct AdcAN;
+
+impl Instruction for AdcAN {
+    fn execute(&self, cpu: &mut Cpu) {
+        let aval = cpu.read_reg8(Reg8::A);
+        let n = cpu.read_word(cpu.get_pc() + 1);
+
+        let mut addval = aval.wrapping_add(n);
+        if cpu.get_flag(CARRY_FLAG) { addval.wrapping_add(1); }
+        cpu.write_reg8(Reg8::A, addval);
+
+        if addval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if addval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if ((aval & 0x0F) + (n & 0x0F)) > 0x0f { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        match (aval & 0b10000000   != 0,
+               n    & 0b10000000   != 0,
+               addval & 0b10000000 != 0) {
+            (true, true, false) | (false, false, true) => cpu.set_flag(PARITY_OVERFLOW_FLAG),
+            _ => cpu.clear_flag(PARITY_OVERFLOW_FLAG)
+        };
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        if aval as u16 + n as u16 > 0xFF { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+
+        println!("{:#06x}: ADC A, {:#04X}", cpu.get_pc(), n);
+        cpu.inc_pc(2);
+    }
+}
+
+
+
 struct AddAN      ;
 struct AddAR      { r: Reg8  }
 struct AddHlSs    { r: Reg16 }
@@ -608,7 +638,7 @@ impl Instruction for JrZ {
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
 
-        println!("{:#06x}: JR Z {:#06X}", cpu.get_pc(), target);
+        println!("{:#06x}: JR Z, {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(ZERO_FLAG) {
             cpu.set_pc(target);
         } else {
@@ -623,7 +653,7 @@ impl Instruction for JrNz {
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
 
-        println!("{:#06x}: JR NZ {:#06X}", cpu.get_pc(), target);
+        println!("{:#06x}: JR NZ, {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(ZERO_FLAG) {
             cpu.inc_pc(2);
         } else {
@@ -2154,7 +2184,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &RetCc{cond:FlagCond::NZ}, &PopQq{r:Reg16qq::BC}, &JpCcNn{cond:FlagCond::NZ}, &JpNn       , &Unsupported, &PushQq{r:Reg16qq::BC}, &AddAN      , &Rst{addr:0x00},
 
     /* 0xC8 */                 /* 0xC9 */             /* 0xCA */                  /* 0xCB */    /* 0xCC */    /* 0xCD */              /* 0xCE */    /* 0xCF */
-    &RetCc{cond:FlagCond::Z} , &Ret                 , &JpCcNn{cond:FlagCond::Z} , &Unsupported, &Unsupported, &CallNn               , &Unsupported, &Rst{addr:0x08},
+    &RetCc{cond:FlagCond::Z} , &Ret                 , &JpCcNn{cond:FlagCond::Z} , &Unsupported, &Unsupported, &CallNn               , &AdcAN      , &Rst{addr:0x08},
 
     /* 0xD0 */                 /* 0xD1 */             /* 0xD2 */                  /* 0xD3 */    /* 0xD4 */    /* 0xD5 */              /* 0xD6 */    /* 0xD7 */
     &RetCc{cond:FlagCond::NC}, &PopQq{r:Reg16qq::DE}, &JpCcNn{cond:FlagCond::NC}, &OutPortNA  , &Unsupported, &PushQq{r:Reg16qq::DE}, &SubN       , &Rst{addr:0x10},
