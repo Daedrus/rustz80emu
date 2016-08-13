@@ -523,6 +523,7 @@ impl Instruction for IncSs {
 
 struct JpMemHl;
 struct JpNn   ;
+struct JpCcNn { cond: FlagCond }
 
 impl Instruction for JpMemHl {
     fn execute(&self, cpu: &mut Cpu) {
@@ -540,6 +541,30 @@ impl Instruction for JpNn {
 
         println!("{:#06x}: JP {:#06X}", cpu.get_pc(), nn);
         cpu.set_pc(nn);
+    }
+}
+
+impl Instruction for JpCcNn {
+    fn execute(&self, cpu: &mut Cpu) {
+        let condval = match self.cond {
+            FlagCond::NZ => cpu.get_flag(ZERO_FLAG) == false,
+            FlagCond::Z  => cpu.get_flag(ZERO_FLAG) == true,
+            FlagCond::NC => cpu.get_flag(CARRY_FLAG) == false,
+            FlagCond::C  => cpu.get_flag(CARRY_FLAG) == true,
+            FlagCond::PO => cpu.get_flag(PARITY_OVERFLOW_FLAG) == false,
+            FlagCond::PE => cpu.get_flag(PARITY_OVERFLOW_FLAG) == true,
+            FlagCond::P  => cpu.get_flag(SIGN_FLAG) == false,
+            FlagCond::M  => cpu.get_flag(SIGN_FLAG) == true
+        };
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+
+        println!("{:#06x}: JP {:?}, {:#06X}", cpu.get_pc(), self.cond, nn);
+        if condval {
+            cpu.set_pc(nn);
+        } else {
+            cpu.inc_pc(3);
+        }
     }
 }
 
@@ -2061,28 +2086,28 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0xB8 */         /* 0xB9 */         /* 0xBA */         /* 0xBB */         /* 0xBC */         /* 0xBD */         /* 0xBE */    /* 0xBF */
     &CpR{r:Reg8::B}  , &CpR{r:Reg8::C}  , &CpR{r:Reg8::D}  , &CpR{r:Reg8::E}  , &CpR{r:Reg8::H}  , &CpR{r:Reg8::L}  , &CpMemHl    , &CpR{r:Reg8::A}  ,
 
-    /* 0xC0 */                 /* 0xC1 */             /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */              /* 0xC6 */    /* 0xC7 */
-    &RetCc{cond:FlagCond::NZ}, &PopQq{r:Reg16qq::BC}, &Unsupported, &JpNn       , &Unsupported, &PushQq{r:Reg16qq::BC}, &AddAN      , &Rst{addr:0x00},
+    /* 0xC0 */                 /* 0xC1 */             /* 0xC2 */                  /* 0xC3 */    /* 0xC4 */    /* 0xC5 */              /* 0xC6 */    /* 0xC7 */
+    &RetCc{cond:FlagCond::NZ}, &PopQq{r:Reg16qq::BC}, &JpCcNn{cond:FlagCond::NZ}, &JpNn       , &Unsupported, &PushQq{r:Reg16qq::BC}, &AddAN      , &Rst{addr:0x00},
 
-    /* 0xC8 */                 /* 0xC9 */             /* 0xCA */    /* 0xCB */    /* 0xCC */    /* 0xCD */              /* 0xCE */    /* 0xCF */
-    &RetCc{cond:FlagCond::Z} , &Ret                 , &Unsupported, &Unsupported, &Unsupported, &CallNn               , &Unsupported, &Rst{addr:0x08},
+    /* 0xC8 */                 /* 0xC9 */             /* 0xCA */                  /* 0xCB */    /* 0xCC */    /* 0xCD */              /* 0xCE */    /* 0xCF */
+    &RetCc{cond:FlagCond::Z} , &Ret                 , &JpCcNn{cond:FlagCond::Z} , &Unsupported, &Unsupported, &CallNn               , &Unsupported, &Rst{addr:0x08},
 
-    /* 0xD0 */                 /* 0xD1 */             /* 0xD2 */    /* 0xD3 */    /* 0xD4 */    /* 0xD5 */              /* 0xD6 */    /* 0xD7 */
-    &RetCc{cond:FlagCond::NC}, &PopQq{r:Reg16qq::DE}, &Unsupported, &OutPortNA  , &Unsupported, &PushQq{r:Reg16qq::DE}, &SubN       , &Rst{addr:0x10},
+    /* 0xD0 */                 /* 0xD1 */             /* 0xD2 */                  /* 0xD3 */    /* 0xD4 */    /* 0xD5 */              /* 0xD6 */    /* 0xD7 */
+    &RetCc{cond:FlagCond::NC}, &PopQq{r:Reg16qq::DE}, &JpCcNn{cond:FlagCond::NC}, &OutPortNA  , &Unsupported, &PushQq{r:Reg16qq::DE}, &SubN       , &Rst{addr:0x10},
 
-    /* 0xD8 */                 /* 0xD9 */             /* 0xDA */    /* 0xDB */    /* 0xDC */    /* 0xDD */              /* 0xDE */    /* 0xDF */
-    &RetCc{cond:FlagCond::C} , &Exx                 , &Unsupported, &InAPortN   , &Unsupported, &Unsupported          , &Unsupported, &Rst{addr:0x18},
+    /* 0xD8 */                 /* 0xD9 */             /* 0xDA */                  /* 0xDB */    /* 0xDC */    /* 0xDD */              /* 0xDE */    /* 0xDF */
+    &RetCc{cond:FlagCond::C} , &Exx                 , &JpCcNn{cond:FlagCond::C} , &InAPortN   , &Unsupported, &Unsupported          , &Unsupported, &Rst{addr:0x18},
 
-    /* 0xE0 */                 /* 0xE1 */             /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */              /* 0xE6 */    /* 0xE7 */
-    &RetCc{cond:FlagCond::PO}, &PopQq{r:Reg16qq::HL}, &Unsupported, &ExMemSpHl  , &Unsupported, &PushQq{r:Reg16qq::HL}, &AndN       , &Rst{addr:0x20},
+    /* 0xE0 */                 /* 0xE1 */             /* 0xE2 */                  /* 0xE3 */    /* 0xE4 */    /* 0xE5 */              /* 0xE6 */    /* 0xE7 */
+    &RetCc{cond:FlagCond::PO}, &PopQq{r:Reg16qq::HL}, &JpCcNn{cond:FlagCond::PO}, &ExMemSpHl  , &Unsupported, &PushQq{r:Reg16qq::HL}, &AndN       , &Rst{addr:0x20},
 
-    /* 0xE8 */                 /* 0xE9 */             /* 0xEA */    /* 0xEB */    /* 0xEC */    /* 0xED */              /* 0xEE */    /* 0xEF */
-    &RetCc{cond:FlagCond::PE}, &JpMemHl             , &Unsupported, &ExDeHl     , &Unsupported, &Unsupported          , &XorN       , &Rst{addr:0x28},
+    /* 0xE8 */                 /* 0xE9 */             /* 0xEA */                  /* 0xEB */    /* 0xEC */    /* 0xED */              /* 0xEE */    /* 0xEF */
+    &RetCc{cond:FlagCond::PE}, &JpMemHl             , &JpCcNn{cond:FlagCond::PE}, &ExDeHl     , &Unsupported, &Unsupported          , &XorN       , &Rst{addr:0x28},
 
-    /* 0xF0 */                 /* 0xF1 */             /* 0xF2 */    /* 0xF3 */    /* 0xF4 */    /* 0xF5 */              /* 0xF6 */    /* 0xF7 */
-    &RetCc{cond:FlagCond::P} , &PopQq{r:Reg16qq::AF}, &Unsupported, &Di         , &Unsupported, &PushQq{r:Reg16qq::AF}, &OrN        , &Rst{addr:0x30},
+    /* 0xF0 */                 /* 0xF1 */             /* 0xF2 */                  /* 0xF3 */    /* 0xF4 */    /* 0xF5 */              /* 0xF6 */    /* 0xF7 */
+    &RetCc{cond:FlagCond::P} , &PopQq{r:Reg16qq::AF}, &JpCcNn{cond:FlagCond::P} , &Di         , &Unsupported, &PushQq{r:Reg16qq::AF}, &OrN        , &Rst{addr:0x30},
 
-    /* 0xF8 */                 /* 0xF9 */             /* 0xFA */    /* 0xFB */    /* 0xFC */    /* 0xFD */              /* 0xFE */    /* 0xFF */
-    &RetCc{cond:FlagCond::M} , &LdSpHl              , &Unsupported, &Ei         , &Unsupported, &Unsupported          , &CpN        , &Rst{addr:0x38}
+    /* 0xF8 */                 /* 0xF9 */             /* 0xFA */                  /* 0xFB */    /* 0xFC */    /* 0xFD */              /* 0xFE */    /* 0xFF */
+    &RetCc{cond:FlagCond::M} , &LdSpHl              , &JpCcNn{cond:FlagCond::M} , &Ei         , &Unsupported, &Unsupported          , &CpN        , &Rst{addr:0x38}
 ];
 
