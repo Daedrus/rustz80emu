@@ -1,10 +1,7 @@
-#[macro_use] extern crate enum_primitive;
-extern crate num;
-#[macro_use] extern crate bitflags;
+extern crate z80emulib;
 
-mod cpu;
-mod memory;
-mod instructions;
+use z80emulib::memory::*;
+use z80emulib::cpu::*;
 
 use std::env;
 use std::fs;
@@ -25,9 +22,9 @@ fn main() {
     let rom0 = read_bin(rom0_file_name);
     let rom1 = read_bin(rom1_file_name);
 
-    let memory = memory::Memory::new(rom0, rom1);
+    let memory = Memory::new(rom0, rom1);
 
-    let mut cpu = cpu::Cpu::new(memory);
+    let mut cpu = Cpu::new(memory);
 
     cpu.run();
 }
