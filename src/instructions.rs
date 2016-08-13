@@ -24,7 +24,7 @@ impl Instruction for AdcAN {
         let n = cpu.read_word(cpu.get_pc() + 1);
 
         let mut addval = aval.wrapping_add(n);
-        if cpu.get_flag(CARRY_FLAG) { addval.wrapping_add(1); }
+        if cpu.get_flag(CARRY_FLAG) { addval = addval.wrapping_add(1); }
         cpu.write_reg8(Reg8::A, addval);
 
         if addval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
@@ -1377,6 +1377,33 @@ impl Instruction for SetBMemHl {
 }
 
 
+struct SbcR { r: Reg8 }
+
+impl Instruction for SbcR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let aval = cpu.read_reg8(Reg8::A) as i8;
+        let rval = cpu.read_reg8(self.r) as i8;
+
+        let mut subval = aval.wrapping_sub(rval);
+        if cpu.get_flag(CARRY_FLAG) { subval = subval.wrapping_sub(1); }
+
+        if subval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if subval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if aval & 0x0F < rval & 0x0F { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        match (aval   & 0b10000000 != 0,
+               rval   & 0b10000000 != 0,
+               subval & 0b10000000 != 0) {
+            (true, false, false) | (false, true, true) => cpu.set_flag(PARITY_OVERFLOW_FLAG),
+            _ => cpu.clear_flag(PARITY_OVERFLOW_FLAG)
+        };
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        if aval < rval { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+
+        println!("{:#06x}: SBC A, {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+    }
+}
+
 
 struct SubR { r: Reg8 }
 struct SubN ;
@@ -2166,7 +2193,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &SubR{r:Reg8::B} , &SubR{r:Reg8::C} , &SubR{r:Reg8::D} , &SubR{r:Reg8::E} , &SubR{r:Reg8::H} , &SubR{r:Reg8::L} , &Unsupported, &SubR{r:Reg8::A} ,
 
     /* 0x98 */         /* 0x99 */         /* 0x9A */         /* 0x9B */         /* 0x9C */         /* 0x9D */         /* 0x9E */    /* 0x9F */
-    &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
+    &SbcR{r:Reg8::B} , &SbcR{r:Reg8::C} , &SbcR{r:Reg8::D} , &SbcR{r:Reg8::E} , &SbcR{r:Reg8::H} , &SbcR{r:Reg8::L} , &Unsupported, &SbcR{r:Reg8::A} ,
 
     /* 0xA0 */         /* 0xA1 */         /* 0xA2 */         /* 0xA3 */         /* 0xA4 */         /* 0xA5 */         /* 0xA6 */    /* 0xA7 */
     &AndR{r:Reg8::B} , &AndR{r:Reg8::C} , &AndR{r:Reg8::D} , &AndR{r:Reg8::E} , &AndR{r:Reg8::H} , &AndR{r:Reg8::L} , &Unsupported, &AndR{r:Reg8::A} ,
