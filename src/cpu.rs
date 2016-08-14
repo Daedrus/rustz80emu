@@ -121,6 +121,18 @@ impl From<Reg16> for OutputRegisters {
     }
 }
 
+impl From<Reg16qq> for OutputRegisters {
+    fn from(r: Reg16qq) -> OutputRegisters {
+        match r {
+            Reg16qq::BC => OB | OC,
+            Reg16qq::DE => OD | OE,
+            Reg16qq::HL => OH | OL,
+            Reg16qq::AF     => OA | OF,
+            Reg16qq::AF_ALT => OA_ALT | OF_ALT
+        }
+    }
+}
+
 impl From<Reg8> for OutputRegisters {
     fn from(r: Reg8) -> OutputRegisters {
         match r {
@@ -391,6 +403,8 @@ impl Cpu {
     pub fn get_flag(&self, flag: StatusIndicatorFlags) -> bool { self.f.contains(flag) }
 
     pub fn run_instruction(&mut self) {
+        debug!("*****************************************************\n");
+
         let i0 = self.read_word(self.pc);
         let i1 = self.read_word(self.pc + 1);
         let i3 = self.read_word(self.pc + 3);
@@ -424,6 +438,8 @@ impl Cpu {
                 &instructions::INSTR_TABLE      [i0 as usize].execute(self);
             }
         }
+
+        debug!("*****************************************************\n");
     }
 
     pub fn read_word(&self, addr: u16) -> u8 {

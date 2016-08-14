@@ -1268,6 +1268,8 @@ struct PushQq { r: Reg16qq }
 
 impl Instruction for PushQq {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OSP));
+
         let curr_sp = cpu.read_reg16(Reg16::SP);
         let rval = cpu.read_reg16qq(self.r);
 
@@ -1278,6 +1280,8 @@ impl Instruction for PushQq {
 
         info!("{:#06x}: PUSH {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OSP));
     }
 }
 
