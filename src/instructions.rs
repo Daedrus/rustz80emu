@@ -236,6 +236,8 @@ struct CallCcNn { cond: FlagCond }
 
 impl Instruction for CallNn {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OSP));
+
         let mut curr_pc = cpu.get_pc();
         let nn =  (cpu.read_word(curr_pc + 1) as u16) |
                  ((cpu.read_word(curr_pc + 2) as u16) << 8);
@@ -249,6 +251,8 @@ impl Instruction for CallNn {
 
         info!("{:#06x}: CALL {:#06X}", cpu.get_pc(), nn);
         cpu.set_pc(nn);
+
+        debug!("{}", cpu.output(OSP));
     }
 }
 
@@ -640,11 +644,15 @@ impl Instruction for JpMemHl {
 
 impl Instruction for JpNn {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OPC));
+
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
 
         info!("{:#06x}: JP {:#06X}", cpu.get_pc(), nn);
         cpu.set_pc(nn);
+
+        debug!("{}", cpu.output(OPC));
     }
 }
 
@@ -777,22 +785,30 @@ struct LdIyNn    ;
 
 impl Instruction for LdRN {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
+
         let n = cpu.read_word(cpu.get_pc() + 1);
         cpu.write_reg8(self.r, n);
 
         info!("{:#06x}: LD {:?}, {:#04X}", cpu.get_pc(), self.r, n);
         cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
     }
 }
 
 impl Instruction for LdDdNn {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
+
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
         cpu.write_reg16(self.r, nn);
 
         info!("{:#06x}: LD {:?}, {:#06X}", cpu.get_pc(), self.r, nn);
         cpu.inc_pc(3);
+
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
     }
 }
 
@@ -812,6 +828,8 @@ impl Instruction for LdDdMemNn {
 
 impl Instruction for LdHlMemNn {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OH|OL));
+
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
         let nnmemval = (cpu.read_word(nn    ) as u16) |
@@ -821,6 +839,8 @@ impl Instruction for LdHlMemNn {
 
         info!("{:#06x}: LD HL, ({:#06X})", cpu.get_pc(), nn);
         cpu.inc_pc(3);
+
+        debug!("{}", cpu.output(OH|OL));
     }
 }
 
@@ -881,11 +901,15 @@ impl Instruction for LdMemIyDN {
 
 impl Instruction for LdSpHl {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OSP|OH|OL));
+
         let hlval = cpu.read_reg16(Reg16::HL);
         cpu.write_reg16(Reg16::SP, hlval);
 
         info!("{:#06x}: LD SP, HL", cpu.get_pc());
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OSP|OH|OL));
     }
 }
 
