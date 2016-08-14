@@ -107,6 +107,34 @@ bitflags! {
     }
 }
 
+impl From<Reg16> for OutputRegisters {
+    fn from(r: Reg16) -> OutputRegisters {
+        match r {
+            Reg16::BC => OB | OC,
+            Reg16::DE => OD | OE,
+            Reg16::HL => OH | OL,
+            Reg16::SP => OSP,
+            Reg16::BC_ALT => OB_ALT | OC_ALT,
+            Reg16::DE_ALT => OD_ALT | OE_ALT,
+            Reg16::HL_ALT => OH_ALT | OL_ALT
+        }
+    }
+}
+
+impl From<Reg8> for OutputRegisters {
+    fn from(r: Reg8) -> OutputRegisters {
+        match r {
+            Reg8::A => OA,
+            Reg8::B => OB,
+            Reg8::C => OC,
+            Reg8::D => OD,
+            Reg8::E => OE,
+            Reg8::H => OH,
+            Reg8::L => OL
+        }
+    }
+}
+
 pub struct Cpu {
     // main register set
     a: u8, f: StatusIndicatorFlags,
@@ -202,7 +230,7 @@ impl Cpu {
         let ixstr = if regs.contains(OIX) { format!(" {:04X} ", self.ix) } else { String::from("      ") };
         let iystr = if regs.contains(OIY) { format!(" {:04X} ", self.iy) } else { String::from("      ") };
         let spstr = if regs.contains(OSP) { format!(" {:04X} ", self.sp) } else { String::from("      ") };
-        let pcstr = if regs.contains(OPC) { format!(" {:04X} ", self.pc) } else { String::from("      ") };
+        let pcstr = format!(" {:04X} ", self.pc);
 
         outstr.push_str("                    -----------           -----------\n");
         outstr.push_str("                af: |"); outstr.push_str(&astr); outstr.push_str("|"); outstr.push_str(&fstr);
