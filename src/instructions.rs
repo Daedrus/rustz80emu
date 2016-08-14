@@ -9,7 +9,7 @@ struct Unsupported;
 
 impl Instruction for Unsupported {
     fn execute(&self, cpu: &mut Cpu) {
-        trace!("{:?}", cpu);
+        info!("{:?}", cpu);
 
         panic!("Unsupported instruction {:#x} at address {:#06x}", cpu.read_word(cpu.get_pc()), cpu.get_pc());
     }
@@ -39,7 +39,7 @@ impl Instruction for AdcAN {
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
         if aval as u16 + n as u16 > 0xFF { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
 
-        trace!("{:#06x}: ADC A, {:#04X}", cpu.get_pc(), n);
+        info!("{:#06x}: ADC A, {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
     }
 }
@@ -71,7 +71,7 @@ impl Instruction for AddAN {
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
         if aval as u16 + n as u16 > 0xFF { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
 
-        trace!("{:#06x}: ADD A, {:#04X}", cpu.get_pc(), n);
+        info!("{:#06x}: ADD A, {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
     }
 }
@@ -96,7 +96,7 @@ impl Instruction for AddAR {
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
         if aval as u16 + rval as u16 > 0xFF { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
 
-        trace!("{:#06x}: ADD A, {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: ADD A, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -122,7 +122,7 @@ impl Instruction for AddHlSs {
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
         if hlval as u32 + rval as u32 > 0xFFFF { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); };
 
-        trace!("{:#06x}: ADD HL, {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: ADD HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -153,9 +153,9 @@ impl Instruction for AddAMemIyD {
         let mut d = d as i8;
         if d & 0b10000000 != 0 {
             d = (d ^ 0xFF) + 1;
-            trace!("{:#06x}: ADD A, (IY-{:#04X})", curr_pc - 1, d);
+            info!("{:#06x}: ADD A, (IY-{:#04X})", curr_pc - 1, d);
         } else {
-            trace!("{:#06x}: ADD A, (IY+{:#04X})", curr_pc - 1, d);
+            info!("{:#06x}: ADD A, (IY+{:#04X})", curr_pc - 1, d);
         }
         cpu.inc_pc(2);
     }
@@ -180,7 +180,7 @@ impl Instruction for AndR {
         if andval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if andval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
 
-        trace!("{:#06x}: AND {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: AND {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -199,7 +199,7 @@ impl Instruction for AndN {
         if andval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if andval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
 
-        trace!("{:#06x}: AND {:#04X}", cpu.get_pc(), n);
+        info!("{:#06x}: AND {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
     }
 }
@@ -222,9 +222,9 @@ impl Instruction for BitBMemIyD {
         let mut d = d as i8;
         if d & 0b10000000 != 0 {
             d = (d ^ 0xFF) + 1;
-            trace!("{:#06x}: BIT {}, (IY-{:#04X})", curr_pc - 2, self.b, d);
+            info!("{:#06x}: BIT {}, (IY-{:#04X})", curr_pc - 2, self.b, d);
         } else {
-            trace!("{:#06x}: BIT {}, (IY+{:#04X})", curr_pc - 2, self.b, d);
+            info!("{:#06x}: BIT {}, (IY+{:#04X})", curr_pc - 2, self.b, d);
         }
         cpu.inc_pc(2);
     }
@@ -247,7 +247,7 @@ impl Instruction for CallNn {
 
         cpu.write_reg16(Reg16::SP, curr_sp - 2);
 
-        trace!("{:#06x}: CALL {:#06X}", cpu.get_pc(), nn);
+        info!("{:#06x}: CALL {:#06X}", cpu.get_pc(), nn);
         cpu.set_pc(nn);
     }
 }
@@ -269,7 +269,7 @@ impl Instruction for CallCcNn {
             FlagCond::M  => cpu.get_flag(SIGN_FLAG) == true
         };
 
-        trace!("{:#06x}: CALL {:?}, {:#06X}", curr_pc, self.cond, nn);
+        info!("{:#06x}: CALL {:?}, {:#06X}", curr_pc, self.cond, nn);
         if condval {
             curr_pc += 3;
             cpu.write_word(curr_sp - 1, ((curr_pc & 0xFF00) >> 8) as u8);
@@ -295,7 +295,7 @@ impl Instruction for Ccf {
         if cfval { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
 
-        trace!("{:#06x}: CCF", cpu.get_pc());
+        info!("{:#06x}: CCF", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -318,7 +318,7 @@ impl Instruction for CpR {
         if (accval & 0x0F) < (rval & 0x0F) { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
         //TODO: Parity flag?
 
-        trace!("{:#06x}: CP {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: CP {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -335,7 +335,7 @@ impl Instruction for CpN {
         if (accval & 0x0F) < (n & 0x0F) { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
         //TODO: Parity flag?
 
-        trace!("{:#06x}: CP {:#04X}", cpu.get_pc(), n);
+        info!("{:#06x}: CP {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
     }
 }
@@ -353,7 +353,7 @@ impl Instruction for CpMemHl {
         if (accval & 0x0F) < (memval & 0x0F) { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
         //TODO: Parity flag?
 
-        trace!("{:#06x}: CP (HL)", cpu.get_pc());
+        info!("{:#06x}: CP (HL)", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -376,9 +376,9 @@ impl Instruction for CpMemIyD {
         let mut d = d as i8;
         if d & 0b10000000 != 0 {
             d = (d ^ 0xFF) + 1;
-            trace!("{:#06x}: CP (IY-{:#04X})", curr_pc - 1, d);
+            info!("{:#06x}: CP (IY-{:#04X})", curr_pc - 1, d);
         } else {
-            trace!("{:#06x}: CP (IY+{:#04X})", curr_pc - 1, d);
+            info!("{:#06x}: CP (IY+{:#04X})", curr_pc - 1, d);
         }
         cpu.inc_pc(2);
     }
@@ -394,7 +394,7 @@ impl Instruction for DecSs {
         let decval = cpu.read_reg16(self.r).wrapping_sub(1);
         cpu.write_reg16(self.r, decval);
 
-        trace!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -410,7 +410,7 @@ impl Instruction for DecR {
         if decval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
         if decval == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
 
-        trace!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -433,9 +433,9 @@ impl Instruction for DecIyD {
         let mut d = d as i8;
         if d & 0b10000000 != 0 {
             d = (d ^ 0xFF) + 1;
-            trace!("{:#06x}: DEC (IY-{:#04X})", curr_pc - 1, d);
+            info!("{:#06x}: DEC (IY-{:#04X})", curr_pc - 1, d);
         } else {
-            trace!("{:#06x}: DEC (IY+{:#04X})", curr_pc - 1, d);
+            info!("{:#06x}: DEC (IY+{:#04X})", curr_pc - 1, d);
         }
         cpu.inc_pc(2);
     }
@@ -449,7 +449,7 @@ impl Instruction for Di {
         cpu.clear_iff1();
         cpu.clear_iff2();
 
-        trace!("{:#06x}: DI", cpu.get_pc());
+        info!("{:#06x}: DI", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -465,7 +465,7 @@ impl Instruction for Djnz {
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
 
-        trace!("{:#06x}: DJNZ {:#06X}", cpu.get_pc(), target);
+        info!("{:#06x}: DJNZ {:#06X}", cpu.get_pc(), target);
         if bval > 0 {
             cpu.set_pc(target);
         } else {
@@ -482,7 +482,7 @@ impl Instruction for Ei {
         cpu.set_iff1();
         cpu.set_iff2();
 
-        trace!("{:#06x}: EI", cpu.get_pc());
+        info!("{:#06x}: EI", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -500,7 +500,7 @@ impl Instruction for ExAfAfAlt {
         cpu.write_reg16qq(Reg16qq::AF, afaltval);
         cpu.write_reg16qq(Reg16qq::AF_ALT, afval);
 
-        trace!("{:#06x}: EX AF, AF'", cpu.get_pc());
+        info!("{:#06x}: EX AF, AF'", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -520,7 +520,7 @@ impl Instruction for ExMemSpHl {
         cpu.write_word(spval, hllow);
         cpu.write_word(spval + 1, hlhigh);
 
-        trace!("{:#06x}: EX (SP), HL", cpu.get_pc());
+        info!("{:#06x}: EX (SP), HL", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -533,7 +533,7 @@ impl Instruction for ExDeHl {
         cpu.write_reg16(Reg16::DE, hlval);
         cpu.write_reg16(Reg16::HL, deval);
 
-        trace!("{:#06x}: EX DE, HL", cpu.get_pc());
+        info!("{:#06x}: EX DE, HL", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -559,7 +559,7 @@ impl Instruction for Exx {
         cpu.write_reg16(Reg16::DE_ALT, deval);
         cpu.write_reg16(Reg16::HL_ALT, hlval);
 
-        trace!("{:#06x}: EXX", cpu.get_pc());
+        info!("{:#06x}: EXX", cpu.get_pc());
 
         cpu.inc_pc(1);
     }
@@ -572,7 +572,7 @@ impl Instruction for Im {
     fn execute(&self, cpu: &mut Cpu) {
         cpu.set_im(self.mode);
 
-        trace!("{:#06x}: IM {}", cpu.get_pc() - 1, self.mode);
+        info!("{:#06x}: IM {}", cpu.get_pc() - 1, self.mode);
         cpu.inc_pc(1);
     }
 }
@@ -588,7 +588,7 @@ impl Instruction for InAPortN {
         let portval = cpu.read_port(port);
         cpu.write_reg8(Reg8::A, portval);
 
-        trace!("{:#06x}: IN A, ({:#04X})", cpu.get_pc(), n);
+        info!("{:#06x}: IN A, ({:#04X})", cpu.get_pc(), n);
         cpu.inc_pc(2);
     }
 }
@@ -609,7 +609,7 @@ impl Instruction for IncR {
         if rval == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
 
-        trace!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -619,7 +619,7 @@ impl Instruction for IncSs {
         let incval = cpu.read_reg16(self.r) + 1;
         cpu.write_reg16(self.r, incval);
 
-        trace!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -633,7 +633,7 @@ impl Instruction for JpMemHl {
     fn execute(&self, cpu: &mut Cpu) {
         let hlval = cpu.read_reg16(Reg16::HL);
 
-        trace!("{:#06x}: JP (HL)", cpu.get_pc());
+        info!("{:#06x}: JP (HL)", cpu.get_pc());
         cpu.set_pc(hlval);
     }
 }
@@ -643,7 +643,7 @@ impl Instruction for JpNn {
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
 
-        trace!("{:#06x}: JP {:#06X}", cpu.get_pc(), nn);
+        info!("{:#06x}: JP {:#06X}", cpu.get_pc(), nn);
         cpu.set_pc(nn);
     }
 }
@@ -663,7 +663,7 @@ impl Instruction for JpCcNn {
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
 
-        trace!("{:#06x}: JP {:?}, {:#06X}", cpu.get_pc(), self.cond, nn);
+        info!("{:#06x}: JP {:?}, {:#06X}", cpu.get_pc(), self.cond, nn);
         if condval {
             cpu.set_pc(nn);
         } else {
@@ -685,7 +685,7 @@ impl Instruction for JrZ {
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
 
-        trace!("{:#06x}: JR Z, {:#06X}", cpu.get_pc(), target);
+        info!("{:#06x}: JR Z, {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(ZERO_FLAG) {
             cpu.set_pc(target);
         } else {
@@ -700,7 +700,7 @@ impl Instruction for JrNz {
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
 
-        trace!("{:#06x}: JR NZ, {:#06X}", cpu.get_pc(), target);
+        info!("{:#06x}: JR NZ, {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(ZERO_FLAG) {
             cpu.inc_pc(2);
         } else {
@@ -715,7 +715,7 @@ impl Instruction for JrNcE {
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
 
-        trace!("{:#06x}: JR NC, {:#06X}", cpu.get_pc(), target);
+        info!("{:#06x}: JR NC, {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(CARRY_FLAG) {
             cpu.inc_pc(2);
         } else {
@@ -730,7 +730,7 @@ impl Instruction for JrCE {
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
 
-        trace!("{:#06x}: JR C, {:#06X}", cpu.get_pc(), target);
+        info!("{:#06x}: JR C, {:#06X}", cpu.get_pc(), target);
 
         if cpu.get_flag(CARRY_FLAG) {
             cpu.set_pc(target);
@@ -746,7 +746,7 @@ impl Instruction for JrE {
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (curr_pc as i16 + offset as i16) as u16;
 
-        trace!("{:#06x}: JR {:#06X}", cpu.get_pc(), target);
+        info!("{:#06x}: JR {:#06X}", cpu.get_pc(), target);
         cpu.set_pc(target);
     }
 }
@@ -780,7 +780,7 @@ impl Instruction for LdRN {
         let n = cpu.read_word(cpu.get_pc() + 1);
         cpu.write_reg8(self.r, n);
 
-        trace!("{:#06x}: LD {:?}, {:#04X}", cpu.get_pc(), self.r, n);
+        info!("{:#06x}: LD {:?}, {:#04X}", cpu.get_pc(), self.r, n);
         cpu.inc_pc(2);
     }
 }
@@ -791,7 +791,7 @@ impl Instruction for LdDdNn {
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
         cpu.write_reg16(self.r, nn);
 
-        trace!("{:#06x}: LD {:?}, {:#06X}", cpu.get_pc(), self.r, nn);
+        info!("{:#06x}: LD {:?}, {:#06X}", cpu.get_pc(), self.r, nn);
         cpu.inc_pc(3);
     }
 }
@@ -805,7 +805,7 @@ impl Instruction for LdDdMemNn {
 
         cpu.write_reg16(self.r, nnmemval);
 
-        trace!("{:#06x}: LD {:?}, ({:#06X})", cpu.get_pc(), self.r, nn);
+        info!("{:#06x}: LD {:?}, ({:#06X})", cpu.get_pc(), self.r, nn);
         cpu.inc_pc(3);
     }
 }
@@ -819,7 +819,7 @@ impl Instruction for LdHlMemNn {
 
         cpu.write_reg16(Reg16::HL, nnmemval);
 
-        trace!("{:#06x}: LD HL, ({:#06X})", cpu.get_pc(), nn);
+        info!("{:#06x}: LD HL, ({:#06X})", cpu.get_pc(), nn);
         cpu.inc_pc(3);
     }
 }
@@ -832,7 +832,7 @@ impl Instruction for LdMemHlN {
 
         cpu.write_word(hlval, n);
 
-        trace!("{:#06x}: LD (HL), {:#04X}", cpu.get_pc(), n);
+        info!("{:#06x}: LD (HL), {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
     }
 }
@@ -850,9 +850,9 @@ impl Instruction for LdRMemIyD {
         let mut d = d as i8;
         if d & 0b10000000 != 0 {
             d = (d ^ 0xFF) + 1;
-            trace!("{:#06x}: LD {:?}, (IY-{:#04X})", curr_pc - 1, self.r, d);
+            info!("{:#06x}: LD {:?}, (IY-{:#04X})", curr_pc - 1, self.r, d);
         } else {
-            trace!("{:#06x}: LD {:?}, (IY+{:#04X})", curr_pc - 1, self.r, d);
+            info!("{:#06x}: LD {:?}, (IY+{:#04X})", curr_pc - 1, self.r, d);
         }
 
         cpu.inc_pc(2);
@@ -870,9 +870,9 @@ impl Instruction for LdMemIyDN {
         let mut d = d as i8;
         if d & 0b10000000 != 0 {
             d = (d ^ 0xFF) + 1;
-            trace!("{:#06x}: LD (IY-{:#04X}), {:#04X}", curr_pc - 1, d, n);
+            info!("{:#06x}: LD (IY-{:#04X}), {:#04X}", curr_pc - 1, d, n);
         } else {
-            trace!("{:#06x}: LD (IY+{:#04X}), {:#04X}", curr_pc - 1, d, n);
+            info!("{:#06x}: LD (IY+{:#04X}), {:#04X}", curr_pc - 1, d, n);
         }
 
         cpu.inc_pc(3);
@@ -884,7 +884,7 @@ impl Instruction for LdSpHl {
         let hlval = cpu.read_reg16(Reg16::HL);
         cpu.write_reg16(Reg16::SP, hlval);
 
-        trace!("{:#06x}: LD SP, HL", cpu.get_pc());
+        info!("{:#06x}: LD SP, HL", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -896,7 +896,7 @@ impl Instruction for LdIxNn {
 
         cpu.set_ix(nn);
 
-        trace!("{:#06x}: LD IX, {:#06X}", cpu.get_pc() - 1, nn);
+        info!("{:#06x}: LD IX, {:#06X}", cpu.get_pc() - 1, nn);
         cpu.inc_pc(3);
     }
 }
@@ -910,7 +910,7 @@ impl Instruction for LdIxMemNn {
 
         cpu.set_ix(nnmemval);
 
-        trace!("{:#06x}: LD IX, TODO {:#06X}", cpu.get_pc() - 1, nnmemval);
+        info!("{:#06x}: LD IX, TODO {:#06X}", cpu.get_pc() - 1, nnmemval);
         cpu.inc_pc(3);
     }
 }
@@ -925,7 +925,7 @@ impl Instruction for LdMemNnIx {
         cpu.write_word(nn, ixlow);
         cpu.write_word(nn + 1, ixhigh);
 
-        trace!("{:#06x}: LD ({:#06X}), IX", cpu.get_pc() - 1, nn);
+        info!("{:#06x}: LD ({:#06X}), IX", cpu.get_pc() - 1, nn);
         cpu.inc_pc(3);
     }
 }
@@ -941,9 +941,9 @@ impl Instruction for LdMemIxDN {
         let mut d = d as i8;
         if d & 0b10000000 != 0 {
             d = (d ^ 0xFF) + 1;
-            trace!("{:#06x}: LD (IX-{:#04X}), {:#04X}", curr_pc - 1, d, n);
+            info!("{:#06x}: LD (IX-{:#04X}), {:#04X}", curr_pc - 1, d, n);
         } else {
-            trace!("{:#06x}: LD (IX+{:#04X}), {:#04X}", curr_pc - 1, d, n);
+            info!("{:#06x}: LD (IX+{:#04X}), {:#04X}", curr_pc - 1, d, n);
         }
 
         cpu.inc_pc(3);
@@ -954,7 +954,7 @@ impl Instruction for LdRR {
     fn execute(&self, cpu: &mut Cpu) {
         let rsval = cpu.read_reg8(self.rs);
         cpu.write_reg8(self.rt, rsval);
-        trace!("{:#06x}: LD {:?}, {:?}", cpu.get_pc(), self.rt, self.rs);
+        info!("{:#06x}: LD {:?}, {:?}", cpu.get_pc(), self.rt, self.rs);
         cpu.inc_pc(1);
     }
 }
@@ -971,7 +971,7 @@ impl Instruction for LdMemNnDd {
         cpu.write_word(nn, rlow);
         cpu.write_word(nn + 1, rhigh);
 
-        trace!("{:#06x}: LD ({:#06X}), {:?}", cpu.get_pc() - 1, nn, self.r);
+        info!("{:#06x}: LD ({:#06X}), {:?}", cpu.get_pc() - 1, nn, self.r);
         cpu.inc_pc(3);
     }
 }
@@ -983,7 +983,7 @@ impl Instruction for LdMemHlR {
 
         cpu.write_word(addr, val);
 
-        trace!("{:#06x}: LD (HL), {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: LD (HL), {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -996,7 +996,7 @@ impl Instruction for LdMemNnA {
 
         cpu.write_word(nn, aval);
 
-        trace!("{:#06x}: LD ({:#06X}), A", cpu.get_pc(), nn);
+        info!("{:#06x}: LD ({:#06X}), A", cpu.get_pc(), nn);
         cpu.inc_pc(3);
     }
 }
@@ -1006,7 +1006,7 @@ impl Instruction for LdRMemHl {
         let hlmemval = cpu.read_word(cpu.read_reg16(Reg16::HL));
         cpu.write_reg8(self.r, hlmemval);
 
-        trace!("{:#06x}: LD {:?}, (HL)", cpu.get_pc(), self.r);
+        info!("{:#06x}: LD {:?}, (HL)", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -1022,7 +1022,7 @@ impl Instruction for LdMemNnHl {
         cpu.write_word(nn, hllow);
         cpu.write_word(nn + 1, hlhigh);
 
-        trace!("{:#06x}: LD ({:#06X}), HL", cpu.get_pc(), nn);
+        info!("{:#06x}: LD ({:#06X}), HL", cpu.get_pc(), nn);
         cpu.inc_pc(3);
     }
 }
@@ -1034,7 +1034,7 @@ impl Instruction for LdAMemNn {
         let memval = cpu.read_word(nn);
         cpu.write_reg8(Reg8::A, memval);
 
-        trace!("{:#06x}: LD A, ({:#06X})", cpu.get_pc(), nn);
+        info!("{:#06x}: LD A, ({:#06X})", cpu.get_pc(), nn);
         cpu.inc_pc(3);
     }
 }
@@ -1045,7 +1045,7 @@ impl Instruction for LdAMemDe {
         let memval = cpu.read_word(deval);
         cpu.write_reg8(Reg8::A, memval);
 
-        trace!("{:#06x}: LD A, (DE)", cpu.get_pc());
+        info!("{:#06x}: LD A, (DE)", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -1056,7 +1056,7 @@ impl Instruction for LdMemDeA {
         let aval = cpu.read_reg8(Reg8::A);
         cpu.write_word(deval, aval);
 
-        trace!("{:#06x}: LD (DE), A", cpu.get_pc());
+        info!("{:#06x}: LD (DE), A", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -1068,7 +1068,7 @@ impl Instruction for LdIyNn {
 
         cpu.set_iy(nn);
 
-        trace!("{:#06x}: LD IY, {:#06X}", cpu.get_pc() - 1, nn);
+        info!("{:#06x}: LD IY, {:#06X}", cpu.get_pc() - 1, nn);
         cpu.inc_pc(3);
     }
 }
@@ -1097,7 +1097,7 @@ impl Instruction for Lddr {
         cpu.clear_flag(PARITY_OVERFLOW_FLAG);
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
 
-        trace!("{:#06x}: LDDR", cpu.get_pc() - 1);
+        info!("{:#06x}: LDDR", cpu.get_pc() - 1);
         cpu.inc_pc(1);
     }
 }
@@ -1126,7 +1126,7 @@ impl Instruction for Ldir {
         cpu.clear_flag(PARITY_OVERFLOW_FLAG);
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
 
-        trace!("{:#06x}: LDIR", cpu.get_pc() - 1);
+        info!("{:#06x}: LDIR", cpu.get_pc() - 1);
         cpu.inc_pc(1);
     }
 }
@@ -1148,7 +1148,7 @@ impl Instruction for OrR {
         if orval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if orval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
 
-        trace!("{:#06x}: OR {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: OR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -1166,7 +1166,7 @@ impl Instruction for OrN {
         if orval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if orval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
 
-        trace!("{:#06x}: OR {:#04X}", cpu.get_pc(), n);
+        info!("{:#06x}: OR {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
     }
 }
@@ -1186,7 +1186,7 @@ impl Instruction for OrMemHl {
         if orval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if orval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
 
-        trace!("{:#06x}: OR (HL)", cpu.get_pc());
+        info!("{:#06x}: OR (HL)", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -1202,7 +1202,7 @@ impl Instruction for OutPortCR {
 
         cpu.write_port(port, rval);
 
-        trace!("{:#06x}: OUT (C), {:?}", cpu.get_pc() - 1, self.r);
+        info!("{:#06x}: OUT (C), {:?}", cpu.get_pc() - 1, self.r);
         cpu.inc_pc(1);
     }
 }
@@ -1215,7 +1215,7 @@ impl Instruction for OutPortNA {
 
         cpu.write_port(port, accval);
 
-        trace!("{:#06x}: OUT ({:#04X}), A", cpu.get_pc(), n);
+        info!("{:#06x}: OUT ({:#04X}), A", cpu.get_pc(), n);
         cpu.inc_pc(2);
     }
 }
@@ -1234,7 +1234,7 @@ impl Instruction for PopQq {
 
         cpu.write_reg16(Reg16::SP, curr_sp + 2);
 
-        trace!("{:#06x}: POP {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: POP {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -1252,7 +1252,7 @@ impl Instruction for PushQq {
 
         cpu.write_reg16(Reg16::SP, curr_sp - 2);
 
-        trace!("{:#06x}: PUSH {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: PUSH {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -1273,9 +1273,9 @@ impl Instruction for ResBMemIyD {
         let mut d = d as i8;
         if d & 0b10000000 != 0 {
             d = (d ^ 0xFF) + 1;
-            trace!("{:#06x}: RES {}, (IY-{:#04X})", curr_pc - 2, self.b, d);
+            info!("{:#06x}: RES {}, (IY-{:#04X})", curr_pc - 2, self.b, d);
         } else {
-            trace!("{:#06x}: RES {}, (IY+{:#04X})", curr_pc - 2, self.b, d);
+            info!("{:#06x}: RES {}, (IY+{:#04X})", curr_pc - 2, self.b, d);
         }
         cpu.inc_pc(2);
     }
@@ -1288,7 +1288,7 @@ impl Instruction for ResBMemHl {
         let memval = cpu.read_word(hlval);
         cpu.write_word(hlval, memval & !(1 << self.b));
 
-        trace!("{:#06x}: RES {}, (HL)", cpu.get_pc() - 1, self.b);
+        info!("{:#06x}: RES {}, (HL)", cpu.get_pc() - 1, self.b);
         cpu.inc_pc(1);
     }
 }
@@ -1306,7 +1306,7 @@ impl Instruction for Ret {
 
         cpu.write_reg16(Reg16::SP, curr_sp + 2);
 
-        trace!("{:#06x}: RET", cpu.get_pc());
+        info!("{:#06x}: RET", cpu.get_pc());
         cpu.set_pc(((high as u16) << 8 ) | low as u16);
     }
 }
@@ -1324,7 +1324,7 @@ impl Instruction for RetCc {
             FlagCond::M  => cpu.get_flag(SIGN_FLAG) == true
         };
 
-        trace!("{:#06x}: RET {:?}", cpu.get_pc(), self.cond);
+        info!("{:#06x}: RET {:?}", cpu.get_pc(), self.cond);
 
         if condval {
             let curr_sp = cpu.read_reg16(Reg16::SP);
@@ -1358,7 +1358,7 @@ impl Instruction for RlR {
 
         cpu.write_reg8(self.r, rlval);
 
-        trace!("{:#06x}: RL {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: RL {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -1376,7 +1376,7 @@ impl Instruction for Rlca {
 
         cpu.write_reg8(Reg8::A, rlval);
 
-        trace!("{:#06x}: RLCA", cpu.get_pc());
+        info!("{:#06x}: RLCA", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -1398,7 +1398,7 @@ impl Instruction for Rra {
 
         cpu.write_reg8(Reg8::A, rrval);
 
-        trace!("{:#06x}: RRA", cpu.get_pc());
+        info!("{:#06x}: RRA", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -1414,7 +1414,7 @@ impl Instruction for Rrca {
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
         if rrval & 0b10000000 != 0 { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
 
-        trace!("{:#06x}: RRCA", cpu.get_pc());
+        info!("{:#06x}: RRCA", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -1432,7 +1432,7 @@ impl Instruction for Rst {
 
         cpu.write_reg16(Reg16::SP, curr_sp - 2);
 
-        trace!("{:#06x}: RST {:#04X}", cpu.get_pc(), self.addr);
+        info!("{:#06x}: RST {:#04X}", cpu.get_pc(), self.addr);
         cpu.set_pc(self.addr as u16);
     }
 }
@@ -1446,7 +1446,7 @@ impl Instruction for Scf {
         cpu.clear_flag(HALF_CARRY_FLAG);
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
 
-        trace!("{:#06x}: SCF", cpu.get_pc());
+        info!("{:#06x}: SCF", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -1467,9 +1467,9 @@ impl Instruction for SetBMemIyD {
         let mut d = d as i8;
         if d & 0b10000000 != 0 {
             d = (d ^ 0xFF) + 1;
-            trace!("{:#06x}: SET {}, (IY-{:#04X})", curr_pc - 2, self.b, d);
+            info!("{:#06x}: SET {}, (IY-{:#04X})", curr_pc - 2, self.b, d);
         } else {
-            trace!("{:#06x}: SET {}, (IY+{:#04X})", curr_pc - 2, self.b, d);
+            info!("{:#06x}: SET {}, (IY+{:#04X})", curr_pc - 2, self.b, d);
         }
         cpu.inc_pc(2);
     }
@@ -1482,7 +1482,7 @@ impl Instruction for SetBMemHl {
         let memval = cpu.read_word(hlval);
         cpu.write_word(hlval, memval | (1 << self.b));
 
-        trace!("{:#06x}: SET {}, (HL)", cpu.get_pc() - 1, self.b);
+        info!("{:#06x}: SET {}, (HL)", cpu.get_pc() - 1, self.b);
         cpu.inc_pc(1);
     }
 }
@@ -1510,7 +1510,7 @@ impl Instruction for SbcR {
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
         if aval < rval { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
 
-        trace!("{:#06x}: SBC A, {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: SBC A, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -1539,7 +1539,7 @@ impl Instruction for SubN {
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
         if aval < n { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
 
-        trace!("{:#06x}: SUB {:#04X}", cpu.get_pc(), n);
+        info!("{:#06x}: SUB {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
     }
 }
@@ -1564,7 +1564,7 @@ impl Instruction for SubR {
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
         if aval < r { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
 
-        trace!("{:#06x}: SUB {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: SUB {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -1587,7 +1587,7 @@ impl Instruction for XorR {
         if xorval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if xorval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
 
-        trace!("{:#06x}: XOR {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: XOR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 }
@@ -1606,7 +1606,7 @@ impl Instruction for XorN {
         if xorval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if xorval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
 
-        trace!("{:#06x}: XOR {:#04X}", cpu.get_pc(), n);
+        info!("{:#06x}: XOR {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
     }
 }
@@ -1627,7 +1627,7 @@ impl Instruction for XorMemHl {
         if xorval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if xorval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
 
-        trace!("{:#06x}: XOR (HL)", cpu.get_pc());
+        info!("{:#06x}: XOR (HL)", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }

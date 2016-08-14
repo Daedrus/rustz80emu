@@ -10,7 +10,7 @@ mod test_zex {
     use z80emulib::cpu::*;
     use z80emulib::instructions::{self};
 
-    use log::{LogRecord, LogLevelFilter};
+    use log::{LogRecord};
     use env_logger::LogBuilder;
     use std::env;
 
@@ -22,7 +22,7 @@ mod test_zex {
         let mut builder = LogBuilder::new();
 
         let format = |record: &LogRecord| { format!("{}", record.args()) };
-        builder.format(format).filter(None, LogLevelFilter::Info);
+        builder.format(format);
 
         if env::var("RUST_LOG").is_ok() {
             builder.parse(&env::var("RUST_LOG").unwrap());

@@ -2,7 +2,7 @@ extern crate z80emulib;
 
 #[macro_use] extern crate log;
 extern crate env_logger;
-use log::{LogRecord, LogLevelFilter};
+use log::{LogRecord};
 use env_logger::LogBuilder;
 
 use z80emulib::memory::*;
@@ -24,7 +24,7 @@ fn setup_logging() {
     let mut builder = LogBuilder::new();
 
     let format = |record: &LogRecord| { format!("{}", record.args()) };
-    builder.format(format).filter(None, LogLevelFilter::Info);
+    builder.format(format);
 
     if env::var("RUST_LOG").is_ok() {
         builder.parse(&env::var("RUST_LOG").unwrap());
