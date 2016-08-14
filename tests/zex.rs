@@ -1,12 +1,35 @@
 extern crate z80emulib;
 
+#[macro_use] extern crate log;
+extern crate env_logger;
+
 #[cfg(test)]
 mod test_zex {
+
     use z80emulib::memory::*;
     use z80emulib::cpu::*;
     use z80emulib::instructions::{self};
 
+    use log::{LogRecord, LogLevelFilter};
+    use env_logger::LogBuilder;
+    use std::env;
+
+
     static ZEXDOC: &'static [u8] = include_bytes!("zexdoc.com");
+
+    // TODO: Reuse the function from main.rs
+    fn setup_logging() {
+        let mut builder = LogBuilder::new();
+
+        let format = |record: &LogRecord| { format!("{}", record.args()) };
+        builder.format(format).filter(None, LogLevelFilter::Info);
+
+        if env::var("RUST_LOG").is_ok() {
+            builder.parse(&env::var("RUST_LOG").unwrap());
+        }
+
+        builder.init().unwrap();
+    }
 
     fn cpm_bdos(cpu: &mut Cpu) {
         match cpu.read_reg8(Reg8::C) {
@@ -30,6 +53,8 @@ mod test_zex {
 
     #[test]
     fn test_zexdoc() {
+        setup_logging();
+
         let mut dummyrom0: Vec<u8> = vec![0; 16 * 1024];
         let dummyrom1: Vec<u8> = vec![0; 16 * 1024];
 

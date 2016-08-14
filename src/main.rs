@@ -1,5 +1,10 @@
 extern crate z80emulib;
 
+#[macro_use] extern crate log;
+extern crate env_logger;
+use log::{LogRecord, LogLevelFilter};
+use env_logger::LogBuilder;
+
 use z80emulib::memory::*;
 use z80emulib::cpu::*;
 
@@ -15,7 +20,22 @@ fn read_bin<P: AsRef<Path>>(path: P) -> Vec<u8> {
     file_buf
 }
 
+fn setup_logging() {
+    let mut builder = LogBuilder::new();
+
+    let format = |record: &LogRecord| { format!("{}", record.args()) };
+    builder.format(format).filter(None, LogLevelFilter::Info);
+
+    if env::var("RUST_LOG").is_ok() {
+        builder.parse(&env::var("RUST_LOG").unwrap());
+    }
+
+    builder.init().unwrap();
+}
+
 fn main() {
+    setup_logging();
+
     let rom0_file_name = env::args().nth(1).unwrap();
     let rom1_file_name = env::args().nth(2).unwrap();
 
