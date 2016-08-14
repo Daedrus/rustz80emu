@@ -36,21 +36,25 @@ impl Memory {
     }
 
     pub fn read_word(&self, addr: u16) -> u8 {
+        let mut val = 0;
         if addr <= 0x3FFF {
             match self.rom {
-                0 => self.rom0[addr as usize],
-                1 => self.rom1[addr as usize],
+                0 => { val = self.rom0[addr as usize]; },
+                1 => { val = self.rom1[addr as usize]; },
                 _ => unreachable!()
             }
         } else if addr >= 0x4000 && addr <= 0x7FFF {
-            self.bank[self.ram_0x4000_0x7FFF][(addr - 0x4000) as usize]
+            val = self.bank[self.ram_0x4000_0x7FFF][(addr - 0x4000) as usize];
         } else if addr >= 0x8000 && addr <= 0xBFFF {
-            self.bank[self.ram_0x8000_0xBFFF][(addr - 0x8000) as usize]
+            val = self.bank[self.ram_0x8000_0xBFFF][(addr - 0x8000) as usize];
         } else if addr >= 0xC000 {
-            self.bank[self.ram_0xC000_0xFFFF][(addr - 0xC000) as usize]
+            val = self.bank[self.ram_0xC000_0xFFFF][(addr - 0xC000) as usize];
         } else {
             panic!("Trying to read from unrecognized address: {:#x}", addr);
         }
+
+        debug!("                Read value {:#04X} from address {:#06X}", val, addr);
+        val
     }
 
     pub fn write_word(&mut self, addr: u16, val: u8) {
@@ -63,6 +67,8 @@ impl Memory {
         } else {
             panic!("Trying to write to unrecognized address: {:#x}", addr);
         }
+
+        debug!("                Write value {:#04X} to address {:#06X}", val, addr);
     }
 
     pub fn change_bank(&mut self, val: u8) {
