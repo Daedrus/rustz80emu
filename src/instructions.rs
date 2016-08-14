@@ -1342,11 +1342,30 @@ impl Instruction for RetCc {
 }
 
 
-struct RlR { r: Reg8 }
+struct RlR  { r: Reg8 }
+struct Rlca ;
 
 impl Instruction for RlR {
     fn execute(&self, cpu: &mut Cpu) {
-        let aval = cpu.read_reg8(self.r);
+        let rval = cpu.read_reg8(self.r);
+
+        let mut rlval = rval.wrapping_shl(1);
+        if cpu.get_flag(CARRY_FLAG) { rlval |= 0x01; } else { rlval &= 0xFE; }
+
+        cpu.clear_flag(HALF_CARRY_FLAG);
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        if rval & 0x80 != 0 { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+
+        cpu.write_reg8(self.r, rlval);
+
+        println!("{:#06x}: RL {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+    }
+}
+
+impl Instruction for Rlca {
+    fn execute(&self, cpu: &mut Cpu) {
+        let aval = cpu.read_reg8(Reg8::A);
 
         let mut rlval = aval.wrapping_shl(1);
         if cpu.get_flag(CARRY_FLAG) { rlval |= 0x01; } else { rlval &= 0xFE; }
@@ -1355,9 +1374,9 @@ impl Instruction for RlR {
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
         if aval & 0x80 != 0 { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
 
-        cpu.write_reg8(self.r, rlval);
+        cpu.write_reg8(Reg8::A, rlval);
 
-        println!("{:#06x}: RL {:?}", cpu.get_pc(), self.r);
+        println!("{:#06x}: RLCA", cpu.get_pc());
         cpu.inc_pc(1);
     }
 }
@@ -2204,7 +2223,7 @@ pub const INSTR_TABLE_FDCB: [&'static Instruction; 256] = [
 
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0x00 */    /* 0x01 */             /* 0x02 */    /* 0x03 */           /* 0x04 */        /* 0x05 */        /* 0x06 */        /* 0x07 */
-    &Unsupported, &LdDdNn{r:Reg16::BC} , &Unsupported, &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &Unsupported,
+    &Unsupported, &LdDdNn{r:Reg16::BC} , &Unsupported, &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &Rlca       ,
 
     /* 0x08 */    /* 0x09 */             /* 0x0A */    /* 0x0B */           /* 0x0C */        /* 0x0D */        /* 0x0E */        /* 0x0F */
     &ExAfAfAlt  , &AddHlSs{r:Reg16::BC}, &Unsupported, &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &Rrca       ,
