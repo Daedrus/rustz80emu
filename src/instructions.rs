@@ -1249,6 +1249,8 @@ struct PopQq { r: Reg16qq }
 
 impl Instruction for PopQq {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OSP));
+
         let curr_sp = cpu.read_reg16(Reg16::SP);
 
         let low = cpu.read_word(curr_sp);
@@ -1260,6 +1262,8 @@ impl Instruction for PopQq {
 
         info!("{:#06x}: POP {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OSP));
     }
 }
 
@@ -1327,6 +1331,8 @@ struct RetCc { cond: FlagCond }
 
 impl Instruction for Ret {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OSP));
+
         let curr_sp = cpu.read_reg16(Reg16::SP);
 
         let low = cpu.read_word(curr_sp);
@@ -1336,6 +1342,8 @@ impl Instruction for Ret {
 
         info!("{:#06x}: RET", cpu.get_pc());
         cpu.set_pc(((high as u16) << 8 ) | low as u16);
+
+        debug!("{}", cpu.output(OSP));
     }
 }
 

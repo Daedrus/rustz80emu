@@ -304,7 +304,7 @@ impl Cpu {
     }
 
     pub fn read_reg8(&self, reg: Reg8) -> u8 {
-        match reg {
+        let val = match reg {
             Reg8::A => self.a,
             Reg8::B => self.b,
             Reg8::C => self.c,
@@ -312,7 +312,10 @@ impl Cpu {
             Reg8::E => self.e,
             Reg8::H => self.h,
             Reg8::L => self.l
-        }
+        };
+
+        debug!("                Read value {:#04X} from register {:?}", val, reg);
+        val
     }
 
     pub fn write_reg8(&mut self, reg: Reg8, val: u8) {
@@ -325,10 +328,12 @@ impl Cpu {
             Reg8::H => self.h = val,
             Reg8::L => self.l = val
         }
+
+        debug!("                Write value {:#04X} to register {:?}", val, reg);
     }
 
     pub fn read_reg16(&self, reg: Reg16) -> u16 {
-        let value = match reg {
+        let val = match reg {
             Reg16::SP => self.sp,
             _ => {
                 let (high, low) = match reg {
@@ -343,7 +348,9 @@ impl Cpu {
                 (((high as u16) << 8 ) | low as u16)
             }
         };
-        value
+
+        debug!("                Read value {:#04X} from register {:?}", val, reg);
+        val
     }
 
     pub fn write_reg16(&mut self, reg: Reg16, val: u16) {
@@ -357,6 +364,8 @@ impl Cpu {
             Reg16::HL_ALT => { self.h_alt = high; self.l_alt = low; }
             Reg16::SP => { self.sp = val }
         }
+
+        debug!("                Write value {:#06X} to register {:?}", val, reg);
     }
 
     pub fn read_reg16qq(&self, reg: Reg16qq) -> u16 {
@@ -367,7 +376,10 @@ impl Cpu {
             Reg16qq::AF     => (self.a,     self.f.bits() as u8),
             Reg16qq::AF_ALT => (self.a_alt, self.f_alt.bits() as u8)
         };
-        ((high as u16) << 8 ) | low as u16
+        let val = ((high as u16) << 8 ) | low as u16;
+
+        debug!("                Read value {:#04X} from register {:?}", val, reg);
+        val
     }
 
     pub fn write_reg16qq(&mut self, reg: Reg16qq, val: u16) {
@@ -379,6 +391,8 @@ impl Cpu {
             Reg16qq::AF =>     { self.a = high;     self.f = StatusIndicatorFlags::from_bits_truncate(low); }
             Reg16qq::AF_ALT => { self.a_alt = high; self.f_alt = StatusIndicatorFlags::from_bits_truncate(low); }
         }
+
+        debug!("                Write value {:#06X} to register {:?}", val, reg);
     }
 
     pub fn inc_pc(&mut self, val: u16) { self.pc += val; }
