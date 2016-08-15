@@ -103,6 +103,8 @@ impl Instruction for AddAR {
 
 impl Instruction for AddHlSs {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OH|OL|OF|OutputRegisters::from(self.r)));
+
         let hlval = cpu.read_reg16(Reg16::HL);
         let rval = cpu.read_reg16(self.r);
 
@@ -124,6 +126,8 @@ impl Instruction for AddHlSs {
 
         info!("{:#06x}: ADD HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OH|OL|OF|OutputRegisters::from(self.r)));
     }
 }
 
@@ -167,6 +171,8 @@ struct AndN ;
 
 impl Instruction for AndR {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
+
         let aval = cpu.read_reg8(Reg8::A);
         let rval = cpu.read_reg8(self.r);
         let andval = aval & rval;
@@ -182,6 +188,8 @@ impl Instruction for AndR {
 
         info!("{:#06x}: AND {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
     }
 }
 
@@ -329,6 +337,8 @@ impl Instruction for CpR {
 
 impl Instruction for CpN {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF));
+
         let n = cpu.read_word(cpu.get_pc() + 1);
         let accval = cpu.read_reg8(Reg8::A);
 
@@ -341,6 +351,8 @@ impl Instruction for CpN {
 
         info!("{:#06x}: CP {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF));
     }
 }
 
@@ -395,11 +407,15 @@ struct DecIyD ;
 
 impl Instruction for DecSs {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
+
         let decval = cpu.read_reg16(self.r).wrapping_sub(1);
         cpu.write_reg16(self.r, decval);
 
         info!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
     }
 }
 
@@ -531,6 +547,8 @@ impl Instruction for ExMemSpHl {
 
 impl Instruction for ExDeHl {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OD|OE|OH|OL));
+
         let deval = cpu.read_reg16(Reg16::DE);
         let hlval = cpu.read_reg16(Reg16::HL);
 
@@ -539,6 +557,8 @@ impl Instruction for ExDeHl {
 
         info!("{:#06x}: EX DE, HL", cpu.get_pc());
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OD|OE|OH|OL));
     }
 }
 
@@ -620,11 +640,16 @@ impl Instruction for IncR {
 
 impl Instruction for IncSs {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
+
+        // TODO: Wrapping add?
         let incval = cpu.read_reg16(self.r) + 1;
         cpu.write_reg16(self.r, incval);
 
         info!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
     }
 }
 
@@ -644,7 +669,7 @@ impl Instruction for JpMemHl {
 
 impl Instruction for JpNn {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OPC));
+        debug!("{}", cpu.output(ONONE));
 
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
@@ -652,12 +677,14 @@ impl Instruction for JpNn {
         info!("{:#06x}: JP {:#06X}", cpu.get_pc(), nn);
         cpu.set_pc(nn);
 
-        debug!("{}", cpu.output(OPC));
+        debug!("{}", cpu.output(ONONE));
     }
 }
 
 impl Instruction for JpCcNn {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF));
+
         let condval = match self.cond {
             FlagCond::NZ => cpu.get_flag(ZERO_FLAG) == false,
             FlagCond::Z  => cpu.get_flag(ZERO_FLAG) == true,
@@ -677,6 +704,8 @@ impl Instruction for JpCcNn {
         } else {
             cpu.inc_pc(3);
         }
+
+        debug!("{}", cpu.output(ONONE));
     }
 }
 
@@ -846,6 +875,8 @@ impl Instruction for LdHlMemNn {
 
 impl Instruction for LdMemHlN {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OH|OL));
+
         let hlval = cpu.read_reg16(Reg16::HL);
 
         let n =  cpu.read_word(cpu.get_pc() + 1);
@@ -854,6 +885,8 @@ impl Instruction for LdMemHlN {
 
         info!("{:#06x}: LD (HL), {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(ONONE));
     }
 }
 
@@ -976,10 +1009,14 @@ impl Instruction for LdMemIxDN {
 
 impl Instruction for LdRR {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OutputRegisters::from(self.rt) | OutputRegisters::from(self.rs)));
+
         let rsval = cpu.read_reg8(self.rs);
         cpu.write_reg8(self.rt, rsval);
         info!("{:#06x}: LD {:?}, {:?}", cpu.get_pc(), self.rt, self.rs);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OutputRegisters::from(self.rt) | OutputRegisters::from(self.rs)));
     }
 }
 
@@ -1014,6 +1051,8 @@ impl Instruction for LdMemHlR {
 
 impl Instruction for LdMemNnA {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA));
+
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
         let aval = cpu.read_reg8(Reg8::A);
@@ -1022,16 +1061,22 @@ impl Instruction for LdMemNnA {
 
         info!("{:#06x}: LD ({:#06X}), A", cpu.get_pc(), nn);
         cpu.inc_pc(3);
+
+        debug!("{}", cpu.output(ONONE));
     }
 }
 
 impl Instruction for LdRMemHl {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OH|OL));
+
         let hlmemval = cpu.read_word(cpu.read_reg16(Reg16::HL));
         cpu.write_reg8(self.r, hlmemval);
 
         info!("{:#06x}: LD {:?}, (HL)", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
     }
 }
 
@@ -1131,8 +1176,11 @@ struct Ldir;
 
 impl Instruction for Ldir {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
+
         let mut counter = cpu.read_reg16(Reg16::BC);
         while counter > 0 {
+            debug!("        Counter is: {}", counter);
             let deval = cpu.read_reg16(Reg16::DE);
             let hlval = cpu.read_reg16(Reg16::HL);
 
@@ -1152,6 +1200,8 @@ impl Instruction for Ldir {
 
         info!("{:#06x}: LDIR", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
     }
 }
 
@@ -1197,6 +1247,8 @@ impl Instruction for OrN {
 
 impl Instruction for OrMemHl {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OH|OL|OF));
+
         let hlval = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hlval);
 
@@ -1212,6 +1264,8 @@ impl Instruction for OrMemHl {
 
         info!("{:#06x}: OR (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
     }
 }
 
@@ -1249,7 +1303,7 @@ struct PopQq { r: Reg16qq }
 
 impl Instruction for PopQq {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OSP));
+        debug!("{}", cpu.output(OSP|OutputRegisters::from(self.r)));
 
         let curr_sp = cpu.read_reg16(Reg16::SP);
 
@@ -1263,7 +1317,7 @@ impl Instruction for PopQq {
         info!("{:#06x}: POP {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
 
-        debug!("{}", cpu.output(OSP));
+        debug!("{}", cpu.output(OSP|OutputRegisters::from(self.r)));
     }
 }
 
@@ -1379,7 +1433,7 @@ impl Instruction for RetCc {
 
 
 struct RlR  { r: Reg8 }
-struct Rlca ;
+struct RlcA ;
 
 impl Instruction for RlR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -1399,8 +1453,10 @@ impl Instruction for RlR {
     }
 }
 
-impl Instruction for Rlca {
+impl Instruction for RlcA {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF));
+
         let aval = cpu.read_reg8(Reg8::A);
 
         let mut rlval = aval.wrapping_shl(1);
@@ -1414,6 +1470,8 @@ impl Instruction for Rlca {
 
         info!("{:#06x}: RLCA", cpu.get_pc());
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
     }
 }
 
@@ -2259,7 +2317,7 @@ pub const INSTR_TABLE_FDCB: [&'static Instruction; 256] = [
 
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0x00 */    /* 0x01 */             /* 0x02 */    /* 0x03 */           /* 0x04 */        /* 0x05 */        /* 0x06 */        /* 0x07 */
-    &Unsupported, &LdDdNn{r:Reg16::BC} , &Unsupported, &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &Rlca       ,
+    &Unsupported, &LdDdNn{r:Reg16::BC} , &Unsupported, &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &RlcA       ,
 
     /* 0x08 */    /* 0x09 */             /* 0x0A */    /* 0x0B */           /* 0x0C */        /* 0x0D */        /* 0x0E */        /* 0x0F */
     &ExAfAfAlt  , &AddHlSs{r:Reg16::BC}, &Unsupported, &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &Rrca       ,

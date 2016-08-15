@@ -80,6 +80,8 @@ bitflags! {
 
 bitflags! {
     pub flags OutputRegisters: u32 {
+        const ONONE = 0x00000000,
+
         const OA = 0x00000001,
         const OF = 0x00000002,
         const OB = 0x00000004,
