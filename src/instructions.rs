@@ -112,15 +112,7 @@ impl Instruction for AddHlSs {
 
         cpu.write_reg16(Reg16::HL, addval);
 
-        if addval & 0x8000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
-        if addval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
         if ((hlval & 0xfff) + (rval & 0xfff)) > 0xfff { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
-        match (hlval  & 0x8000 != 0,
-               rval   & 0x8000 != 0,
-               addval & 0x8000 != 0) {
-            (true, true, false) | (false, false, true) => cpu.set_flag(PARITY_OVERFLOW_FLAG),
-            _ => cpu.clear_flag(PARITY_OVERFLOW_FLAG)
-        };
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
         if hlval as u32 + rval as u32 > 0xFFFF { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); };
 
@@ -1439,7 +1431,7 @@ impl Instruction for RlR {
     fn execute(&self, cpu: &mut Cpu) {
         let rval = cpu.read_reg8(self.r);
 
-        let mut rlval = rval.wrapping_shl(1);
+        let mut rlval = rval.rotate_left(1);
         if cpu.get_flag(CARRY_FLAG) { rlval |= 0x01; } else { rlval &= 0xFE; }
 
         cpu.clear_flag(HALF_CARRY_FLAG);
@@ -1459,8 +1451,7 @@ impl Instruction for RlcA {
 
         let aval = cpu.read_reg8(Reg8::A);
 
-        let mut rlval = aval.wrapping_shl(1);
-        if cpu.get_flag(CARRY_FLAG) { rlval |= 0x01; } else { rlval &= 0xFE; }
+        let mut rlval = aval.rotate_left(1);
 
         cpu.clear_flag(HALF_CARRY_FLAG);
         cpu.clear_flag(ADD_SUBTRACT_FLAG);
@@ -1476,14 +1467,14 @@ impl Instruction for RlcA {
 }
 
 
-struct Rra;
-struct Rrca;
+struct RrA;
+struct RrcA;
 
-impl Instruction for Rra {
+impl Instruction for RrA {
     fn execute(&self, cpu: &mut Cpu) {
         let aval = cpu.read_reg8(Reg8::A);
 
-        let mut rrval = aval.wrapping_shr(1);
+        let mut rrval = aval.rotate_right(1);
         if cpu.get_flag(CARRY_FLAG) { rrval |= 0x80; } else { rrval &= 0x7F; }
 
         cpu.clear_flag(HALF_CARRY_FLAG);
@@ -1497,11 +1488,11 @@ impl Instruction for Rra {
     }
 }
 
-impl Instruction for Rrca {
+impl Instruction for RrcA {
     fn execute(&self, cpu: &mut Cpu) {
         let aval = cpu.read_reg8(Reg8::A);
 
-        let rrval = aval.wrapping_shr(1);
+        let rrval = aval.rotate_right(1);
         cpu.write_reg8(Reg8::A, rrval);
 
         cpu.clear_flag(HALF_CARRY_FLAG);
@@ -2320,13 +2311,13 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Unsupported, &LdDdNn{r:Reg16::BC} , &Unsupported, &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &RlcA       ,
 
     /* 0x08 */    /* 0x09 */             /* 0x0A */    /* 0x0B */           /* 0x0C */        /* 0x0D */        /* 0x0E */        /* 0x0F */
-    &ExAfAfAlt  , &AddHlSs{r:Reg16::BC}, &Unsupported, &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &Rrca       ,
+    &ExAfAfAlt  , &AddHlSs{r:Reg16::BC}, &Unsupported, &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &RrcA       ,
 
     /* 0x10 */    /* 0x11 */             /* 0x12 */    /* 0x13 */           /* 0x14 */        /* 0x15 */        /* 0x16 */        /* 0x17 */
     &Djnz       , &LdDdNn{r:Reg16::DE} , &LdMemDeA   , &IncSs{r:Reg16::DE}, &IncR{r:Reg8::D}, &DecR{r:Reg8::D}, &LdRN{r:Reg8::D}, &Unsupported,
 
     /* 0x18 */    /* 0x19 */             /* 0x1A */    /* 0x1B */           /* 0x1C */        /* 0x1D */        /* 0x1E */        /* 0x1F */
-    &JrE        , &AddHlSs{r:Reg16::DE}, &LdAMemDe   , &DecSs{r:Reg16::DE}, &IncR{r:Reg8::E}, &DecR{r:Reg8::E}, &LdRN{r:Reg8::E}, &Rra        ,
+    &JrE        , &AddHlSs{r:Reg16::DE}, &LdAMemDe   , &DecSs{r:Reg16::DE}, &IncR{r:Reg8::E}, &DecR{r:Reg8::E}, &LdRN{r:Reg8::E}, &RrA        ,
 
     /* 0x20 */    /* 0x21 */             /* 0x22 */    /* 0x23 */           /* 0x24 */        /* 0x25 */        /* 0x26 */        /* 0x27 */
     &JrNz       , &LdDdNn{r:Reg16::HL} , &LdMemNnHl  , &IncSs{r:Reg16::HL}, &IncR{r:Reg8::H}, &DecR{r:Reg8::H}, &LdRN{r:Reg8::H}, &Unsupported,
