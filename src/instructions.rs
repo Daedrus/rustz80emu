@@ -187,6 +187,8 @@ impl Instruction for AndR {
 
 impl Instruction for AndN {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF));
+
         let n = cpu.read_word(cpu.get_pc() + 1);
         let andval = n & cpu.read_reg8(Reg8::A);
 
@@ -201,6 +203,8 @@ impl Instruction for AndN {
 
         info!("{:#06x}: AND {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
     }
 }
 
@@ -413,6 +417,8 @@ impl Instruction for DecSs {
 
 impl Instruction for DecR {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+
         let decval = cpu.read_reg8(self.r).wrapping_sub(1);
         cpu.write_reg8(self.r, decval);
 
@@ -424,6 +430,8 @@ impl Instruction for DecR {
 
         info!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
     }
 }
 
@@ -615,6 +623,8 @@ struct IncSs { r: Reg16 }
 
 impl Instruction for IncR {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+
         let rval = cpu.read_reg8(self.r);
         let incval = rval.wrapping_add(1);
         cpu.write_reg8(self.r, incval);
@@ -627,6 +637,8 @@ impl Instruction for IncR {
 
         info!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
     }
 }
 
@@ -1490,6 +1502,8 @@ impl Instruction for RrA {
 
 impl Instruction for RrcA {
     fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF));
+
         let aval = cpu.read_reg8(Reg8::A);
 
         let rrval = aval.rotate_right(1);
@@ -1501,6 +1515,8 @@ impl Instruction for RrcA {
 
         info!("{:#06x}: RRCA", cpu.get_pc());
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
     }
 }
 
