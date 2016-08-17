@@ -1917,8 +1917,8 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     /* 0xD8 */    /* 0xD9 */    /* 0xDA */    /* 0xDB */    /* 0xDC */    /* 0xDD */    /* 0xDE */    /* 0xDF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0xE0 */    /* 0xE1 */    /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */    /* 0xE6 */    /* 0xE7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0xE0 */    /* 0xE1 */             /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */              /* 0xE6 */    /* 0xE7 */
+    &Unsupported, &PopQq{r:Reg16qq::IX}, &Unsupported, &Unsupported, &Unsupported, &PushQq{r:Reg16qq::IX}, &Unsupported, &Unsupported,
 
     /* 0xE8 */    /* 0xE9 */    /* 0xEA */    /* 0xEB */    /* 0xEC */    /* 0xED */    /* 0xEE */    /* 0xEF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2113,8 +2113,8 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     /* 0xD8 */    /* 0xD9 */    /* 0xDA */    /* 0xDB */    /* 0xDC */    /* 0xDD */    /* 0xDE */    /* 0xDF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0xE0 */    /* 0xE1 */    /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */    /* 0xE6 */    /* 0xE7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0xE0 */    /* 0xE1 */             /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */              /* 0xE6 */    /* 0xE7 */
+    &Unsupported, &PopQq{r:Reg16qq::IY}, &Unsupported, &Unsupported, &Unsupported, &PushQq{r:Reg16qq::IY}, &Unsupported, &Unsupported,
 
     /* 0xE8 */    /* 0xE9 */    /* 0xEA */    /* 0xEB */    /* 0xEC */    /* 0xED */    /* 0xEE */    /* 0xEF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,

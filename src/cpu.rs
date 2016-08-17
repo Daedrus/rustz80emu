@@ -26,7 +26,10 @@ pub enum Reg16qq {
     HL = 0b10,
     AF = 0b11,
 
-    AF_ALT = 0b111
+    AF_ALT = 0b111,
+
+    IX = 0b1000,
+    IY = 0b1001
 }
 }
 
@@ -126,6 +129,8 @@ impl From<Reg16> for OutputRegisters {
 impl From<Reg16qq> for OutputRegisters {
     fn from(r: Reg16qq) -> OutputRegisters {
         match r {
+            Reg16qq::IX => OIX,
+            Reg16qq::IY => OIY,
             Reg16qq::BC => OB | OC,
             Reg16qq::DE => OD | OE,
             Reg16qq::HL => OH | OL,
@@ -371,14 +376,21 @@ impl Cpu {
     }
 
     pub fn read_reg16qq(&self, reg: Reg16qq) -> u16 {
-        let (high, low) = match reg {
-            Reg16qq::BC => (self.b, self.c),
-            Reg16qq::DE => (self.d, self.e),
-            Reg16qq::HL => (self.h, self.l),
-            Reg16qq::AF     => (self.a,     self.f.bits() as u8),
-            Reg16qq::AF_ALT => (self.a_alt, self.f_alt.bits() as u8)
+        let val = match reg {
+            Reg16qq::IX => self.ix,
+            Reg16qq::IY => self.iy,
+            _ => {
+                let (high, low) = match reg {
+                    Reg16qq::BC => (self.b, self.c),
+                    Reg16qq::DE => (self.d, self.e),
+                    Reg16qq::HL => (self.h, self.l),
+                    Reg16qq::AF     => (self.a,     self.f.bits() as u8),
+                    Reg16qq::AF_ALT => (self.a_alt, self.f_alt.bits() as u8),
+                    _ => unreachable!()
+                };
+                ((high as u16) << 8 ) | low as u16
+            }
         };
-        let val = ((high as u16) << 8 ) | low as u16;
 
         debug!("                Read value {:#04X} from register {:?}", val, reg);
         val
@@ -387,6 +399,8 @@ impl Cpu {
     pub fn write_reg16qq(&mut self, reg: Reg16qq, val: u16) {
         let (high, low) = (((val & 0xFF00) >> 8) as u8, (val & 0x00FF) as u8);
         match reg {
+            Reg16qq::IX => { self.ix = val; }
+            Reg16qq::IY => { self.iy = val; }
             Reg16qq::BC => { self.b = high; self.c = low; }
             Reg16qq::DE => { self.d = high; self.e = low; }
             Reg16qq::HL => { self.h = high; self.l = low; }
