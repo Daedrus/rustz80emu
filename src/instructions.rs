@@ -5,6 +5,7 @@ pub trait Instruction {
     fn execute(&self, &mut Cpu);
 }
 
+
 struct Unsupported;
 
 impl Instruction for Unsupported {
@@ -12,6 +13,20 @@ impl Instruction for Unsupported {
         info!("{:?}", cpu);
 
         panic!("Unsupported instruction {:#x} at address {:#06x}", cpu.read_word(cpu.get_pc()), cpu.get_pc());
+    }
+}
+
+
+struct Nop;
+
+impl Instruction for Nop {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(ONONE));
+
+        info!("{:#06x}: NOP", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(ONONE));
     }
 }
 
@@ -43,7 +58,6 @@ impl Instruction for AdcAN {
         cpu.inc_pc(2);
     }
 }
-
 
 
 struct AddAN      ;
@@ -2351,7 +2365,7 @@ pub const INSTR_TABLE_FDCB: [&'static Instruction; 256] = [
 
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0x00 */    /* 0x01 */             /* 0x02 */    /* 0x03 */           /* 0x04 */        /* 0x05 */        /* 0x06 */        /* 0x07 */
-    &Unsupported, &LdDdNn{r:Reg16::BC} , &Unsupported, &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &RlcA       ,
+    &Nop        , &LdDdNn{r:Reg16::BC} , &Unsupported, &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &RlcA       ,
 
     /* 0x08 */    /* 0x09 */             /* 0x0A */    /* 0x0B */           /* 0x0C */        /* 0x0D */        /* 0x0E */        /* 0x0F */
     &ExAfAfAlt  , &AddHlSs{r:Reg16::BC}, &Unsupported, &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &RrcA       ,
