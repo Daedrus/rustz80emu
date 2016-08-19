@@ -632,8 +632,9 @@ impl Instruction for InAPortN {
 }
 
 
-struct IncR  { r: Reg8  }
-struct IncSs { r: Reg16 }
+struct IncR    { r: Reg8  }
+struct IncSs   { r: Reg16 }
+struct IncMemHl;
 
 impl Instruction for IncR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -668,6 +669,29 @@ impl Instruction for IncSs {
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OutputRegisters::from(self.r)));
+    }
+}
+
+impl Instruction for IncMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OH|OL));
+
+        let hlval = cpu.read_reg16(Reg16::HL);
+
+        // TODO: Wrapping add?
+        let incval = cpu.read_word(hlval) + 1;
+        cpu.write_word(hlval, incval);
+
+        if incval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        if incval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
+        if incval & 0b00001111 == 0 { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
+        if hlval == 0x7F { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
+        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+
+        info!("{:#06x}: INC (HL)", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OH|OL));
     }
 }
 
@@ -2383,7 +2407,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &JrZ        , &AddHlSs{r:Reg16::HL}, &LdHlMemNn  , &DecSs{r:Reg16::HL}, &IncR{r:Reg8::L}, &DecR{r:Reg8::L}, &LdRN{r:Reg8::L}, &Unsupported,
 
     /* 0x30 */    /* 0x31 */             /* 0x32 */    /* 0x33 */           /* 0x34 */        /* 0x35 */        /* 0x36 */        /* 0x37 */
-    &JrNcE      , &LdDdNn{r:Reg16::SP} , &LdMemNnA   , &IncSs{r:Reg16::SP}, &Unsupported    , &Unsupported    , &LdMemHlN       , &Scf        ,
+    &JrNcE      , &LdDdNn{r:Reg16::SP} , &LdMemNnA   , &IncSs{r:Reg16::SP}, &IncMemHl       , &Unsupported    , &LdMemHlN       , &Scf        ,
 
     /* 0x38 */    /* 0x39 */             /* 0x3A */    /* 0x3B */           /* 0x3C */        /* 0x3D */        /* 0x3E */        /* 0x3F */
     &JrCE       , &AddHlSs{r:Reg16::SP}, &LdAMemNn   , &DecSs{r:Reg16::SP}, &IncR{r:Reg8::A}, &DecR{r:Reg8::A}, &LdRN{r:Reg8::A}, &Ccf        ,
