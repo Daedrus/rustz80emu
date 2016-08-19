@@ -693,8 +693,7 @@ impl Instruction for IncSs {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OutputRegisters::from(self.r)));
 
-        // TODO: Wrapping add?
-        let incval = cpu.read_reg16(self.r) + 1;
+        let incval = cpu.read_reg16(self.r).wrapping_add(1);
         cpu.write_reg16(self.r, incval);
 
         info!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
@@ -710,8 +709,7 @@ impl Instruction for IncMemHl {
 
         let hlval = cpu.read_reg16(Reg16::HL);
 
-        // TODO: Wrapping add?
-        let incval = cpu.read_word(hlval) + 1;
+        let incval = cpu.read_word(hlval).wrapping_add(1);
         cpu.write_word(hlval, incval);
 
         if incval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
