@@ -1,6 +1,7 @@
 use super::cpu::*;
 use num::FromPrimitive;
 
+
 pub trait Instruction {
     fn execute(&self, &mut Cpu);
 }
@@ -68,25 +69,20 @@ impl Instruction for AdcHlSs {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OH|OL|OF|OutputRegisters::from(self.r)));
 
-        let hlval = cpu.read_reg16(Reg16::HL);
-        let rval = cpu.read_reg16(self.r);
+        let hl = cpu.read_reg16(Reg16::HL);
+        let ss = cpu.read_reg16(self.r);
+        let c  = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
-        let mut addval = hlval.wrapping_add(rval);
-        if cpu.get_flag(CARRY_FLAG) { addval = addval.wrapping_add(1); }
+        let sum = hl.wrapping_add(ss).wrapping_add(c);
 
-        cpu.write_reg16(Reg16::HL, addval);
+        cpu.write_reg16(Reg16::HL, sum);
 
-        if addval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
-        if addval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
-        if ((hlval & 0x0FFF) + (rval & 0x0FFF)) > 0x0FFF { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
-        match (hlval  & 0b10000000 != 0,
-               rval   & 0b10000000 != 0,
-               addval & 0b10000000 != 0) {
-            (true, true, false) | (false, false, true) => cpu.set_flag(PARITY_OVERFLOW_FLAG),
-            _ => cpu.clear_flag(PARITY_OVERFLOW_FLAG)
-        };
-        cpu.clear_flag(ADD_SUBTRACT_FLAG);
-        if hlval as u32 + rval as u32 > 0xFFFF { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
+        cpu.cond_flag  ( SIGN_FLAG            , sum & 0x8000 != 0                             );
+        cpu.cond_flag  ( ZERO_FLAG            , sum == 0                                      );
+        cpu.cond_flag  ( HALF_CARRY_FLAG      , hl & 0x0FFF + ss & 0x0FFF + c > 0x0FFF        );
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (hl ^ ss ^ 0x8000) & (hl ^ sum ^ 0x8000) !=  0);
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                    );
+        cpu.cond_flag  ( CARRY_FLAG           , hl as u32 + ss as u32 > 0xFFFF                );
 
         info!("{:#06x}: ADC HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);

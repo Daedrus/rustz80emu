@@ -431,6 +431,9 @@ impl Cpu {
     pub fn set_flag(&mut self, flag: StatusIndicatorFlags) { self.f.insert(flag); }
     pub fn clear_flag(&mut self, flag: StatusIndicatorFlags) { self.f.remove(flag); }
     pub fn get_flag(&self, flag: StatusIndicatorFlags) -> bool { self.f.contains(flag) }
+    pub fn cond_flag(&mut self, flag: StatusIndicatorFlags, cond: bool) {
+        if cond { self.f.insert(flag); } else { self.f.remove(flag); }
+    }
 
     pub fn run_instruction(&mut self) {
         debug!("*****************************************************\n");
