@@ -336,11 +336,11 @@ impl Instruction for Ccf {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OF));
 
-        let cfval = cpu.get_flag(CARRY_FLAG);
+        let c = cpu.get_flag(CARRY_FLAG);
 
-        if cfval { cpu.clear_flag(CARRY_FLAG); } else { cpu.set_flag(CARRY_FLAG); }
-        if cfval { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
-        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        cpu.cond_flag  ( HALF_CARRY_FLAG   , c  );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG      );
+        cpu.cond_flag  ( CARRY_FLAG        , !c );
 
         info!("{:#06x}: CCF", cpu.get_pc());
         cpu.inc_pc(1);
@@ -359,15 +359,17 @@ impl Instruction for CpR {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OF|OA|OutputRegisters::from(self.r)));
 
-        let rval = cpu.read_reg8(self.r);
-        let accval = cpu.read_reg8(Reg8::A);
+        let a = cpu.read_reg8(Reg8::A);
+        let r = cpu.read_reg8(self.r);
 
-        cpu.set_flag(ADD_SUBTRACT_FLAG);
-        if rval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
-        if rval == accval { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
-        if accval < rval { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
-        if (accval & 0x0F) < (rval & 0x0F) { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
-        //TODO: Parity flag?
+        let res = a - r;
+
+        cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0           );
+        cpu.cond_flag ( ZERO_FLAG            , res == 0                  );
+        cpu.cond_flag ( HALF_CARRY_FLAG      , a & 0x0F < r & 0x0F       );
+        cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (a ^ r) & (r ^ res) !=  0 );
+        cpu.set_flag  ( ADD_SUBTRACT_FLAG                                );
+        cpu.cond_flag ( CARRY_FLAG           , a < r                     );
 
         info!("{:#06x}: CP {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -380,15 +382,17 @@ impl Instruction for CpN {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF));
 
+        let a = cpu.read_reg8(Reg8::A);
         let n = cpu.read_word(cpu.get_pc() + 1);
-        let accval = cpu.read_reg8(Reg8::A);
 
-        cpu.set_flag(ADD_SUBTRACT_FLAG);
-        if n & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
-        if n == accval { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
-        if accval < n { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
-        if (accval & 0x0F) < (n & 0x0F) { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
-        //TODO: Parity flag?
+        let res = a - n;
+
+        cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0           );
+        cpu.cond_flag ( ZERO_FLAG            , res == 0                  );
+        cpu.cond_flag ( HALF_CARRY_FLAG      , a & 0x0F < n & 0x0F       );
+        cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (a ^ n) & (n ^ res) !=  0 );
+        cpu.set_flag  ( ADD_SUBTRACT_FLAG                                );
+        cpu.cond_flag ( CARRY_FLAG           , a < n                     );
 
         info!("{:#06x}: CP {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
@@ -399,18 +403,20 @@ impl Instruction for CpN {
 
 impl Instruction for CpMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
+        debug!("{}", cpu.output(OA|OF|OH|OL));
 
-        let addr = cpu.read_reg16(Reg16::HL);
-        let memval = cpu.read_word(addr);
-        let accval = cpu.read_reg8(Reg8::A);
+        let a      = cpu.read_reg8(Reg8::A);
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
 
-        cpu.set_flag(ADD_SUBTRACT_FLAG);
-        if memval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
-        if memval == accval { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
-        if accval < memval { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
-        if (accval & 0x0F) < (memval & 0x0F) { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
-        //TODO: Parity flag?
+        let res = a - memval;
+
+        cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0                     );
+        cpu.cond_flag ( ZERO_FLAG            , res == 0                            );
+        cpu.cond_flag ( HALF_CARRY_FLAG      , a & 0x0F < memval & 0x0F            );
+        cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (a ^ memval) & (memval ^ res) !=  0 );
+        cpu.set_flag  ( ADD_SUBTRACT_FLAG                                          );
+        cpu.cond_flag ( CARRY_FLAG           , a < memval                          );
 
         info!("{:#06x}: CP (HL)", cpu.get_pc());
         cpu.inc_pc(1);
@@ -421,27 +427,26 @@ impl Instruction for CpMemHl {
 
 impl Instruction for CpMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
+        debug!("{}", cpu.output(OA|OF|OIY));
 
-        let curr_pc = cpu.get_pc();
-        let d = cpu.read_word(curr_pc + 1) as i8 as i16;
-        let addr = ((cpu.get_iy() as i16) + d) as u16;
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
-        let accval = cpu.read_reg8(Reg8::A);
 
-        cpu.set_flag(ADD_SUBTRACT_FLAG);
-        if memval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
-        if memval == accval { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
-        if accval < memval { cpu.set_flag(CARRY_FLAG); } else { cpu.clear_flag(CARRY_FLAG); }
-        if (accval & 0x0F) < (memval & 0x0F) { cpu.set_flag(HALF_CARRY_FLAG); } else { cpu.clear_flag(HALF_CARRY_FLAG); }
-        //TODO: Parity flag?
+        let res = a - memval;
 
-        let mut d = d as i8;
-        if d & 0b10000000 != 0 {
-            d = (d ^ 0xFF) + 1;
-            info!("{:#06x}: CP (IY-{:#04X})", curr_pc - 1, d);
+        cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0                     );
+        cpu.cond_flag ( ZERO_FLAG            , res == 0                            );
+        cpu.cond_flag ( HALF_CARRY_FLAG      , a & 0x0F < memval & 0x0F            );
+        cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (a ^ memval) & (memval ^ res) !=  0 );
+        cpu.set_flag  ( ADD_SUBTRACT_FLAG                                          );
+        cpu.cond_flag ( CARRY_FLAG           , a < memval                          );
+
+        if d < 0 {
+            info!("{:#06x}: CP (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
         } else {
-            info!("{:#06x}: CP (IY+{:#04X})", curr_pc - 1, d);
+            info!("{:#06x}: CP (IY+{:#04X})", cpu.get_pc() - 1, d);
         }
         cpu.inc_pc(2);
 
