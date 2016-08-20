@@ -43,14 +43,14 @@ impl Instruction for AdcAN {
         let n = cpu.read_word(cpu.get_pc() + 1);
         let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
-        let sum = a.wrapping_add(n).wrapping_add(c);
+        let res = a.wrapping_add(n).wrapping_add(c);
 
-        cpu.write_reg8(Reg8::A, sum);
+        cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , sum & 0x8000 != 0                           );
-        cpu.cond_flag  ( ZERO_FLAG            , sum == 0                                    );
+        cpu.cond_flag  ( SIGN_FLAG            , res & 0x8000 != 0                           );
+        cpu.cond_flag  ( ZERO_FLAG            , res == 0                                    );
         cpu.cond_flag  ( HALF_CARRY_FLAG      , a & 0x0FFF + n & 0x0FFF + c > 0x0FFF        );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ n ^ 0x8000) & (a ^ sum ^ 0x8000) !=  0 );
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ n ^ 0x8000) & (a ^ res ^ 0x8000) !=  0 );
         cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                  );
         cpu.cond_flag  ( CARRY_FLAG           , a as u32 + n as u32 + c as u32 > 0xFFFF     );
 
@@ -69,14 +69,14 @@ impl Instruction for AdcHlSs {
         let ss = cpu.read_reg16(self.r);
         let c  = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
-        let sum = hl.wrapping_add(ss).wrapping_add(c);
+        let res = hl.wrapping_add(ss).wrapping_add(c);
 
-        cpu.write_reg16(Reg16::HL, sum);
+        cpu.write_reg16(Reg16::HL, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , sum & 0x8000 != 0                              );
-        cpu.cond_flag  ( ZERO_FLAG            , sum == 0                                       );
+        cpu.cond_flag  ( SIGN_FLAG            , res & 0x8000 != 0                              );
+        cpu.cond_flag  ( ZERO_FLAG            , res == 0                                       );
         cpu.cond_flag  ( HALF_CARRY_FLAG      , hl & 0x0FFF + ss & 0x0FFF + c > 0x0FFF         );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (hl ^ ss ^ 0x8000) & (hl ^ sum ^ 0x8000) !=  0 );
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (hl ^ ss ^ 0x8000) & (hl ^ res ^ 0x8000) !=  0 );
         cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                     );
         cpu.cond_flag  ( CARRY_FLAG           , hl as u32 + ss as u32 + c as u32 > 0xFFFF      );
 
@@ -100,14 +100,14 @@ impl Instruction for AddAN {
         let a = cpu.read_reg8(Reg8::A);
         let n = cpu.read_word(cpu.get_pc() + 1);
 
-        let sum = a.wrapping_add(n);
+        let res = a.wrapping_add(n);
 
-        cpu.write_reg8(Reg8::A, sum);
+        cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , sum & 0x80 != 0                         );
-        cpu.cond_flag  ( ZERO_FLAG            , sum == 0                                );
+        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0                         );
+        cpu.cond_flag  ( ZERO_FLAG            , res == 0                                );
         cpu.cond_flag  ( HALF_CARRY_FLAG      , a & 0x0F + n & 0x0F > 0x0F              );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ n ^ 0x80) & (a ^ sum ^ 0x80) !=  0 );
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ n ^ 0x80) & (a ^ res ^ 0x80) !=  0 );
         cpu.clear_flag ( ADD_SUBTRACT_FLAG                                              );
         cpu.cond_flag  ( CARRY_FLAG           , a as u16 + n as u16 > 0xFF              );
 
@@ -125,14 +125,14 @@ impl Instruction for AddAR {
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
-        let sum = a.wrapping_add(r);
+        let res = a.wrapping_add(r);
 
-        cpu.write_reg8(Reg8::A, sum);
+        cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , sum & 0x80 != 0                         );
-        cpu.cond_flag  ( ZERO_FLAG            , sum == 0                                );
+        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0                         );
+        cpu.cond_flag  ( ZERO_FLAG            , res == 0                                );
         cpu.cond_flag  ( HALF_CARRY_FLAG      , a & 0x0F + r & 0x0F > 0x0F              );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ r ^ 0x80) & (a ^ sum ^ 0x80) !=  0 );
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ r ^ 0x80) & (a ^ res ^ 0x80) !=  0 );
         cpu.clear_flag ( ADD_SUBTRACT_FLAG                                              );
         cpu.cond_flag  ( CARRY_FLAG           , a as u16 + r as u16 > 0xFF              );
 
@@ -150,9 +150,9 @@ impl Instruction for AddHlSs {
         let hl = cpu.read_reg16(Reg16::HL);
         let ss = cpu.read_reg16(self.r);
 
-        let sum = hl.wrapping_add(ss);
+        let res = hl.wrapping_add(ss);
 
-        cpu.write_reg16(Reg16::HL, sum);
+        cpu.write_reg16(Reg16::HL, res);
 
         cpu.cond_flag  ( HALF_CARRY_FLAG   , hl & 0x0FFF + ss & 0x0FFF > 0x0FFF );
         cpu.clear_flag ( ADD_SUBTRACT_FLAG                                      );
@@ -174,14 +174,14 @@ impl Instruction for AddAMemIyD {
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
-        let sum = a.wrapping_add(memval);
+        let res = a.wrapping_add(memval);
 
-        cpu.write_reg8(Reg8::A, sum);
+        cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , sum & 0x80 != 0                              );
-        cpu.cond_flag  ( ZERO_FLAG            , sum == 0                                     );
+        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0                              );
+        cpu.cond_flag  ( ZERO_FLAG            , res == 0                                     );
         cpu.cond_flag  ( HALF_CARRY_FLAG      , a & 0x0F + memval & 0x0F > 0x0F              );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ memval ^ 0x80) & (a ^ sum ^ 0x80) !=  0 );
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ memval ^ 0x80) & (a ^ res ^ 0x80) !=  0 );
         cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                   );
         cpu.cond_flag  ( CARRY_FLAG           , a as u16 + memval as u16 > 0xFF              );
 
@@ -204,18 +204,19 @@ impl Instruction for AndR {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
 
-        let aval = cpu.read_reg8(Reg8::A);
-        let rval = cpu.read_reg8(self.r);
-        let andval = aval & rval;
+        let a = cpu.read_reg8(Reg8::A);
+        let r = cpu.read_reg8(self.r);
 
-        cpu.write_reg8(Reg8::A, andval);
+        let res = a & r;
 
-        cpu.set_flag(HALF_CARRY_FLAG);
-        cpu.clear_flag(ADD_SUBTRACT_FLAG);
-        cpu.clear_flag(CARRY_FLAG);
-        if andval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
-        if andval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
-        if andval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        cpu.write_reg8(Reg8::A, res);
+
+        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
+        cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
+        cpu.set_flag   ( HALF_CARRY_FLAG                                  );
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
+        cpu.clear_flag ( CARRY_FLAG                                       );
 
         info!("{:#06x}: AND {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -228,17 +229,19 @@ impl Instruction for AndN {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF));
 
+        let a = cpu.read_reg8(Reg8::A);
         let n = cpu.read_word(cpu.get_pc() + 1);
-        let andval = n & cpu.read_reg8(Reg8::A);
 
-        cpu.write_reg8(Reg8::A, andval);
+        let res = a & n;
 
-        cpu.set_flag(HALF_CARRY_FLAG);
-        cpu.clear_flag(ADD_SUBTRACT_FLAG);
-        cpu.clear_flag(CARRY_FLAG);
-        if andval.count_ones() % 2 == 0 { cpu.set_flag(PARITY_OVERFLOW_FLAG); } else { cpu.clear_flag(PARITY_OVERFLOW_FLAG); }
-        if andval == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
-        if andval & 0b10000000 != 0 { cpu.set_flag(SIGN_FLAG); } else { cpu.clear_flag(SIGN_FLAG); }
+        cpu.write_reg8(Reg8::A, res);
+
+        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
+        cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
+        cpu.set_flag   ( HALF_CARRY_FLAG                                  );
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
+        cpu.clear_flag ( CARRY_FLAG                                       );
 
         info!("{:#06x}: AND {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
@@ -254,22 +257,19 @@ impl Instruction for BitBMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OF|OIY));
 
-        let curr_pc = cpu.get_pc();
-        let d = cpu.read_word(curr_pc) as i16;
-        let addr = ((cpu.get_iy() as i16) + d) as u16;
+        let d    = cpu.read_word(cpu.get_pc()) as i8;
+        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
 
         let memval = cpu.read_word(addr);
 
-        if memval & (1 << self.b) == 0 { cpu.set_flag(ZERO_FLAG); } else { cpu.clear_flag(ZERO_FLAG); }
-        cpu.set_flag(HALF_CARRY_FLAG);
-        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        cpu.cond_flag  ( ZERO_FLAG       , memval & (1 << self.b) == 0 );
+        cpu.set_flag   ( HALF_CARRY_FLAG                               );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                             );
 
-        let mut d = d as i8;
-        if d & 0b10000000 != 0 {
-            d = (d ^ 0xFF) + 1;
-            info!("{:#06x}: BIT {}, (IY-{:#04X})", curr_pc - 2, self.b, d);
+        if d < 0 {
+            info!("{:#06x}: BIT {}, (IY-{:#04X})", cpu.get_pc() - 2, self.b, (d ^ 0xFF) + 1);
         } else {
-            info!("{:#06x}: BIT {}, (IY+{:#04X})", curr_pc - 2, self.b, d);
+            info!("{:#06x}: BIT {}, (IY+{:#04X})", cpu.get_pc() - 2, self.b, d);
         }
         cpu.inc_pc(2);
 
