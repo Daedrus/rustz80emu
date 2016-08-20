@@ -285,18 +285,17 @@ impl Instruction for CallNn {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OSP));
 
-        let mut curr_pc = cpu.get_pc();
-        let nn =  (cpu.read_word(curr_pc + 1) as u16) |
-                 ((cpu.read_word(curr_pc + 2) as u16) << 8);
+        let curr_pc = cpu.get_pc();
+        let nn      =  (cpu.read_word(curr_pc + 1) as u16) |
+                      ((cpu.read_word(curr_pc + 2) as u16) << 8);
         let curr_sp = cpu.read_reg16(Reg16::SP);
 
-        curr_pc += 3;
-        cpu.write_word(curr_sp - 1, ((curr_pc & 0xFF00) >> 8) as u8);
-        cpu.write_word(curr_sp - 2,  (curr_pc & 0x00FF)       as u8);
+        cpu.write_word(curr_sp - 1, (((curr_pc + 3) & 0xFF00) >> 8) as u8);
+        cpu.write_word(curr_sp - 2,  ((curr_pc + 3) & 0x00FF)       as u8);
 
         cpu.write_reg16(Reg16::SP, curr_sp - 2);
 
-        info!("{:#06x}: CALL {:#06X}", cpu.get_pc(), nn);
+        info!("{:#06x}: CALL {:#06X}", curr_pc, nn);
         cpu.set_pc(nn);
 
         debug!("{}", cpu.output(OSP));
@@ -307,26 +306,17 @@ impl Instruction for CallCcNn {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OSP|OF));
 
-        let mut curr_pc = cpu.get_pc();
-        let nn =  (cpu.read_word(curr_pc + 1) as u16) |
-                 ((cpu.read_word(curr_pc + 2) as u16) << 8);
+        let curr_pc = cpu.get_pc();
+        let nn      =  (cpu.read_word(curr_pc + 1) as u16) |
+                      ((cpu.read_word(curr_pc + 2) as u16) << 8);
         let curr_sp = cpu.read_reg16(Reg16::SP);
-        let condval = match self.cond {
-            FlagCond::NZ => cpu.get_flag(ZERO_FLAG) == false,
-            FlagCond::Z  => cpu.get_flag(ZERO_FLAG) == true,
-            FlagCond::NC => cpu.get_flag(CARRY_FLAG) == false,
-            FlagCond::C  => cpu.get_flag(CARRY_FLAG) == true,
-            FlagCond::PO => cpu.get_flag(PARITY_OVERFLOW_FLAG) == false,
-            FlagCond::PE => cpu.get_flag(PARITY_OVERFLOW_FLAG) == true,
-            FlagCond::P  => cpu.get_flag(SIGN_FLAG) == false,
-            FlagCond::M  => cpu.get_flag(SIGN_FLAG) == true
-        };
+        let cc      = cpu.check_cond(self.cond);
 
         info!("{:#06x}: CALL {:?}, {:#06X}", curr_pc, self.cond, nn);
-        if condval {
-            curr_pc += 3;
-            cpu.write_word(curr_sp - 1, ((curr_pc & 0xFF00) >> 8) as u8);
-            cpu.write_word(curr_sp - 2,  (curr_pc & 0x00FF)       as u8);
+
+        if cc {
+            cpu.write_word(curr_sp - 1, (((curr_pc + 3) & 0xFF00) >> 8) as u8);
+            cpu.write_word(curr_sp - 2,  ((curr_pc + 3) & 0x00FF)       as u8);
 
             cpu.write_reg16(Reg16::SP, curr_sp - 2);
 

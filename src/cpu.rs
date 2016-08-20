@@ -435,6 +435,19 @@ impl Cpu {
         if cond { self.f.insert(flag); } else { self.f.remove(flag); }
     }
 
+    pub fn check_cond(&self, cond: FlagCond) -> bool {
+        match cond {
+            FlagCond::NZ => !self.f.contains(ZERO_FLAG),
+            FlagCond::Z  =>  self.f.contains(ZERO_FLAG),
+            FlagCond::NC => !self.f.contains(CARRY_FLAG),
+            FlagCond::C  =>  self.f.contains(CARRY_FLAG),
+            FlagCond::PO => !self.f.contains(PARITY_OVERFLOW_FLAG),
+            FlagCond::PE =>  self.f.contains(PARITY_OVERFLOW_FLAG),
+            FlagCond::P  => !self.f.contains(SIGN_FLAG),
+            FlagCond::M  =>  self.f.contains(SIGN_FLAG)
+        }
+    }
+
     pub fn run_instruction(&mut self) {
         debug!("*****************************************************\n");
 
