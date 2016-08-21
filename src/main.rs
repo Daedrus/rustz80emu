@@ -42,7 +42,10 @@ fn main() {
     let rom0 = read_bin(rom0_file_name);
     let rom1 = read_bin(rom1_file_name);
 
-    let memory = Memory::new(rom0, rom1);
+    let memory = MemoryBuilder::new()
+                    .rom0(rom0)
+                    .rom1(rom1)
+                    .finalize();
 
     let mut cpu = Cpu::new(memory);
 

@@ -52,6 +52,7 @@ mod test_zex {
     }
 
     #[test]
+    #[ignore]
     fn test_zexdoc() {
         setup_logging();
 
@@ -65,7 +66,11 @@ mod test_zex {
         dummyrom0[0x0006] = 0x00;
         dummyrom0[0x0007] = 0xF0;
 
-        let memory = Memory::new(dummyrom0, dummyrom1);
+        let memory = MemoryBuilder::new()
+                        .rom0(dummyrom0)
+                        .rom1(dummyrom1)
+                        .writable_rom(true)
+                        .finalize();
 
         let mut cpu = Cpu::new(memory);
         cpu.set_pc(0x0100);
