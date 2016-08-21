@@ -88,10 +88,102 @@ impl Instruction for AdcHlSs {
 }
 
 
+struct AddAMemHl  ;
+struct AddAMemIxD ;
+struct AddAMemIyD ;
 struct AddAN      ;
 struct AddAR      { r: Reg8  }
 struct AddHlSs    { r: Reg16 }
-struct AddAMemIyD ;
+
+#[inline(always)]
+fn update_flags_add8(cpu: &mut Cpu, op1: u8, op2: u8, res: u8) {
+    cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0                               );
+    cpu.cond_flag  ( ZERO_FLAG            , res == 0                                      );
+    cpu.cond_flag  ( HALF_CARRY_FLAG      , op1 & 0x0F + op2 & 0x0F > 0x0F                );
+    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (op1 ^ op2 ^ 0x80) & (op1 ^ res ^ 0x80) !=  0 );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                    );
+    cpu.cond_flag  ( CARRY_FLAG           , op1 as u16 + op2 as u16 > 0xFF                );
+}
+
+#[inline(always)]
+fn update_flags_add16(cpu: &mut Cpu, op1: u16, op2: u16) {
+    cpu.cond_flag  ( HALF_CARRY_FLAG   , op1 & 0x0FFF + op2 & 0x0FFF > 0x0FFF );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                        );
+    cpu.cond_flag  ( CARRY_FLAG        , op1 as u32 + op2 as u32  > 0xFFFF    );
+}
+
+impl Instruction for AddAMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let res = a.wrapping_add(memval);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_add8(cpu, a, memval, res);
+
+        info!("{:#06x}: ADD A, (HL)", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for AddAMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIX));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = a.wrapping_add(memval);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_add8(cpu, a, memval, res);
+
+        if d < 0 {
+            info!("{:#06x}: ADD A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: ADD A, (IX+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for AddAMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIY));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = a.wrapping_add(memval);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_add8(cpu, a, memval, res);
+
+        if d < 0 {
+            info!("{:#06x}: ADD A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: ADD A, (IY+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
 
 impl Instruction for AddAN {
     fn execute(&self, cpu: &mut Cpu) {
@@ -104,12 +196,7 @@ impl Instruction for AddAN {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0                         );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                                );
-        cpu.cond_flag  ( HALF_CARRY_FLAG      , a & 0x0F + n & 0x0F > 0x0F              );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ n ^ 0x80) & (a ^ res ^ 0x80) !=  0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                              );
-        cpu.cond_flag  ( CARRY_FLAG           , a as u16 + n as u16 > 0xFF              );
+        update_flags_add8(cpu, a, n, res);
 
         info!("{:#06x}: ADD A, {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
@@ -129,12 +216,7 @@ impl Instruction for AddAR {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0                         );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                                );
-        cpu.cond_flag  ( HALF_CARRY_FLAG      , a & 0x0F + r & 0x0F > 0x0F              );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ r ^ 0x80) & (a ^ res ^ 0x80) !=  0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                              );
-        cpu.cond_flag  ( CARRY_FLAG           , a as u16 + r as u16 > 0xFF              );
+        update_flags_add8(cpu, a, r, res);
 
         info!("{:#06x}: ADD A, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -154,9 +236,7 @@ impl Instruction for AddHlSs {
 
         cpu.write_reg16(Reg16::HL, res);
 
-        cpu.cond_flag  ( HALF_CARRY_FLAG   , hl & 0x0FFF + ss & 0x0FFF > 0x0FFF );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                      );
-        cpu.cond_flag  ( CARRY_FLAG        , hl as u32 + ss as u32  > 0xFFFF    );
+        update_flags_add16(cpu, hl, ss);
 
         info!("{:#06x}: ADD HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -165,36 +245,6 @@ impl Instruction for AddHlSs {
     }
 }
 
-impl Instruction for AddAMemIyD {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIY));
-
-        let a      = cpu.read_reg8(Reg8::A);
-        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
-        let memval = cpu.read_word(addr);
-
-        let res = a.wrapping_add(memval);
-
-        cpu.write_reg8(Reg8::A, res);
-
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0                              );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                                     );
-        cpu.cond_flag  ( HALF_CARRY_FLAG      , a & 0x0F + memval & 0x0F > 0x0F              );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ memval ^ 0x80) & (a ^ res ^ 0x80) !=  0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                   );
-        cpu.cond_flag  ( CARRY_FLAG           , a as u16 + memval as u16 > 0xFF              );
-
-        if d < 0 {
-            info!("{:#06x}: ADD A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: ADD A, (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
-        cpu.inc_pc(2);
-
-        debug!("{}", cpu.output(OA|OF));
-    }
-}
 
 
 struct AndR { r: Reg8 }
@@ -2158,7 +2208,7 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */    /* 0x85 */    /* 0x86 */    /* 0x87 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddAMemIxD , &Unsupported,
 
     /* 0x88 */    /* 0x89 */    /* 0x8A */    /* 0x8B */    /* 0x8C */    /* 0x8D */    /* 0x8E */    /* 0x8F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2672,7 +2722,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &LdRR{rt:Reg8::A,rs:Reg8::H}             , &LdRR{rt:Reg8::A,rs:Reg8::L}           , &LdRMemHl{r:Reg8::A}              , &LdRR{rt:Reg8::A,rs:Reg8::A},
 
     /* 0x80 */         /* 0x81 */         /* 0x82 */         /* 0x83 */         /* 0x84 */         /* 0x85 */         /* 0x86 */    /* 0x87 */
-    &AddAR{r:Reg8::B}, &AddAR{r:Reg8::C}, &AddAR{r:Reg8::D}, &AddAR{r:Reg8::E}, &AddAR{r:Reg8::H}, &AddAR{r:Reg8::L}, &Unsupported, &AddAR{r:Reg8::A},
+    &AddAR{r:Reg8::B}, &AddAR{r:Reg8::C}, &AddAR{r:Reg8::D}, &AddAR{r:Reg8::E}, &AddAR{r:Reg8::H}, &AddAR{r:Reg8::L}, &AddAMemHl  , &AddAR{r:Reg8::A},
 
     /* 0x88 */         /* 0x89 */         /* 0x8A */         /* 0x8B */         /* 0x8C */         /* 0x8D */         /* 0x8E */    /* 0x8F */
     &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
