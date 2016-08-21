@@ -196,12 +196,12 @@ impl Instruction for AdcHlSs {
 }
 
 
-struct AddAMemHl  ;
-struct AddAMemIxD ;
-struct AddAMemIyD ;
-struct AddAN      ;
-struct AddAR      { r: Reg8  }
-struct AddHlSs    { r: Reg16 }
+struct AddMemHl  ;
+struct AddMemIxD ;
+struct AddMemIyD ;
+struct AddN      ;
+struct AddR      { r: Reg8  }
+struct AddHlSs   { r: Reg16 }
 
 #[inline(always)]
 fn update_flags_add8(cpu: &mut Cpu, op1: u8, op2: u8, res: u8) {
@@ -220,7 +220,7 @@ fn update_flags_add16(cpu: &mut Cpu, op1: u16, op2: u16) {
     cpu.cond_flag  ( CARRY_FLAG        , op1 as u32 + op2 as u32  > 0xFFFF        );
 }
 
-impl Instruction for AddAMemHl {
+impl Instruction for AddMemHl {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF));
 
@@ -241,7 +241,7 @@ impl Instruction for AddAMemHl {
     }
 }
 
-impl Instruction for AddAMemIxD {
+impl Instruction for AddMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF|OIX));
 
@@ -267,7 +267,7 @@ impl Instruction for AddAMemIxD {
     }
 }
 
-impl Instruction for AddAMemIyD {
+impl Instruction for AddMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF|OIY));
 
@@ -293,7 +293,7 @@ impl Instruction for AddAMemIyD {
     }
 }
 
-impl Instruction for AddAN {
+impl Instruction for AddN {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF));
 
@@ -313,7 +313,7 @@ impl Instruction for AddAN {
     }
 }
 
-impl Instruction for AddAR {
+impl Instruction for AddR {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
 
@@ -2316,7 +2316,7 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */    /* 0x85 */    /* 0x86 */    /* 0x87 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddAMemIxD , &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddMemIxD  , &Unsupported,
 
     /* 0x88 */    /* 0x89 */    /* 0x8A */    /* 0x8B */    /* 0x8C */    /* 0x8D */    /* 0x8E */    /* 0x8F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AdcMemIxD  , &Unsupported,
@@ -2512,7 +2512,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::A}, &Unsupported,
 
     /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */    /* 0x85 */    /* 0x86 */    /* 0x87 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddAMemIyD , &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddMemIyD  , &Unsupported,
 
     /* 0x88 */    /* 0x89 */    /* 0x8A */    /* 0x8B */    /* 0x8C */    /* 0x8D */    /* 0x8E */    /* 0x8F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AdcMemIyD  , &Unsupported,
@@ -2830,7 +2830,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &LdRR{rt:Reg8::A,rs:Reg8::H}             , &LdRR{rt:Reg8::A,rs:Reg8::L}           , &LdRMemHl{r:Reg8::A}              , &LdRR{rt:Reg8::A,rs:Reg8::A},
 
     /* 0x80 */         /* 0x81 */         /* 0x82 */         /* 0x83 */         /* 0x84 */         /* 0x85 */         /* 0x86 */    /* 0x87 */
-    &AddAR{r:Reg8::B}, &AddAR{r:Reg8::C}, &AddAR{r:Reg8::D}, &AddAR{r:Reg8::E}, &AddAR{r:Reg8::H}, &AddAR{r:Reg8::L}, &AddAMemHl  , &AddAR{r:Reg8::A},
+    &AddR{r:Reg8::B} , &AddR{r:Reg8::C} , &AddR{r:Reg8::D} , &AddR{r:Reg8::E} , &AddR{r:Reg8::H} , &AddR{r:Reg8::L} , &AddMemHl   , &AddR{r:Reg8::A},
 
     /* 0x88 */         /* 0x89 */         /* 0x8A */         /* 0x8B */         /* 0x8C */         /* 0x8D */         /* 0x8E */    /* 0x8F */
     &AdcR{r:Reg8::B} , &AdcR{r:Reg8::C} , &AdcR{r:Reg8::D} , &AdcR{r:Reg8::E} , &AdcR{r:Reg8::H} , &AdcR{r:Reg8::L} , &AdcMemHl   , &AdcR{r:Reg8::A} ,
@@ -2854,7 +2854,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &CpR{r:Reg8::B}  , &CpR{r:Reg8::C}  , &CpR{r:Reg8::D}  , &CpR{r:Reg8::E}  , &CpR{r:Reg8::H}  , &CpR{r:Reg8::L}  , &CpMemHl    , &CpR{r:Reg8::A}  ,
 
     /* 0xC0 */                 /* 0xC1 */             /* 0xC2 */                  /* 0xC3 */    /* 0xC4 */                    /* 0xC5 */              /* 0xC6 */    /* 0xC7 */
-    &RetCc{cond:FlagCond::NZ}, &PopQq{r:Reg16qq::BC}, &JpCcNn{cond:FlagCond::NZ}, &JpNn       , &CallCcNn{cond:FlagCond::NZ}, &PushQq{r:Reg16qq::BC}, &AddAN      , &Rst{addr:0x00},
+    &RetCc{cond:FlagCond::NZ}, &PopQq{r:Reg16qq::BC}, &JpCcNn{cond:FlagCond::NZ}, &JpNn       , &CallCcNn{cond:FlagCond::NZ}, &PushQq{r:Reg16qq::BC}, &AddN       , &Rst{addr:0x00},
 
     /* 0xC8 */                 /* 0xC9 */             /* 0xCA */                  /* 0xCB */    /* 0xCC */                    /* 0xCD */              /* 0xCE */    /* 0xCF */
     &RetCc{cond:FlagCond::Z} , &Ret                 , &JpCcNn{cond:FlagCond::Z} , &Unsupported, &CallCcNn{cond:FlagCond::Z} , &CallNn               , &AdcN       , &Rst{addr:0x08},
@@ -2890,7 +2890,7 @@ mod test {
     fn add_a_r() {
         let memory = MemoryBuilder::new().finalize();
         let mut cpu = Cpu::new(memory);
-        let instr = super::AddAR { r:Reg8::B };
+        let instr = super::AddR { r:Reg8::B };
 
         // Test sign flag
         cpu.write_reg8(Reg8::A, 0x80);
