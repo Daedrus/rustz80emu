@@ -2823,5 +2823,27 @@ mod test {
         assert!(cpu.read_reg8(Reg8::A) == 0xFE);
         assert!(cpu.check_flags(SIGN_FLAG|CARRY_FLAG|HALF_CARRY_FLAG));
     }
+
+    #[test]
+    fn add_hl_ss() {
+        let memory = MemoryBuilder::new().finalize();
+        let mut cpu = Cpu::new(memory);
+        let instr = super::AddHlSs { r:Reg16::BC };
+
+        // Test half-carry flag
+        cpu.write_reg16(Reg16::HL, 0x0FFF);
+        cpu.write_reg16(Reg16::BC, 0x0002);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg16(Reg16::HL) == 0x1001);
+        assert!(cpu.check_flags(HALF_CARRY_FLAG));
+
+        // Test carry flag
+        cpu.clear_flag(ALL_FLAGS);
+        cpu.write_reg16(Reg16::HL, 0xFFFF);
+        cpu.write_reg16(Reg16::BC, 0xFFFF);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg16(Reg16::HL) == 0xFFFE);
+        assert!(cpu.check_flags(CARRY_FLAG|HALF_CARRY_FLAG));
+    }
 }
 
