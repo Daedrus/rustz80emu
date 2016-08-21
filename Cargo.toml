@@ -14,7 +14,7 @@ env_logger = "0.3.4"
 [lib]
 name = "z80emulib"
 path = "src/lib.rs"
-test = false
+test = true
 doctest = false
 
 [[bin]]

@@ -97,19 +97,19 @@ struct AddHlSs    { r: Reg16 }
 
 #[inline(always)]
 fn update_flags_add8(cpu: &mut Cpu, op1: u8, op2: u8, res: u8) {
-    cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0                               );
-    cpu.cond_flag  ( ZERO_FLAG            , res == 0                                      );
-    cpu.cond_flag  ( HALF_CARRY_FLAG      , op1 & 0x0F + op2 & 0x0F > 0x0F                );
-    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (op1 ^ op2 ^ 0x80) & (op1 ^ res ^ 0x80) !=  0 );
-    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                    );
-    cpu.cond_flag  ( CARRY_FLAG           , op1 as u16 + op2 as u16 > 0xFF                );
+    cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0                                          );
+    cpu.cond_flag  ( ZERO_FLAG            , res == 0                                                 );
+    cpu.cond_flag  ( HALF_CARRY_FLAG      , (op1 & 0x0F) + (op2 & 0x0F) > 0x0F                       );
+    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (op1 & 0x80 == op2 & 0x80) && (op1 & 0x80 != res & 0x80) );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                               );
+    cpu.cond_flag  ( CARRY_FLAG           , op1 as u16 + op2 as u16 > 0xFF                           );
 }
 
 #[inline(always)]
 fn update_flags_add16(cpu: &mut Cpu, op1: u16, op2: u16) {
-    cpu.cond_flag  ( HALF_CARRY_FLAG   , op1 & 0x0FFF + op2 & 0x0FFF > 0x0FFF );
-    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                        );
-    cpu.cond_flag  ( CARRY_FLAG        , op1 as u32 + op2 as u32  > 0xFFFF    );
+    cpu.cond_flag  ( HALF_CARRY_FLAG   , (op1 & 0x0FFF) + (op2 & 0x0FFF) > 0x0FFF );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                            );
+    cpu.cond_flag  ( CARRY_FLAG        , op1 as u32 + op2 as u32  > 0xFFFF        );
 }
 
 impl Instruction for AddAMemHl {
@@ -2769,4 +2769,59 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0xF8 */                 /* 0xF9 */             /* 0xFA */                  /* 0xFB */    /* 0xFC */                    /* 0xFD */              /* 0xFE */    /* 0xFF */
     &RetCc{cond:FlagCond::M} , &LdSpHl              , &JpCcNn{cond:FlagCond::M} , &Ei         , &CallCcNn{cond:FlagCond::M} , &Unsupported          , &CpN        , &Rst{addr:0x38}
 ];
+
+
+#[cfg(test)]
+mod test {
+
+    use super::super::cpu::*;
+    use super::super::memory::*;
+    use super::*;
+
+    #[test]
+    fn add_a_r() {
+        let memory = MemoryBuilder::new().finalize();
+        let mut cpu = Cpu::new(memory);
+        let instr = super::AddAR { r:Reg8::B };
+
+        // Test sign flag
+        cpu.write_reg8(Reg8::A, 0x80);
+        cpu.write_reg8(Reg8::B, 0x00);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x80);
+        assert!(cpu.check_flags(SIGN_FLAG));
+
+        // Test zero flag
+        cpu.clear_flag(ALL_FLAGS);
+        cpu.write_reg8(Reg8::A, 0x00);
+        cpu.write_reg8(Reg8::B, 0x00);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x00);
+        assert!(cpu.check_flags(ZERO_FLAG));
+
+        // Test half-carry flag
+        cpu.clear_flag(ALL_FLAGS);
+        cpu.write_reg8(Reg8::A, 0x0F);
+        cpu.write_reg8(Reg8::B, 0x0F);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x1E);
+        assert!(cpu.check_flags(HALF_CARRY_FLAG));
+
+        // Test overflow flag
+        cpu.clear_flag(ALL_FLAGS);
+        cpu.write_reg8(Reg8::A, 0x78);
+        cpu.write_reg8(Reg8::B, 0x69);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0xE1);
+        assert!(cpu.check_flags(SIGN_FLAG|PARITY_OVERFLOW_FLAG|HALF_CARRY_FLAG));
+
+        // Test carry flag
+        cpu.clear_flag(ALL_FLAGS);
+        cpu.write_reg8(Reg8::A, 0xFF);
+        cpu.write_reg8(Reg8::B, 0xFF);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0xFE);
+        assert!(cpu.check_flags(SIGN_FLAG|CARRY_FLAG|HALF_CARRY_FLAG));
+    }
+}
 
