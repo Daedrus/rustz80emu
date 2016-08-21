@@ -32,10 +32,52 @@ impl Instruction for Nop {
 }
 
 
-struct AdcAN   ;
-struct AdcHlSs { r: Reg16 }
+struct AdcR      { r: Reg8 }
+struct AdcN      ;
+struct AdcMemHl  ;
+struct AdcMemIxD ;
+struct AdcMemIyD ;
+struct AdcHlSs   { r: Reg16 }
 
-impl Instruction for AdcAN {
+#[inline(always)]
+fn update_flags_adc8(cpu: &mut Cpu, op1: u8, op2: u8, c: u8, res: u8) {
+    cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0                                          );
+    cpu.cond_flag  ( ZERO_FLAG            , res == 0                                                 );
+    cpu.cond_flag  ( HALF_CARRY_FLAG      , (op1 & 0x0F) + (op2 & 0x0F) + c > 0x0F                   );
+    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (op1 & 0x80 == op2 & 0x80) && (op1 & 0x80 != res & 0x80) );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                               );
+    cpu.cond_flag  ( CARRY_FLAG           , op1 as u16 + op2 as u16 + c as u16 > 0xFF                );
+}
+
+#[inline(always)]
+fn update_flags_adc16(cpu: &mut Cpu, op1: u16, op2: u16, c: u16) {
+    cpu.cond_flag  ( HALF_CARRY_FLAG   , (op1 & 0x0FFF) + (op2 & 0x0FFF) + c > 0x0FFF );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                );
+    cpu.cond_flag  ( CARRY_FLAG        , op1 as u32 + op2 as u32 + c as u32 > 0xFFFF  );
+}
+
+impl Instruction for AdcR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
+
+        let a = cpu.read_reg8(Reg8::A);
+        let r = cpu.read_reg8(self.r);
+        let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
+
+        let res = a.wrapping_add(r).wrapping_add(c);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_adc8(cpu, a, r, c, res);
+
+        info!("{:#06x}: ADC A, {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for AdcN {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF));
 
@@ -47,15 +89,86 @@ impl Instruction for AdcAN {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x8000 != 0                           );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                                    );
-        cpu.cond_flag  ( HALF_CARRY_FLAG      , a & 0x0FFF + n & 0x0FFF + c > 0x0FFF        );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (a ^ n ^ 0x8000) & (a ^ res ^ 0x8000) !=  0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                  );
-        cpu.cond_flag  ( CARRY_FLAG           , a as u32 + n as u32 + c as u32 > 0xFFFF     );
+        update_flags_adc8(cpu, a, n, c, res);
 
         info!("{:#06x}: ADC A, {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for AdcMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIX));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+        let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
+
+        let res = a.wrapping_add(memval).wrapping_add(c);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_adc8(cpu, a, memval, c, res);
+
+        if d < 0 {
+            info!("{:#06x}: ADC A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: ADC A, (IX+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for AdcMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIY));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+        let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
+
+        let res = a.wrapping_add(memval).wrapping_add(c);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_adc8(cpu, a, memval, c, res);
+
+        if d < 0 {
+            info!("{:#06x}: ADC A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: ADC A, (IY+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for AdcMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OH|OL));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+        let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
+
+        let res = a.wrapping_add(memval).wrapping_add(c);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_adc8(cpu, a, memval, c, res);
+
+        info!("{:#06x}: ADC A, (HL)", cpu.get_pc());
+        cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OA|OF));
     }
@@ -73,12 +186,7 @@ impl Instruction for AdcHlSs {
 
         cpu.write_reg16(Reg16::HL, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x8000 != 0                              );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                                       );
-        cpu.cond_flag  ( HALF_CARRY_FLAG      , hl & 0x0FFF + ss & 0x0FFF + c > 0x0FFF         );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (hl ^ ss ^ 0x8000) & (hl ^ res ^ 0x8000) !=  0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                     );
-        cpu.cond_flag  ( CARRY_FLAG           , hl as u32 + ss as u32 + c as u32 > 0xFFFF      );
+        update_flags_adc16(cpu, hl, ss, c);
 
         info!("{:#06x}: ADC HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -2211,7 +2319,7 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddAMemIxD , &Unsupported,
 
     /* 0x88 */    /* 0x89 */    /* 0x8A */    /* 0x8B */    /* 0x8C */    /* 0x8D */    /* 0x8E */    /* 0x8F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AdcMemIxD  , &Unsupported,
 
     /* 0x90 */    /* 0x91 */    /* 0x92 */    /* 0x93 */    /* 0x94 */    /* 0x95 */    /* 0x96 */    /* 0x97 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2407,7 +2515,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddAMemIyD , &Unsupported,
 
     /* 0x88 */    /* 0x89 */    /* 0x8A */    /* 0x8B */    /* 0x8C */    /* 0x8D */    /* 0x8E */    /* 0x8F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AdcMemIyD  , &Unsupported,
 
     /* 0x90 */    /* 0x91 */    /* 0x92 */    /* 0x93 */    /* 0x94 */    /* 0x95 */    /* 0x96 */    /* 0x97 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2725,7 +2833,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &AddAR{r:Reg8::B}, &AddAR{r:Reg8::C}, &AddAR{r:Reg8::D}, &AddAR{r:Reg8::E}, &AddAR{r:Reg8::H}, &AddAR{r:Reg8::L}, &AddAMemHl  , &AddAR{r:Reg8::A},
 
     /* 0x88 */         /* 0x89 */         /* 0x8A */         /* 0x8B */         /* 0x8C */         /* 0x8D */         /* 0x8E */    /* 0x8F */
-    &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported     , &Unsupported, &Unsupported     ,
+    &AdcR{r:Reg8::B} , &AdcR{r:Reg8::C} , &AdcR{r:Reg8::D} , &AdcR{r:Reg8::E} , &AdcR{r:Reg8::H} , &AdcR{r:Reg8::L} , &AdcMemHl   , &AdcR{r:Reg8::A} ,
 
     /* 0x90 */         /* 0x91 */         /* 0x92 */         /* 0x93 */         /* 0x94 */         /* 0x95 */         /* 0x96 */    /* 0x97 */
     &SubR{r:Reg8::B} , &SubR{r:Reg8::C} , &SubR{r:Reg8::D} , &SubR{r:Reg8::E} , &SubR{r:Reg8::H} , &SubR{r:Reg8::L} , &Unsupported, &SubR{r:Reg8::A} ,
@@ -2749,7 +2857,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &RetCc{cond:FlagCond::NZ}, &PopQq{r:Reg16qq::BC}, &JpCcNn{cond:FlagCond::NZ}, &JpNn       , &CallCcNn{cond:FlagCond::NZ}, &PushQq{r:Reg16qq::BC}, &AddAN      , &Rst{addr:0x00},
 
     /* 0xC8 */                 /* 0xC9 */             /* 0xCA */                  /* 0xCB */    /* 0xCC */                    /* 0xCD */              /* 0xCE */    /* 0xCF */
-    &RetCc{cond:FlagCond::Z} , &Ret                 , &JpCcNn{cond:FlagCond::Z} , &Unsupported, &CallCcNn{cond:FlagCond::Z} , &CallNn               , &AdcAN      , &Rst{addr:0x08},
+    &RetCc{cond:FlagCond::Z} , &Ret                 , &JpCcNn{cond:FlagCond::Z} , &Unsupported, &CallCcNn{cond:FlagCond::Z} , &CallNn               , &AdcN       , &Rst{addr:0x08},
 
     /* 0xD0 */                 /* 0xD1 */             /* 0xD2 */                  /* 0xD3 */    /* 0xD4 */                    /* 0xD5 */              /* 0xD6 */    /* 0xD7 */
     &RetCc{cond:FlagCond::NC}, &PopQq{r:Reg16qq::DE}, &JpCcNn{cond:FlagCond::NC}, &OutPortNA  , &CallCcNn{cond:FlagCond::NC}, &PushQq{r:Reg16qq::DE}, &SubN       , &Rst{addr:0x10},
