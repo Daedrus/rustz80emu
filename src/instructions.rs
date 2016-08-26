@@ -603,9 +603,107 @@ impl Instruction for CpMemIyD {
 }
 
 
-struct DecSs  { r: Reg16 }
-struct DecR   { r: Reg8  }
-struct DecIyD ;
+struct DecR      { r: Reg8  }
+struct DecMemHl  ;
+struct DecMemIxD ;
+struct DecMemIyD ;
+struct DecSs     { r: Reg16 }
+
+fn update_flags_dec8(cpu: &mut Cpu, op: u8, res: u8) {
+    cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0  );
+    cpu.cond_flag ( ZERO_FLAG            , res == 0         );
+    cpu.cond_flag ( HALF_CARRY_FLAG      , (op & 0x0F) == 0 );
+    cpu.cond_flag ( PARITY_OVERFLOW_FLAG , res == 0x7F      );
+    cpu.set_flag  ( ADD_SUBTRACT_FLAG                       );
+}
+
+impl Instruction for DecR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+
+        let r   = cpu.read_reg8(self.r);
+        let res = r.wrapping_sub(1);
+
+        cpu.write_reg8(self.r, res);
+
+        update_flags_dec8(cpu, r, res);
+
+        info!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    }
+}
+
+impl Instruction for DecMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OH|OL));
+
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let res = memval.wrapping_sub(1);
+
+        cpu.write_word(hl, res);
+
+        update_flags_dec8(cpu, memval, res);
+
+        info!("{:#06x}: DEC (HL)", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for DecMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIX));
+
+        let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval.wrapping_sub(1);
+
+        cpu.write_word(addr, res);
+
+        update_flags_dec8(cpu, memval, res);
+
+        if d < 0 {
+            info!("{:#06x}: DEC (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: DEC (IX+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for DecMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIY));
+
+        let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval.wrapping_sub(1);
+
+        cpu.write_word(addr, res);
+
+        update_flags_dec8(cpu, memval, res);
+
+        if d < 0 {
+            info!("{:#06x}: DEC (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: DEC (IY+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
 
 impl Instruction for DecSs {
     fn execute(&self, cpu: &mut Cpu) {
@@ -622,57 +720,6 @@ impl Instruction for DecSs {
         debug!("{}", cpu.output(OutputRegisters::from(self.r)));
     }
 }
-
-impl Instruction for DecR {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-
-        let r   = cpu.read_reg8(self.r);
-        let res = r.wrapping_sub(1);
-
-        cpu.write_reg8(self.r, res);
-
-        cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0 );
-        cpu.cond_flag ( ZERO_FLAG            , res == 0        );
-        cpu.cond_flag ( HALF_CARRY_FLAG      , res & 0x0F == 0 );
-        cpu.cond_flag ( PARITY_OVERFLOW_FLAG , res == 0x7F     );
-        cpu.set_flag  ( ADD_SUBTRACT_FLAG                      );
-
-        info!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
-        cpu.inc_pc(1);
-
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-    }
-}
-
-impl Instruction for DecIyD {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY));
-
-        let d    = cpu.read_word(cpu.get_pc()) as i8;
-        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
-
-        let res = cpu.read_word(addr).wrapping_sub(1);
-
-        cpu.write_word(addr, res);
-
-        cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0 );
-        cpu.cond_flag ( ZERO_FLAG            , res == 0        );
-        cpu.cond_flag ( HALF_CARRY_FLAG      , res & 0x0F == 0 );
-        cpu.cond_flag ( PARITY_OVERFLOW_FLAG , res == 0x7F     );
-        cpu.set_flag  ( ADD_SUBTRACT_FLAG                      );
-
-        if d < 0 {
-            info!("{:#06x}: DEC (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: DEC (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
-        cpu.inc_pc(2);
-
-        debug!("{}", cpu.output(OF));
-    }
-}
-
 
 struct Di;
 
@@ -2276,7 +2323,7 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &LdIxMemNn  , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdMemIxDN  , &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &DecMemIxD  , &LdMemIxDN  , &Unsupported,
 
     /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2472,7 +2519,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &DecIyD     , &LdMemIyDN,   &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &DecMemIyD  , &LdMemIyDN,   &Unsupported,
 
     /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2766,7 +2813,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &JrZ        , &AddHlSs{r:Reg16::HL}, &LdHlMemNn  , &DecSs{r:Reg16::HL}, &IncR{r:Reg8::L}, &DecR{r:Reg8::L}, &LdRN{r:Reg8::L}, &Unsupported,
 
     /* 0x30 */    /* 0x31 */             /* 0x32 */    /* 0x33 */           /* 0x34 */        /* 0x35 */        /* 0x36 */        /* 0x37 */
-    &JrNcE      , &LdDdNn{r:Reg16::SP} , &LdMemNnA   , &IncSs{r:Reg16::SP}, &IncMemHl       , &Unsupported    , &LdMemHlN       , &Scf        ,
+    &JrNcE      , &LdDdNn{r:Reg16::SP} , &LdMemNnA   , &IncSs{r:Reg16::SP}, &IncMemHl       , &DecMemHl       , &LdMemHlN       , &Scf        ,
 
     /* 0x38 */    /* 0x39 */             /* 0x3A */    /* 0x3B */           /* 0x3C */        /* 0x3D */        /* 0x3E */        /* 0x3F */
     &JrCE       , &AddHlSs{r:Reg16::SP}, &LdAMemNn   , &DecSs{r:Reg16::SP}, &IncR{r:Reg8::A}, &DecR{r:Reg8::A}, &LdRN{r:Reg8::A}, &Ccf        ,
@@ -2973,6 +3020,43 @@ mod test {
         cpu.write_reg8(Reg8::B, 0xA0);
         instr.execute(&mut cpu);
         assert!(cpu.check_flags(SIGN_FLAG | ADD_SUBTRACT_FLAG | CARRY_FLAG | PARITY_OVERFLOW_FLAG));
+    }
+
+    #[test]
+    fn dec_r() {
+        let memory = MemoryBuilder::new().finalize();
+        let mut cpu = Cpu::new(memory);
+        let instr = super::DecR { r:Reg8::A };
+
+        // Test add/subtract flag
+        cpu.write_reg8(Reg8::A, 0x42);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x41);
+        assert!(cpu.check_flags(ADD_SUBTRACT_FLAG));
+
+        // Test zero flag
+        cpu.write_reg8(Reg8::A, 0x01);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x00);
+        assert!(cpu.check_flags(ZERO_FLAG | ADD_SUBTRACT_FLAG));
+
+        // Test half carry
+        cpu.write_reg8(Reg8::A, 0x10);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x0F);
+        assert!(cpu.check_flags(HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG));
+
+        // Test overflow flag
+        cpu.write_reg8(Reg8::A, 0x80);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x7F);
+        assert!(cpu.check_flags(PARITY_OVERFLOW_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG));
+
+        // Test sign flag
+        cpu.write_reg8(Reg8::A, 0x00);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0xFF);
+        assert!(cpu.check_flags(SIGN_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG));
     }
 }
 
