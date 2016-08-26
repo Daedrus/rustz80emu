@@ -909,9 +909,20 @@ impl Instruction for InAPortN {
 }
 
 
-struct IncR    { r: Reg8  }
-struct IncSs   { r: Reg16 }
-struct IncMemHl;
+struct IncR      { r: Reg8  }
+struct IncMemHl  ;
+struct IncMemIxD ;
+struct IncMemIyD ;
+struct IncSs     { r: Reg16 }
+
+#[inline(always)]
+fn update_flags_inc8(cpu: &mut Cpu, op: u8, res: u8) {
+    cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0        );
+    cpu.cond_flag  ( ZERO_FLAG            , res == 0               );
+    cpu.cond_flag  ( HALF_CARRY_FLAG      , (op & 0x0F) + 1 > 0x0F );
+    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res == 0x80            );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                             );
+}
 
 impl Instruction for IncR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -922,16 +933,82 @@ impl Instruction for IncR {
 
         cpu.write_reg8(self.r, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0 );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0        );
-        cpu.cond_flag  ( HALF_CARRY_FLAG      , res & 0x0F == 0 );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res == 0x80     );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                      );
+        update_flags_inc8(cpu, r, res);
 
         info!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    }
+}
+
+impl Instruction for IncMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OH|OL|OF));
+
+        let hl  = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let res = memval.wrapping_add(1);
+
+        cpu.write_word(hl, res);
+
+        update_flags_inc8(cpu, memval, res);
+
+        info!("{:#06x}: INC (HL)", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for IncMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIX));
+
+        let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval.wrapping_add(1);
+
+        cpu.write_word(addr, res);
+
+        update_flags_inc8(cpu, memval, res);
+
+        if d < 0 {
+            info!("{:#06x}: INC (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: INC (IX+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for IncMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIY));
+
+        let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval.wrapping_add(1);
+
+        cpu.write_word(addr, res);
+
+        update_flags_inc8(cpu, memval, res);
+
+        if d < 0 {
+            info!("{:#06x}: INC (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: INC (IY+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF));
     }
 }
 
@@ -948,28 +1025,6 @@ impl Instruction for IncSs {
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OutputRegisters::from(self.r)));
-    }
-}
-
-impl Instruction for IncMemHl {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL|OF));
-
-        let hl  = cpu.read_reg16(Reg16::HL);
-        let res = cpu.read_word(hl).wrapping_add(1);
-
-        cpu.write_word(hl, res);
-
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0 );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0        );
-        cpu.cond_flag  ( HALF_CARRY_FLAG      , res & 0x0F == 0 );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res == 0x80     );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                      );
-
-        info!("{:#06x}: INC (HL)", cpu.get_pc());
-        cpu.inc_pc(1);
-
-        debug!("{}", cpu.output(OH|OL|OF));
     }
 }
 
@@ -2323,7 +2378,7 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &LdIxMemNn  , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &DecMemIxD  , &LdMemIxDN  , &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &IncMemIxD  , &DecMemIxD  , &LdMemIxDN  , &Unsupported,
 
     /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2519,7 +2574,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &DecMemIyD  , &LdMemIyDN,   &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &IncMemIyD  , &DecMemIyD  , &LdMemIyDN,   &Unsupported,
 
     /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -3004,18 +3059,21 @@ mod test {
         assert!(cpu.check_flags(ADD_SUBTRACT_FLAG));
 
         // Test zero flag
+        cpu.clear_flag(ALL_FLAGS);
         cpu.write_reg8(Reg8::A, 0x42);
         cpu.write_reg8(Reg8::B, 0x42);
         instr.execute(&mut cpu);
         assert!(cpu.check_flags(ZERO_FLAG | ADD_SUBTRACT_FLAG));
 
         // Test sign flag, half carry and carry flag
+        cpu.clear_flag(ALL_FLAGS);
         cpu.write_reg8(Reg8::A, 0x42);
         cpu.write_reg8(Reg8::B, 0x43);
         instr.execute(&mut cpu);
         assert!(cpu.check_flags(SIGN_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG | CARRY_FLAG));
 
         // Test overflow flag
+        cpu.clear_flag(ALL_FLAGS);
         cpu.write_reg8(Reg8::A, 0x7F);
         cpu.write_reg8(Reg8::B, 0xA0);
         instr.execute(&mut cpu);
@@ -3035,28 +3093,59 @@ mod test {
         assert!(cpu.check_flags(ADD_SUBTRACT_FLAG));
 
         // Test zero flag
+        cpu.clear_flag(ALL_FLAGS);
         cpu.write_reg8(Reg8::A, 0x01);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0x00);
         assert!(cpu.check_flags(ZERO_FLAG | ADD_SUBTRACT_FLAG));
 
         // Test half carry
+        cpu.clear_flag(ALL_FLAGS);
         cpu.write_reg8(Reg8::A, 0x10);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0x0F);
         assert!(cpu.check_flags(HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG));
 
         // Test overflow flag
+        cpu.clear_flag(ALL_FLAGS);
         cpu.write_reg8(Reg8::A, 0x80);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0x7F);
         assert!(cpu.check_flags(PARITY_OVERFLOW_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG));
 
         // Test sign flag
+        cpu.clear_flag(ALL_FLAGS);
         cpu.write_reg8(Reg8::A, 0x00);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0xFF);
         assert!(cpu.check_flags(SIGN_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG));
+    }
+
+    #[test]
+    fn inc_r() {
+        let memory = MemoryBuilder::new().finalize();
+        let mut cpu = Cpu::new(memory);
+        let instr = super::IncR { r:Reg8::A };
+
+        // Test add/subtract flag cleared
+        cpu.write_reg8(Reg8::A, 0x42);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x43);
+        assert!(cpu.check_flags(EMPTY_FLAGS));
+
+        // Test zero flag and half carry
+        cpu.clear_flag(ALL_FLAGS);
+        cpu.write_reg8(Reg8::A, 0xFF);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x00);
+        assert!(cpu.check_flags(ZERO_FLAG | HALF_CARRY_FLAG));
+
+        // Test overflow flag and sign flag
+        cpu.clear_flag(ALL_FLAGS);
+        cpu.write_reg8(Reg8::A, 0x7F);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x80);
+        assert!(cpu.check_flags(PARITY_OVERFLOW_FLAG | HALF_CARRY_FLAG | SIGN_FLAG));
     }
 }
 

@@ -72,12 +72,16 @@ pub enum FlagCond {
 
 bitflags! {
     pub flags StatusIndicatorFlags: u8 {
+        const EMPTY_FLAGS          = 0b00000000,
+
         const CARRY_FLAG           = 0b00000001, // C
         const ADD_SUBTRACT_FLAG    = 0b00000010, // N
         const PARITY_OVERFLOW_FLAG = 0b00000100, // P/V
         const HALF_CARRY_FLAG      = 0b00010000, // H
         const ZERO_FLAG            = 0b01000000, // Z
-        const SIGN_FLAG            = 0b10000000  // S
+        const SIGN_FLAG            = 0b10000000, // S
+
+        const ALL_FLAGS            = 0b11111111
     }
 }
 
@@ -434,6 +438,7 @@ impl Cpu {
     pub fn cond_flag(&mut self, flag: StatusIndicatorFlags, cond: bool) {
         if cond { self.f.insert(flag); } else { self.f.remove(flag); }
     }
+    pub fn check_flags(&self, flags: StatusIndicatorFlags) -> bool { self.f == flags }
 
     pub fn check_cond(&self, cond: FlagCond) -> bool {
         match cond {
