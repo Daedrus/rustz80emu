@@ -2072,24 +2072,39 @@ impl Instruction for SetBMemHl {
 struct SbcR    { r: Reg8 }
 struct SbcHlSs { r: Reg16 }
 
+#[inline(always)]
+fn update_flags_sbc8(cpu: &mut Cpu, op1: u8, op2: u8, c: u8, res: u8) {
+    cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0                                          );
+    cpu.cond_flag ( ZERO_FLAG            , res == 0                                                 );
+    cpu.cond_flag ( HALF_CARRY_FLAG      , (op1 & 0x0F) < (op2 & 0x0F) + c                          );
+    cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (op1 & 0x80 != op2 & 0x80) && (op1 & 0x80 != res & 0x80) );
+    cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                               );
+    cpu.cond_flag ( CARRY_FLAG           , (op1 as u16) < ((op2 as u16) + (c as u16))               );
+}
+
+#[inline(always)]
+fn update_flags_sbc16(cpu: &mut Cpu, op1: u16, op2: u16, c: u16, res: u16) {
+    cpu.cond_flag ( SIGN_FLAG            , res & 0x8000 != 0                                                );
+    cpu.cond_flag ( ZERO_FLAG            , res == 0                                                         );
+    cpu.cond_flag ( HALF_CARRY_FLAG      , (op1 & 0x00FF) < (op2 & 0x00FF) + c                              );
+    cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (op1 & 0x8000 != op2 & 0x8000) && (op1 & 0x8000 != res & 0x8000) );
+    cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                                       );
+    cpu.cond_flag ( CARRY_FLAG           , (op1 as u32) < ((op2 as u32) + (c as u32))                       );
+}
+
 impl Instruction for SbcR {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
 
-        let a = cpu.read_reg8(Reg8::A) as i8;
-        let r = cpu.read_reg8(self.r) as i8;
+        let a = cpu.read_reg8(Reg8::A);
+        let r = cpu.read_reg8(self.r);
         let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
         let res = a.wrapping_sub(r).wrapping_sub(c);
 
-        cpu.write_reg8(Reg8::A, res as u8);
+        cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0                           );
-        cpu.cond_flag ( ZERO_FLAG            , res == 0                                  );
-        cpu.cond_flag ( HALF_CARRY_FLAG      , a & 0x0F < r & 0x0F                       );
-        cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (a ^ r ^ 0x8000) & (a ^ res ^ 0x80) !=  0 );
-        cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                );
-        cpu.cond_flag ( CARRY_FLAG           , a as i32 - r as i32 - c as i32 > 0xFFFF   );
+        update_flags_sbc8(cpu, a, r, c, res);
 
         info!("{:#06x}: SBC A, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -2102,20 +2117,15 @@ impl Instruction for SbcHlSs {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OH|OL|OF|OutputRegisters::from(self.r)));
 
-        let hl = cpu.read_reg16(Reg16::HL) as i16;
-        let r  = cpu.read_reg16(self.r) as i16;
+        let hl = cpu.read_reg16(Reg16::HL);
+        let r  = cpu.read_reg16(self.r);
         let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
         let res = hl.wrapping_sub(r).wrapping_sub(c);
 
-        cpu.write_reg16(Reg16::HL, res as u16);
+        cpu.write_reg16(Reg16::HL, res);
 
-        cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0                             );
-        cpu.cond_flag ( ZERO_FLAG            , res == 0                                    );
-        cpu.cond_flag ( HALF_CARRY_FLAG      , hl & 0x0F < r & 0x0F                        );
-        cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (hl ^ r ^ 0x8000) & (hl ^ res ^ 0x80) !=  0 );
-        cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                  );
-        cpu.cond_flag ( CARRY_FLAG           , hl as i32 - r as i32 - c as i32 > 0xFFFF    );
+        update_flags_sbc16(cpu, hl, r, c, res);
 
         info!("{:#06x}: SBC HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -3146,6 +3156,52 @@ mod test {
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0x80);
         assert!(cpu.check_flags(PARITY_OVERFLOW_FLAG | HALF_CARRY_FLAG | SIGN_FLAG));
+    }
+
+    #[test]
+    fn sbc_r() {
+        let memory = MemoryBuilder::new().finalize();
+        let mut cpu = Cpu::new(memory);
+        let instr = super::SbcR { r:Reg8::B };
+
+        // Test add/subtract flag
+        cpu.write_reg8(Reg8::A, 0x42);
+        cpu.write_reg8(Reg8::B, 0x41);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x01);
+        assert!(cpu.check_flags(ADD_SUBTRACT_FLAG));
+
+        // Test zero flag
+        cpu.clear_flag(ALL_FLAGS);
+        cpu.write_reg8(Reg8::A, 0x42);
+        cpu.write_reg8(Reg8::B, 0x41);
+        cpu.set_flag(CARRY_FLAG);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x00);
+        assert!(cpu.check_flags(ZERO_FLAG | ADD_SUBTRACT_FLAG));
+
+        cpu.clear_flag(ALL_FLAGS);
+        cpu.write_reg8(Reg8::A, 0x42);
+        cpu.write_reg8(Reg8::B, 0x42);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x00);
+        assert!(cpu.check_flags(ZERO_FLAG | ADD_SUBTRACT_FLAG));
+
+        // Test sign, half carry and carry flags
+        cpu.clear_flag(ALL_FLAGS);
+        cpu.write_reg8(Reg8::A, 0x01);
+        cpu.write_reg8(Reg8::B, 0x02);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0xFF);
+        assert!(cpu.check_flags(SIGN_FLAG | ADD_SUBTRACT_FLAG | HALF_CARRY_FLAG | CARRY_FLAG));
+
+        // Test overflow flag
+        cpu.clear_flag(ALL_FLAGS);
+        cpu.write_reg8(Reg8::A, 0x80);
+        cpu.write_reg8(Reg8::B, 0x01);
+        instr.execute(&mut cpu);
+        assert!(cpu.read_reg8(Reg8::A) == 0x7F);
+        assert!(cpu.check_flags(PARITY_OVERFLOW_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG));
     }
 }
 
