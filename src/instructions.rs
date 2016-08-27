@@ -50,10 +50,13 @@ fn update_flags_adc8(cpu: &mut Cpu, op1: u8, op2: u8, c: u8, res: u8) {
 }
 
 #[inline(always)]
-fn update_flags_adc16(cpu: &mut Cpu, op1: u16, op2: u16, c: u16) {
-    cpu.cond_flag  ( HALF_CARRY_FLAG   , (op1 & 0x0FFF) + (op2 & 0x0FFF) + c > 0x0FFF );
-    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                );
-    cpu.cond_flag  ( CARRY_FLAG        , op1 as u32 + op2 as u32 + c as u32 > 0xFFFF  );
+fn update_flags_adc16(cpu: &mut Cpu, op1: u16, op2: u16, c: u16, res: u16) {
+    cpu.cond_flag  ( SIGN_FLAG            , res & 0x8000 != 0                                                );
+    cpu.cond_flag  ( ZERO_FLAG            , res == 0                                                         );
+    cpu.cond_flag  ( HALF_CARRY_FLAG      , (op1 & 0x0FFF) + (op2 & 0x0FFF) + c > 0x0FFF                     );
+    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (op1 & 0x8000 == op2 & 0x8000) && (op1 & 0x8000 != res & 0x8000) );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                                       );
+    cpu.cond_flag  ( CARRY_FLAG           , op1 as u32 + op2 as u32 + c as u32 > 0xFFFF                      );
 }
 
 impl Instruction for AdcR {
@@ -186,7 +189,7 @@ impl Instruction for AdcHlSs {
 
         cpu.write_reg16(Reg16::HL, res);
 
-        update_flags_adc16(cpu, hl, ss, c);
+        update_flags_adc16(cpu, hl, ss, c, res);
 
         info!("{:#06x}: ADC HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
