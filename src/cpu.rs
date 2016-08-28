@@ -7,29 +7,19 @@ use super::instructions;
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy)]
 pub enum Reg16 {
-    BC = 0b00,
-    DE = 0b01,
-    HL = 0b10,
-    SP = 0b11,
+    AF = 0,
+    BC = 1,
+    DE = 2,
+    HL = 3,
 
-    BC_ALT = 0b100,
-    DE_ALT = 0b101,
-    HL_ALT = 0b110
-}
-}
+    AF_ALT = 4,
+    BC_ALT = 5,
+    DE_ALT = 6,
+    HL_ALT = 7,
 
-enum_from_primitive! {
-#[derive(Debug, Clone, Copy)]
-pub enum Reg16qq {
-    BC = 0b00,
-    DE = 0b01,
-    HL = 0b10,
-    AF = 0b11,
-
-    AF_ALT = 0b111,
-
-    IX = 0b1000,
-    IY = 0b1001
+    SP = 8,
+    IX = 9,
+    IY = 10
 }
 }
 
@@ -119,27 +109,17 @@ bitflags! {
 impl From<Reg16> for OutputRegisters {
     fn from(r: Reg16) -> OutputRegisters {
         match r {
+            Reg16::AF => OA | OF,
             Reg16::BC => OB | OC,
             Reg16::DE => OD | OE,
             Reg16::HL => OH | OL,
-            Reg16::SP => OSP,
+            Reg16::AF_ALT => OA_ALT | OF_ALT,
             Reg16::BC_ALT => OB_ALT | OC_ALT,
             Reg16::DE_ALT => OD_ALT | OE_ALT,
-            Reg16::HL_ALT => OH_ALT | OL_ALT
-        }
-    }
-}
-
-impl From<Reg16qq> for OutputRegisters {
-    fn from(r: Reg16qq) -> OutputRegisters {
-        match r {
-            Reg16qq::IX => OIX,
-            Reg16qq::IY => OIY,
-            Reg16qq::BC => OB | OC,
-            Reg16qq::DE => OD | OE,
-            Reg16qq::HL => OH | OL,
-            Reg16qq::AF     => OA | OF,
-            Reg16qq::AF_ALT => OA_ALT | OF_ALT
+            Reg16::HL_ALT => OH_ALT | OL_ALT,
+            Reg16::SP => OSP,
+            Reg16::IX => OIX,
+            Reg16::IY => OIY
         }
     }
 }
@@ -345,12 +325,16 @@ impl Cpu {
 
     pub fn read_reg16(&self, reg: Reg16) -> u16 {
         let val = match reg {
+            Reg16::IX => self.ix,
+            Reg16::IY => self.iy,
             Reg16::SP => self.sp,
             _ => {
                 let (high, low) = match reg {
+                    Reg16::AF => (self.a, self.f.bits() as u8),
                     Reg16::BC => (self.b, self.c),
                     Reg16::DE => (self.d, self.e),
                     Reg16::HL => (self.h, self.l),
+                    Reg16::AF_ALT => (self.a_alt, self.f_alt.bits() as u8),
                     Reg16::BC_ALT => (self.b_alt, self.c_alt),
                     Reg16::DE_ALT => (self.d_alt, self.e_alt),
                     Reg16::HL_ALT => (self.h_alt, self.l_alt),
@@ -367,49 +351,17 @@ impl Cpu {
     pub fn write_reg16(&mut self, reg: Reg16, val: u16) {
         let (high, low) = (((val & 0xFF00) >> 8) as u8, (val & 0x00FF) as u8);
         match reg {
+            Reg16::AF => { self.a = high; self.f = StatusIndicatorFlags::from_bits_truncate(low); }
             Reg16::BC => { self.b = high; self.c = low; }
             Reg16::DE => { self.d = high; self.e = low; }
             Reg16::HL => { self.h = high; self.l = low; }
+            Reg16::AF_ALT => { self.a_alt = high; self.f_alt = StatusIndicatorFlags::from_bits_truncate(low); }
             Reg16::BC_ALT => { self.b_alt = high; self.c_alt = low; }
             Reg16::DE_ALT => { self.d_alt = high; self.e_alt = low; }
             Reg16::HL_ALT => { self.h_alt = high; self.l_alt = low; }
             Reg16::SP => { self.sp = val }
-        }
-
-        debug!("                Write value {:#06X} to register {:?}", val, reg);
-    }
-
-    pub fn read_reg16qq(&self, reg: Reg16qq) -> u16 {
-        let val = match reg {
-            Reg16qq::IX => self.ix,
-            Reg16qq::IY => self.iy,
-            _ => {
-                let (high, low) = match reg {
-                    Reg16qq::BC => (self.b, self.c),
-                    Reg16qq::DE => (self.d, self.e),
-                    Reg16qq::HL => (self.h, self.l),
-                    Reg16qq::AF     => (self.a,     self.f.bits() as u8),
-                    Reg16qq::AF_ALT => (self.a_alt, self.f_alt.bits() as u8),
-                    _ => unreachable!()
-                };
-                ((high as u16) << 8 ) | low as u16
-            }
-        };
-
-        debug!("                Read value {:#04X} from register {:?}", val, reg);
-        val
-    }
-
-    pub fn write_reg16qq(&mut self, reg: Reg16qq, val: u16) {
-        let (high, low) = (((val & 0xFF00) >> 8) as u8, (val & 0x00FF) as u8);
-        match reg {
-            Reg16qq::IX => { self.ix = val; }
-            Reg16qq::IY => { self.iy = val; }
-            Reg16qq::BC => { self.b = high; self.c = low; }
-            Reg16qq::DE => { self.d = high; self.e = low; }
-            Reg16qq::HL => { self.h = high; self.l = low; }
-            Reg16qq::AF =>     { self.a = high;     self.f = StatusIndicatorFlags::from_bits_truncate(low); }
-            Reg16qq::AF_ALT => { self.a_alt = high; self.f_alt = StatusIndicatorFlags::from_bits_truncate(low); }
+            Reg16::IX => { self.ix = val }
+            Reg16::IY => { self.iy = val }
         }
 
         debug!("                Write value {:#06X} to register {:?}", val, reg);

@@ -790,11 +790,11 @@ impl Instruction for ExAfAfAlt {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF|OA_ALT|OF_ALT));
 
-        let af    = cpu.read_reg16qq(Reg16qq::AF);
-        let afalt = cpu.read_reg16qq(Reg16qq::AF_ALT);
+        let af    = cpu.read_reg16(Reg16::AF);
+        let afalt = cpu.read_reg16(Reg16::AF_ALT);
 
-        cpu.write_reg16qq(Reg16qq::AF, afalt);
-        cpu.write_reg16qq(Reg16qq::AF_ALT, af);
+        cpu.write_reg16(Reg16::AF, afalt);
+        cpu.write_reg16(Reg16::AF_ALT, af);
 
         info!("{:#06x}: EX AF, AF'", cpu.get_pc());
         cpu.inc_pc(1);
@@ -1768,7 +1768,7 @@ impl Instruction for OutPortNA {
 }
 
 
-struct PopQq { r: Reg16qq }
+struct PopQq { r: Reg16 }
 
 impl Instruction for PopQq {
     fn execute(&self, cpu: &mut Cpu) {
@@ -1779,7 +1779,7 @@ impl Instruction for PopQq {
         let low  = cpu.read_word(curr_sp);
         let high = cpu.read_word(curr_sp + 1);
 
-        cpu.write_reg16qq(self.r, ((high as u16) << 8 ) | low as u16);
+        cpu.write_reg16(self.r, ((high as u16) << 8 ) | low as u16);
         cpu.write_reg16(Reg16::SP, curr_sp + 2);
 
         info!("{:#06x}: POP {:?}", cpu.get_pc(), self.r);
@@ -1790,14 +1790,14 @@ impl Instruction for PopQq {
 }
 
 
-struct PushQq { r: Reg16qq }
+struct PushQq { r: Reg16 }
 
 impl Instruction for PushQq {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OutputRegisters::from(self.r)|OSP));
 
         let curr_sp = cpu.read_reg16(Reg16::SP);
-        let r = cpu.read_reg16qq(self.r);
+        let r = cpu.read_reg16(self.r);
 
         cpu.write_word(curr_sp - 1, ((r & 0xFF00) >> 8) as u8);
         cpu.write_word(curr_sp - 2,  (r & 0x00FF)       as u8);
@@ -2456,8 +2456,8 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     /* 0xD8 */    /* 0xD9 */    /* 0xDA */    /* 0xDB */    /* 0xDC */    /* 0xDD */    /* 0xDE */    /* 0xDF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0xE0 */    /* 0xE1 */             /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */              /* 0xE6 */    /* 0xE7 */
-    &Unsupported, &PopQq{r:Reg16qq::IX}, &Unsupported, &Unsupported, &Unsupported, &PushQq{r:Reg16qq::IX}, &Unsupported, &Unsupported,
+    /* 0xE0 */    /* 0xE1 */           /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */            /* 0xE6 */    /* 0xE7 */
+    &Unsupported, &PopQq{r:Reg16::IX}, &Unsupported, &Unsupported, &Unsupported, &PushQq{r:Reg16::IX}, &Unsupported, &Unsupported,
 
     /* 0xE8 */    /* 0xE9 */    /* 0xEA */    /* 0xEB */    /* 0xEC */    /* 0xED */    /* 0xEE */    /* 0xEF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2652,8 +2652,8 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     /* 0xD8 */    /* 0xD9 */    /* 0xDA */    /* 0xDB */    /* 0xDC */    /* 0xDD */    /* 0xDE */    /* 0xDF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0xE0 */    /* 0xE1 */             /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */              /* 0xE6 */    /* 0xE7 */
-    &Unsupported, &PopQq{r:Reg16qq::IY}, &Unsupported, &Unsupported, &Unsupported, &PushQq{r:Reg16qq::IY}, &Unsupported, &Unsupported,
+    /* 0xE0 */    /* 0xE1 */           /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */            /* 0xE6 */    /* 0xE7 */
+    &Unsupported, &PopQq{r:Reg16::IY}, &Unsupported, &Unsupported, &Unsupported, &PushQq{r:Reg16::IY}, &Unsupported, &Unsupported,
 
     /* 0xE8 */    /* 0xE9 */    /* 0xEA */    /* 0xEB */    /* 0xEC */    /* 0xED */    /* 0xEE */    /* 0xEF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2958,29 +2958,29 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0xB8 */         /* 0xB9 */         /* 0xBA */         /* 0xBB */         /* 0xBC */         /* 0xBD */         /* 0xBE */    /* 0xBF */
     &CpR{r:Reg8::B}  , &CpR{r:Reg8::C}  , &CpR{r:Reg8::D}  , &CpR{r:Reg8::E}  , &CpR{r:Reg8::H}  , &CpR{r:Reg8::L}  , &CpMemHl    , &CpR{r:Reg8::A}  ,
 
-    /* 0xC0 */                 /* 0xC1 */             /* 0xC2 */                  /* 0xC3 */    /* 0xC4 */                    /* 0xC5 */              /* 0xC6 */    /* 0xC7 */
-    &RetCc{cond:FlagCond::NZ}, &PopQq{r:Reg16qq::BC}, &JpCcNn{cond:FlagCond::NZ}, &JpNn       , &CallCcNn{cond:FlagCond::NZ}, &PushQq{r:Reg16qq::BC}, &AddN       , &Rst{addr:0x00},
+    /* 0xC0 */                 /* 0xC1 */           /* 0xC2 */                  /* 0xC3 */    /* 0xC4 */                    /* 0xC5 */            /* 0xC6 */    /* 0xC7 */
+    &RetCc{cond:FlagCond::NZ}, &PopQq{r:Reg16::BC}, &JpCcNn{cond:FlagCond::NZ}, &JpNn       , &CallCcNn{cond:FlagCond::NZ}, &PushQq{r:Reg16::BC}, &AddN       , &Rst{addr:0x00},
 
-    /* 0xC8 */                 /* 0xC9 */             /* 0xCA */                  /* 0xCB */    /* 0xCC */                    /* 0xCD */              /* 0xCE */    /* 0xCF */
-    &RetCc{cond:FlagCond::Z} , &Ret                 , &JpCcNn{cond:FlagCond::Z} , &Unsupported, &CallCcNn{cond:FlagCond::Z} , &CallNn               , &AdcN       , &Rst{addr:0x08},
+    /* 0xC8 */                 /* 0xC9 */           /* 0xCA */                  /* 0xCB */    /* 0xCC */                    /* 0xCD */            /* 0xCE */    /* 0xCF */
+    &RetCc{cond:FlagCond::Z} , &Ret               , &JpCcNn{cond:FlagCond::Z} , &Unsupported, &CallCcNn{cond:FlagCond::Z} , &CallNn             , &AdcN       , &Rst{addr:0x08},
 
-    /* 0xD0 */                 /* 0xD1 */             /* 0xD2 */                  /* 0xD3 */    /* 0xD4 */                    /* 0xD5 */              /* 0xD6 */    /* 0xD7 */
-    &RetCc{cond:FlagCond::NC}, &PopQq{r:Reg16qq::DE}, &JpCcNn{cond:FlagCond::NC}, &OutPortNA  , &CallCcNn{cond:FlagCond::NC}, &PushQq{r:Reg16qq::DE}, &SubN       , &Rst{addr:0x10},
+    /* 0xD0 */                 /* 0xD1 */           /* 0xD2 */                  /* 0xD3 */    /* 0xD4 */                    /* 0xD5 */            /* 0xD6 */    /* 0xD7 */
+    &RetCc{cond:FlagCond::NC}, &PopQq{r:Reg16::DE}, &JpCcNn{cond:FlagCond::NC}, &OutPortNA  , &CallCcNn{cond:FlagCond::NC}, &PushQq{r:Reg16::DE}, &SubN       , &Rst{addr:0x10},
 
-    /* 0xD8 */                 /* 0xD9 */             /* 0xDA */                  /* 0xDB */    /* 0xDC */                    /* 0xDD */              /* 0xDE */    /* 0xDF */
-    &RetCc{cond:FlagCond::C} , &Exx                 , &JpCcNn{cond:FlagCond::C} , &InAPortN   , &CallCcNn{cond:FlagCond::C} , &Unsupported          , &Unsupported, &Rst{addr:0x18},
+    /* 0xD8 */                 /* 0xD9 */           /* 0xDA */                  /* 0xDB */    /* 0xDC */                    /* 0xDD */            /* 0xDE */    /* 0xDF */
+    &RetCc{cond:FlagCond::C} , &Exx               , &JpCcNn{cond:FlagCond::C} , &InAPortN   , &CallCcNn{cond:FlagCond::C} , &Unsupported        , &Unsupported, &Rst{addr:0x18},
 
-    /* 0xE0 */                 /* 0xE1 */             /* 0xE2 */                  /* 0xE3 */    /* 0xE4 */                    /* 0xE5 */              /* 0xE6 */    /* 0xE7 */
-    &RetCc{cond:FlagCond::PO}, &PopQq{r:Reg16qq::HL}, &JpCcNn{cond:FlagCond::PO}, &ExMemSpHl  , &CallCcNn{cond:FlagCond::PO}, &PushQq{r:Reg16qq::HL}, &AndN       , &Rst{addr:0x20},
+    /* 0xE0 */                 /* 0xE1 */           /* 0xE2 */                  /* 0xE3 */    /* 0xE4 */                    /* 0xE5 */            /* 0xE6 */    /* 0xE7 */
+    &RetCc{cond:FlagCond::PO}, &PopQq{r:Reg16::HL}, &JpCcNn{cond:FlagCond::PO}, &ExMemSpHl  , &CallCcNn{cond:FlagCond::PO}, &PushQq{r:Reg16::HL}, &AndN       , &Rst{addr:0x20},
 
-    /* 0xE8 */                 /* 0xE9 */             /* 0xEA */                  /* 0xEB */    /* 0xEC */                    /* 0xED */              /* 0xEE */    /* 0xEF */
-    &RetCc{cond:FlagCond::PE}, &JpMemHl             , &JpCcNn{cond:FlagCond::PE}, &ExDeHl     , &CallCcNn{cond:FlagCond::PE}, &Unsupported          , &XorN       , &Rst{addr:0x28},
+    /* 0xE8 */                 /* 0xE9 */           /* 0xEA */                  /* 0xEB */    /* 0xEC */                    /* 0xED */            /* 0xEE */    /* 0xEF */
+    &RetCc{cond:FlagCond::PE}, &JpMemHl           , &JpCcNn{cond:FlagCond::PE}, &ExDeHl     , &CallCcNn{cond:FlagCond::PE}, &Unsupported        , &XorN       , &Rst{addr:0x28},
 
-    /* 0xF0 */                 /* 0xF1 */             /* 0xF2 */                  /* 0xF3 */    /* 0xF4 */                    /* 0xF5 */              /* 0xF6 */    /* 0xF7 */
-    &RetCc{cond:FlagCond::P} , &PopQq{r:Reg16qq::AF}, &JpCcNn{cond:FlagCond::P} , &Di         , &CallCcNn{cond:FlagCond::P} , &PushQq{r:Reg16qq::AF}, &OrN        , &Rst{addr:0x30},
+    /* 0xF0 */                 /* 0xF1 */           /* 0xF2 */                  /* 0xF3 */    /* 0xF4 */                    /* 0xF5 */            /* 0xF6 */    /* 0xF7 */
+    &RetCc{cond:FlagCond::P} , &PopQq{r:Reg16::AF}, &JpCcNn{cond:FlagCond::P} , &Di         , &CallCcNn{cond:FlagCond::P} , &PushQq{r:Reg16::AF}, &OrN        , &Rst{addr:0x30},
 
-    /* 0xF8 */                 /* 0xF9 */             /* 0xFA */                  /* 0xFB */    /* 0xFC */                    /* 0xFD */              /* 0xFE */    /* 0xFF */
-    &RetCc{cond:FlagCond::M} , &LdSpHl              , &JpCcNn{cond:FlagCond::M} , &Ei         , &CallCcNn{cond:FlagCond::M} , &Unsupported          , &CpN        , &Rst{addr:0x38}
+    /* 0xF8 */                 /* 0xF9 */           /* 0xFA */                  /* 0xFB */    /* 0xFC */                    /* 0xFD */            /* 0xFE */    /* 0xFF */
+    &RetCc{cond:FlagCond::M} , &LdSpHl            , &JpCcNn{cond:FlagCond::M} , &Ei         , &CallCcNn{cond:FlagCond::M} , &Unsupported        , &CpN        , &Rst{addr:0x38}
 ];
 
 
