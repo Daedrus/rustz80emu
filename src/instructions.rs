@@ -1217,28 +1217,179 @@ impl Instruction for JrE {
 }
 
 
+struct LdMemBcA  ;
+struct LdMemDeA  ;
+struct LdMemHlN  ;
+struct LdMemHlR  { r: Reg8  }
+struct LdMemIxDN ;
+struct LdMemIxDR { r: Reg8  }
+struct LdMemIyDN ;
+struct LdMemIyDR { r: Reg8  }
 struct LdRN      { r: Reg8  }
 struct LdDdNn    { r: Reg16 }
 struct LdDdMemNn { r: Reg16 }
 struct LdHlMemNn ;
-struct LdMemHlN  ;
 struct LdRMemIyD { r: Reg8  }
-struct LdMemIyDN ;
 struct LdSpHl    ;
 struct LdIxNn    ;
 struct LdIxMemNn ;
 struct LdMemNnIx ;
-struct LdMemIxDN ;
 struct LdRR      { rt: Reg8, rs: Reg8 }
 struct LdMemNnDd { r: Reg16 }
-struct LdMemHlR  { r: Reg8  }
 struct LdMemNnA  ;
 struct LdRMemHl  { r: Reg8  }
 struct LdMemNnHl ;
 struct LdAMemNn  ;
 struct LdAMemDe  ;
-struct LdMemDeA  ;
 struct LdIyNn    ;
+
+impl Instruction for LdMemBcA {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OB|OC));
+
+        let bc = cpu.read_reg16(Reg16::BC);
+        let a  = cpu.read_reg8(Reg8::A);
+
+        cpu.write_word(bc, a);
+
+        info!("{:#06x}: LD (BC), A", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
+
+impl Instruction for LdMemDeA {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OD|OE));
+
+        let de = cpu.read_reg16(Reg16::DE);
+        let a  = cpu.read_reg8(Reg8::A);
+
+        cpu.write_word(de, a);
+
+        info!("{:#06x}: LD (DE), A", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
+
+impl Instruction for LdMemHlN {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OH|OL));
+
+        let hl = cpu.read_reg16(Reg16::HL);
+        let n  = cpu.read_word(cpu.get_pc() + 1);
+
+        cpu.write_word(hl, n);
+
+        info!("{:#06x}: LD (HL), {:#04X}", cpu.get_pc(), n);
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
+
+impl Instruction for LdMemHlR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OH|OL|OutputRegisters::from(self.r)));
+
+        let hl = cpu.read_reg16(Reg16::HL);
+        let r  = cpu.read_reg8(self.r);
+
+        cpu.write_word(hl, r);
+
+        info!("{:#06x}: LD (HL), {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
+
+impl Instruction for LdMemIxDN {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OIX));
+
+        let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let n    = cpu.read_word(cpu.get_pc() + 2);
+        let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
+
+        cpu.write_word(addr, n);
+
+        if d < 0 {
+            info!("{:#06x}: LD (IX-{:#04X}), {:#04X}", cpu.get_pc() - 1, (d ^ 0xFF) + 1, n);
+        } else {
+            info!("{:#06x}: LD (IX+{:#04X}), {:#04X}", cpu.get_pc() - 1, d, n);
+        }
+        cpu.inc_pc(3);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
+
+impl Instruction for LdMemIxDR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OIX));
+
+        let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let r    = cpu.read_reg8(self.r);
+        let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
+
+        cpu.write_word(addr, r);
+
+        if d < 0 {
+            info!("{:#06x}: LD (IX-{:#04X}), {:?}", cpu.get_pc() - 1, (d ^ 0xFF) + 1, self.r);
+        } else {
+            info!("{:#06x}: LD (IX+{:#04X}), {:?}", cpu.get_pc() - 1, d, self.r);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
+
+impl Instruction for LdMemIyDN {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OIY));
+
+        let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let n    = cpu.read_word(cpu.get_pc() + 2);
+        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
+
+        cpu.write_word(addr, n);
+
+        if d < 0 {
+            info!("{:#06x}: LD (IY-{:#04X}), {:#04X}", cpu.get_pc() - 1, (d ^ 0xFF) + 1, n);
+        } else {
+            info!("{:#06x}: LD (IY+{:#04X}), {:#04X}", cpu.get_pc() - 1, d, n);
+        }
+        cpu.inc_pc(3);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
+
+impl Instruction for LdMemIyDR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OIY));
+
+        let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let r    = cpu.read_reg8(self.r);
+        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
+
+        cpu.write_word(addr, r);
+
+        if d < 0 {
+            info!("{:#06x}: LD (IY-{:#04X}), {:?}", cpu.get_pc() - 1, (d ^ 0xFF) + 1, self.r);
+        } else {
+            info!("{:#06x}: LD (IY+{:#04X}), {:?}", cpu.get_pc() - 1, d, self.r);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
 
 impl Instruction for LdRN {
     fn execute(&self, cpu: &mut Cpu) {
@@ -1307,22 +1458,6 @@ impl Instruction for LdHlMemNn {
     }
 }
 
-impl Instruction for LdMemHlN {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL));
-
-        let hl = cpu.read_reg16(Reg16::HL);
-        let n  = cpu.read_word(cpu.get_pc() + 1);
-
-        cpu.write_word(hl, n);
-
-        info!("{:#06x}: LD (HL), {:#04X}", cpu.get_pc(), n);
-        cpu.inc_pc(2);
-
-        debug!("{}", cpu.output(ONONE));
-    }
-}
-
 impl Instruction for LdRMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OIY|OutputRegisters::from(self.r)));
@@ -1341,27 +1476,6 @@ impl Instruction for LdRMemIyD {
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OutputRegisters::from(self.r)));
-    }
-}
-
-impl Instruction for LdMemIyDN {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIY));
-
-        let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let n    = cpu.read_word(cpu.get_pc() + 2);
-        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
-
-        cpu.write_word(addr, n);
-
-        if d < 0 {
-            info!("{:#06x}: LD (IY-{:#04X}), {:#04X}", cpu.get_pc() - 1, (d ^ 0xFF) + 1, n);
-        } else {
-            info!("{:#06x}: LD (IY+{:#04X}), {:#04X}", cpu.get_pc() - 1, d, n);
-        }
-        cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(ONONE));
     }
 }
 
@@ -1432,27 +1546,6 @@ impl Instruction for LdMemNnIx {
     }
 }
 
-impl Instruction for LdMemIxDN {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIX));
-
-        let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let n    = cpu.read_word(cpu.get_pc() + 2);
-        let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
-
-        cpu.write_word(addr, n);
-
-        if d < 0 {
-            info!("{:#06x}: LD (IX-{:#04X}), {:#04X}", cpu.get_pc() - 1, (d ^ 0xFF) + 1, n);
-        } else {
-            info!("{:#06x}: LD (IX+{:#04X}), {:#04X}", cpu.get_pc() - 1, d, n);
-        }
-        cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(ONONE));
-    }
-}
-
 impl Instruction for LdRR {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OutputRegisters::from(self.rt) | OutputRegisters::from(self.rs)));
@@ -1483,22 +1576,6 @@ impl Instruction for LdMemNnDd {
 
         info!("{:#06x}: LD ({:#06X}), {:?}", cpu.get_pc() - 1, nn, self.r);
         cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(ONONE));
-    }
-}
-
-impl Instruction for LdMemHlR {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL|OutputRegisters::from(self.r)));
-
-        let hl = cpu.read_reg16(Reg16::HL);
-        let r  = cpu.read_reg8(self.r);
-
-        cpu.write_word(hl, r);
-
-        info!("{:#06x}: LD (HL), {:?}", cpu.get_pc(), self.r);
-        cpu.inc_pc(1);
 
         debug!("{}", cpu.output(ONONE));
     }
@@ -1587,22 +1664,6 @@ impl Instruction for LdAMemDe {
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OA));
-    }
-}
-
-impl Instruction for LdMemDeA {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OD|OE));
-
-        let de = cpu.read_reg16(Reg16::DE);
-        let a  = cpu.read_reg8(Reg8::A);
-
-        cpu.write_word(de, a);
-
-        info!("{:#06x}: LD (DE), A", cpu.get_pc());
-        cpu.inc_pc(1);
-
-        debug!("{}", cpu.output(ONONE));
     }
 }
 
@@ -2556,8 +2617,8 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     /* 0x68 */    /* 0x69 */    /* 0x6A */    /* 0x6B */    /* 0x6C */    /* 0x6D */    /* 0x6E */    /* 0x6F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x70 */    /* 0x71 */    /* 0x72 */    /* 0x73 */    /* 0x74 */    /* 0x75 */    /* 0x76 */    /* 0x77 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x70 */             /* 0x71 */             /* 0x72 */             /* 0x73 */             /* 0x74 */             /* 0x75 */             /* 0x76 */    /* 0x77 */
+    &LdMemIxDR{r:Reg8::B}, &LdMemIxDR{r:Reg8::C}, &LdMemIxDR{r:Reg8::D}, &LdMemIxDR{r:Reg8::E}, &LdMemIxDR{r:Reg8::H}, &LdMemIxDR{r:Reg8::L}, &Unsupported, &LdMemIxDR{r:Reg8::A},
 
     /* 0x78 */    /* 0x79 */    /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */    /* 0x7F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2752,8 +2813,8 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     /* 0x68 */    /* 0x69 */    /* 0x6A */    /* 0x6B */    /* 0x6C */    /* 0x6D */    /* 0x6E */             /* 0x6F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::L}, &Unsupported,
 
-    /* 0x70 */    /* 0x71 */    /* 0x72 */    /* 0x73 */    /* 0x74 */    /* 0x75 */    /* 0x76 */             /* 0x77 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported         , &Unsupported,
+    /* 0x70 */             /* 0x71 */             /* 0x72 */             /* 0x73 */             /* 0x74 */             /* 0x75 */             /* 0x76 */    /* 0x77 */
+    &LdMemIyDR{r:Reg8::B}, &LdMemIyDR{r:Reg8::C}, &LdMemIyDR{r:Reg8::D}, &LdMemIyDR{r:Reg8::E}, &LdMemIyDR{r:Reg8::H}, &LdMemIyDR{r:Reg8::L}, &Unsupported, &LdMemIyDR{r:Reg8::A},
 
     /* 0x78 */    /* 0x79 */    /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */             /* 0x7F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::A}, &Unsupported,
@@ -3005,7 +3066,7 @@ pub const INSTR_TABLE_FDCB: [&'static Instruction; 256] = [
 
 pub const INSTR_TABLE: [&'static Instruction; 256] = [
     /* 0x00 */    /* 0x01 */             /* 0x02 */    /* 0x03 */           /* 0x04 */        /* 0x05 */        /* 0x06 */        /* 0x07 */
-    &Nop        , &LdDdNn{r:Reg16::BC} , &Unsupported, &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &RlcA       ,
+    &Nop        , &LdDdNn{r:Reg16::BC} , &LdMemBcA   , &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &RlcA       ,
 
     /* 0x08 */    /* 0x09 */             /* 0x0A */    /* 0x0B */           /* 0x0C */        /* 0x0D */        /* 0x0E */        /* 0x0F */
     &ExAfAfAlt  , &AddHlSs{r:Reg16::BC}, &Unsupported, &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &RrcA       ,
