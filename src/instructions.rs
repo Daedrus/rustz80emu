@@ -2113,8 +2113,12 @@ impl Instruction for SetBMemHl {
 }
 
 
-struct SbcR    { r: Reg8 }
-struct SbcHlSs { r: Reg16 }
+struct SbcR      { r: Reg8 }
+struct SbcN      ;
+struct SbcMemHl  ;
+struct SbcMemIxD ;
+struct SbcMemIyD ;
+struct SbcHlSs   { r: Reg16 }
 
 #[inline(always)]
 fn update_flags_sbc8(cpu: &mut Cpu, op1: u8, op2: u8, c: u8, res: u8) {
@@ -2152,6 +2156,103 @@ impl Instruction for SbcR {
 
         info!("{:#06x}: SBC A, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for SbcN {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF));
+
+        let a = cpu.read_reg8(Reg8::A);
+        let n = cpu.read_word(cpu.get_pc() + 1);
+        let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
+
+        let res = a.wrapping_sub(n).wrapping_sub(c);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_sbc8(cpu, a, n, c, res);
+
+        info!("{:#06x}: SBC A, {:#04X}", cpu.get_pc(), n);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for SbcMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OH|OL));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+        let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
+
+        let res = a.wrapping_sub(memval).wrapping_sub(c);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_sbc8(cpu, a, memval, c, res);
+
+        info!("{:#06x}: SBC A, (HL)", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for SbcMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIX));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+        let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
+
+        let res = a.wrapping_sub(memval).wrapping_sub(c);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_sbc8(cpu, a, memval, c, res);
+
+        if d < 0 {
+            info!("{:#06x}: SBC A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SBC A, (IX+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for SbcMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIY));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+        let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
+
+        let res = a.wrapping_sub(memval).wrapping_sub(c);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_sbc8(cpu, a, memval, c, res);
+
+        if d < 0 {
+            info!("{:#06x}: SBC A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SBC A, (IY+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF));
     }
@@ -2471,7 +2572,7 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x98 */    /* 0x99 */    /* 0x9A */    /* 0x9B */    /* 0x9C */    /* 0x9D */    /* 0x9E */    /* 0x9F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SbcMemIxD  , &Unsupported,
 
     /* 0xA0 */    /* 0xA1 */    /* 0xA2 */    /* 0xA3 */    /* 0xA4 */    /* 0xA5 */    /* 0xA6 */    /* 0xA7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2667,7 +2768,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x98 */    /* 0x99 */    /* 0x9A */    /* 0x9B */    /* 0x9C */    /* 0x9D */    /* 0x9E */    /* 0x9F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SbcMemIyD  , &Unsupported,
 
     /* 0xA0 */    /* 0xA1 */    /* 0xA2 */    /* 0xA3 */    /* 0xA4 */    /* 0xA5 */    /* 0xA6 */    /* 0xA7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2985,7 +3086,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &SubR{r:Reg8::B} , &SubR{r:Reg8::C} , &SubR{r:Reg8::D} , &SubR{r:Reg8::E} , &SubR{r:Reg8::H} , &SubR{r:Reg8::L} , &Unsupported, &SubR{r:Reg8::A} ,
 
     /* 0x98 */         /* 0x99 */         /* 0x9A */         /* 0x9B */         /* 0x9C */         /* 0x9D */         /* 0x9E */    /* 0x9F */
-    &SbcR{r:Reg8::B} , &SbcR{r:Reg8::C} , &SbcR{r:Reg8::D} , &SbcR{r:Reg8::E} , &SbcR{r:Reg8::H} , &SbcR{r:Reg8::L} , &Unsupported, &SbcR{r:Reg8::A} ,
+    &SbcR{r:Reg8::B} , &SbcR{r:Reg8::C} , &SbcR{r:Reg8::D} , &SbcR{r:Reg8::E} , &SbcR{r:Reg8::H} , &SbcR{r:Reg8::L} , &SbcMemHl   , &SbcR{r:Reg8::A} ,
 
     /* 0xA0 */         /* 0xA1 */         /* 0xA2 */         /* 0xA3 */         /* 0xA4 */         /* 0xA5 */         /* 0xA6 */    /* 0xA7 */
     &AndR{r:Reg8::B} , &AndR{r:Reg8::C} , &AndR{r:Reg8::D} , &AndR{r:Reg8::E} , &AndR{r:Reg8::H} , &AndR{r:Reg8::L} , &Unsupported, &AndR{r:Reg8::A} ,
@@ -3009,7 +3110,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &RetCc{cond:FlagCond::NC}, &PopQq{r:Reg16::DE}, &JpCcNn{cond:FlagCond::NC}, &OutPortNA  , &CallCcNn{cond:FlagCond::NC}, &PushQq{r:Reg16::DE}, &SubN       , &Rst{addr:0x10},
 
     /* 0xD8 */                 /* 0xD9 */           /* 0xDA */                  /* 0xDB */    /* 0xDC */                    /* 0xDD */            /* 0xDE */    /* 0xDF */
-    &RetCc{cond:FlagCond::C} , &Exx               , &JpCcNn{cond:FlagCond::C} , &InAPortN   , &CallCcNn{cond:FlagCond::C} , &Unsupported        , &Unsupported, &Rst{addr:0x18},
+    &RetCc{cond:FlagCond::C} , &Exx               , &JpCcNn{cond:FlagCond::C} , &InAPortN   , &CallCcNn{cond:FlagCond::C} , &Unsupported        , &SbcN       , &Rst{addr:0x18},
 
     /* 0xE0 */                 /* 0xE1 */           /* 0xE2 */                  /* 0xE3 */    /* 0xE4 */                    /* 0xE5 */            /* 0xE6 */    /* 0xE7 */
     &RetCc{cond:FlagCond::PO}, &PopQq{r:Reg16::HL}, &JpCcNn{cond:FlagCond::PO}, &ExMemSpHl  , &CallCcNn{cond:FlagCond::PO}, &PushQq{r:Reg16::HL}, &AndN       , &Rst{addr:0x20},
