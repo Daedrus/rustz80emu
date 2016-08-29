@@ -2510,9 +2510,11 @@ impl Instruction for SubR {
 }
 
 
-struct XorR     { r: Reg8 }
-struct XorN     ;
-struct XorMemHl ;
+struct XorR      { r: Reg8 }
+struct XorN      ;
+struct XorMemHl  ;
+struct XorMemIxD ;
+struct XorMemIyD ;
 
 impl Instruction for XorR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -2525,12 +2527,7 @@ impl Instruction for XorR {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
-        cpu.clear_flag ( HALF_CARRY_FLAG                                  );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
-        cpu.clear_flag ( CARRY_FLAG                                       );
+        update_flags_logical(cpu, res);
 
         info!("{:#06x}: XOR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -2550,12 +2547,7 @@ impl Instruction for XorN {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
-        cpu.clear_flag ( HALF_CARRY_FLAG                                  );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
-        cpu.clear_flag ( CARRY_FLAG                                       );
+        update_flags_logical(cpu, res);
 
         info!("{:#06x}: XOR {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
@@ -2576,12 +2568,7 @@ impl Instruction for XorMemHl {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
-        cpu.clear_flag ( HALF_CARRY_FLAG                                  );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
-        cpu.clear_flag ( CARRY_FLAG                                       );
+        update_flags_logical(cpu, res);
 
         info!("{:#06x}: XOR (HL)", cpu.get_pc());
         cpu.inc_pc(1);
@@ -2590,6 +2577,57 @@ impl Instruction for XorMemHl {
     }
 }
 
+impl Instruction for XorMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIX));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = a ^ memval;
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_logical(cpu, res);
+
+        if d < 0 {
+            info!("{:#06x}: XOR A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: XOR A, (IX+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for XorMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIY));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = a ^ memval;
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_logical(cpu, res);
+
+        if d < 0 {
+            info!("{:#06x}: XOR A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: XOR A, (IY+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
 
 pub const INSTR_TABLE_CB: [&'static Instruction; 256] = [
     /* 0x00 */       /* 0x01 */       /* 0x02 */       /* 0x03 */       /* 0x04 */       /* 0x05 */       /* 0x06 */    /* 0x07 */
@@ -2754,7 +2792,7 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AndMemIxD  , &Unsupported,
 
     /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */    /* 0xAD */    /* 0xAE */    /* 0xAF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &XorMemIxD  , &Unsupported,
 
     /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */    /* 0xB5 */    /* 0xB6 */    /* 0xB7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &OrMemIxD   , &Unsupported,
@@ -2950,7 +2988,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AndMemIyD  , &Unsupported,
 
     /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */    /* 0xAD */    /* 0xAE */    /* 0xAF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &XorMemIyD  , &Unsupported,
 
     /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */    /* 0xB5 */    /* 0xB6 */    /* 0xB7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &OrMemIyD   , &Unsupported,
