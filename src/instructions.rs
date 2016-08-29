@@ -2456,26 +2456,54 @@ impl Instruction for SbcHlSs {
 }
 
 
-struct SubN ;
-struct SubR { r: Reg8 }
+struct SubR      { r: Reg8 }
+struct SubN      ;
+struct SubMemHl  ;
+struct SubMemIxD ;
+struct SubMemIyD ;
+
+#[inline(always)]
+fn update_flags_sub8(cpu: &mut Cpu, op1: u8, op2: u8, res: u8) {
+    cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0                                          );
+    cpu.cond_flag ( ZERO_FLAG            , res == 0                                                 );
+    cpu.cond_flag ( HALF_CARRY_FLAG      , (op1 & 0x0F) < (op2 & 0x0F)                              );
+    cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (op1 & 0x80 != op2 & 0x80) && (op1 & 0x80 != res & 0x80) );
+    cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                               );
+    cpu.cond_flag ( CARRY_FLAG           , (op1 as u16) < (op2 as u16)                              );
+}
+
+impl Instruction for SubR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
+
+        let a = cpu.read_reg8(Reg8::A);
+        let r = cpu.read_reg8(self.r);
+
+        let res = a.wrapping_sub(r);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_sub8(cpu, a, r, res);
+
+        info!("{:#06x}: SUB {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
 
 impl Instruction for SubN {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF));
 
-        let a = cpu.read_reg8(Reg8::A) as i8;
-        let n = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let a = cpu.read_reg8(Reg8::A);
+        let n = cpu.read_word(cpu.get_pc() + 1);
 
         let res = a.wrapping_sub(n);
 
-        cpu.write_reg8(Reg8::A, res as u8);
+        cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0                           );
-        cpu.cond_flag ( ZERO_FLAG            , res == 0                                  );
-        cpu.cond_flag ( HALF_CARRY_FLAG      , a & 0x0F < n & 0x0F                       );
-        cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (a ^ n ^ 0x8000) & (a ^ res ^ 0x80) !=  0 );
-        cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                );
-        cpu.cond_flag ( CARRY_FLAG           , a < n                                     );
+        update_flags_sub8(cpu, a, n, res);
 
         info!("{:#06x}: SUB {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
@@ -2484,26 +2512,74 @@ impl Instruction for SubN {
     }
 }
 
-impl Instruction for SubR {
+impl Instruction for SubMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
+        debug!("{}", cpu.output(OA|OF));
 
-        let a = cpu.read_reg8(Reg8::A) as i8;
-        let r = cpu.read_reg8(self.r) as i8;
+        let a      = cpu.read_reg8(Reg8::A);
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
 
-        let res = a.wrapping_sub(r);
+        let res = a.wrapping_sub(memval);
 
-        cpu.write_reg8(Reg8::A, res as u8);
+        cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0                           );
-        cpu.cond_flag ( ZERO_FLAG            , res == 0                                  );
-        cpu.cond_flag ( HALF_CARRY_FLAG      , a & 0x0F < r & 0x0F                       );
-        cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (a ^ r ^ 0x8000) & (a ^ res ^ 0x80) !=  0 );
-        cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                );
-        cpu.cond_flag ( CARRY_FLAG           , a < r                                     );
+        update_flags_sub8(cpu, a, memval, res);
 
-        info!("{:#06x}: SUB {:?}", cpu.get_pc(), self.r);
+        info!("{:#06x}: SUB A, (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for SubMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIX));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = a.wrapping_sub(memval);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_sub8(cpu, a, memval, res);
+
+        if d < 0 {
+            info!("{:#06x}: SUB A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SUB A, (IX+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for SubMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIY));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = a.wrapping_sub(memval);
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_sub8(cpu, a, memval, res);
+
+        if d < 0 {
+            info!("{:#06x}: SUB A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SUB A, (IY+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF));
     }
@@ -2783,7 +2859,7 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AdcMemIxD  , &Unsupported,
 
     /* 0x90 */    /* 0x91 */    /* 0x92 */    /* 0x93 */    /* 0x94 */    /* 0x95 */    /* 0x96 */    /* 0x97 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SubMemIxD  , &Unsupported,
 
     /* 0x98 */    /* 0x99 */    /* 0x9A */    /* 0x9B */    /* 0x9C */    /* 0x9D */    /* 0x9E */    /* 0x9F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SbcMemIxD  , &Unsupported,
@@ -2979,7 +3055,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AdcMemIyD  , &Unsupported,
 
     /* 0x90 */    /* 0x91 */    /* 0x92 */    /* 0x93 */    /* 0x94 */    /* 0x95 */    /* 0x96 */    /* 0x97 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SubMemIyD  , &Unsupported,
 
     /* 0x98 */    /* 0x99 */    /* 0x9A */    /* 0x9B */    /* 0x9C */    /* 0x9D */    /* 0x9E */    /* 0x9F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SbcMemIyD  , &Unsupported,
@@ -3297,7 +3373,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &AdcR{r:Reg8::B} , &AdcR{r:Reg8::C} , &AdcR{r:Reg8::D} , &AdcR{r:Reg8::E} , &AdcR{r:Reg8::H} , &AdcR{r:Reg8::L} , &AdcMemHl   , &AdcR{r:Reg8::A} ,
 
     /* 0x90 */         /* 0x91 */         /* 0x92 */         /* 0x93 */         /* 0x94 */         /* 0x95 */         /* 0x96 */    /* 0x97 */
-    &SubR{r:Reg8::B} , &SubR{r:Reg8::C} , &SubR{r:Reg8::D} , &SubR{r:Reg8::E} , &SubR{r:Reg8::H} , &SubR{r:Reg8::L} , &Unsupported, &SubR{r:Reg8::A} ,
+    &SubR{r:Reg8::B} , &SubR{r:Reg8::C} , &SubR{r:Reg8::D} , &SubR{r:Reg8::E} , &SubR{r:Reg8::H} , &SubR{r:Reg8::L} , &SubMemHl   , &SubR{r:Reg8::A} ,
 
     /* 0x98 */         /* 0x99 */         /* 0x9A */         /* 0x9B */         /* 0x9C */         /* 0x9D */         /* 0x9E */    /* 0x9F */
     &SbcR{r:Reg8::B} , &SbcR{r:Reg8::C} , &SbcR{r:Reg8::D} , &SbcR{r:Reg8::E} , &SbcR{r:Reg8::H} , &SbcR{r:Reg8::L} , &SbcMemHl   , &SbcR{r:Reg8::A} ,
