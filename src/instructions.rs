@@ -406,10 +406,10 @@ struct AndMemIxD ;
 struct AndMemIyD ;
 
 #[inline(always)]
-fn update_flags_and(cpu: &mut Cpu, res: u8) {
+fn update_flags_logical(cpu: &mut Cpu, res: u8) {
     cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
     cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
-    cpu.set_flag   ( HALF_CARRY_FLAG                                  );
+    cpu.clear_flag ( HALF_CARRY_FLAG                                  );
     cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
     cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
     cpu.clear_flag ( CARRY_FLAG                                       );
@@ -426,7 +426,7 @@ impl Instruction for AndR {
 
         cpu.write_reg8(Reg8::A, res);
 
-        update_flags_and(cpu, res);
+        update_flags_logical(cpu, res);
 
         info!("{:#06x}: AND {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -446,7 +446,7 @@ impl Instruction for AndN {
 
         cpu.write_reg8(Reg8::A, res);
 
-        update_flags_and(cpu, res);
+        update_flags_logical(cpu, res);
 
         info!("{:#06x}: AND {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
@@ -467,7 +467,7 @@ impl Instruction for AndMemHl {
 
         cpu.write_reg8(Reg8::A, res);
 
-        update_flags_and(cpu, res);
+        update_flags_logical(cpu, res);
 
         info!("{:#06x}: AND A, (HL)", cpu.get_pc());
         cpu.inc_pc(1);
@@ -489,7 +489,7 @@ impl Instruction for AndMemIxD {
 
         cpu.write_reg8(Reg8::A, res);
 
-        update_flags_and(cpu, res);
+        update_flags_logical(cpu, res);
 
         if d < 0 {
             info!("{:#06x}: AND A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
@@ -515,7 +515,7 @@ impl Instruction for AndMemIyD {
 
         cpu.write_reg8(Reg8::A, res);
 
-        update_flags_and(cpu, res);
+        update_flags_logical(cpu, res);
 
         if d < 0 {
             info!("{:#06x}: AND A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
@@ -1827,9 +1827,11 @@ impl Instruction for Ldir {
 }
 
 
-struct OrR    { r: Reg8 }
-struct OrN    ;
-struct OrMemHl;
+struct OrR      { r: Reg8 }
+struct OrN      ;
+struct OrMemHl  ;
+struct OrMemIxD ;
+struct OrMemIyD ;
 
 impl Instruction for OrR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -1842,12 +1844,7 @@ impl Instruction for OrR {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
-        cpu.clear_flag ( HALF_CARRY_FLAG                                  );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
-        cpu.clear_flag ( CARRY_FLAG                                       );
+        update_flags_logical(cpu, res);
 
         info!("{:#06x}: OR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -1867,12 +1864,7 @@ impl Instruction for OrN {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
-        cpu.clear_flag ( HALF_CARRY_FLAG                                  );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
-        cpu.clear_flag ( CARRY_FLAG                                       );
+        update_flags_logical(cpu, res);
 
         info!("{:#06x}: OR {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
@@ -1893,15 +1885,62 @@ impl Instruction for OrMemHl {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
-        cpu.clear_flag ( HALF_CARRY_FLAG                                  );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
-        cpu.clear_flag ( CARRY_FLAG                                       );
+        update_flags_logical(cpu, res);
 
         info!("{:#06x}: OR (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for OrMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIX));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = a | memval;
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_logical(cpu, res);
+
+        if d < 0 {
+            info!("{:#06x}: OR A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: OR A, (IX+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for OrMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIY));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = a | memval;
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_logical(cpu, res);
+
+        if d < 0 {
+            info!("{:#06x}: OR A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: OR A, (IY+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF));
     }
@@ -2718,7 +2757,7 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */    /* 0xB5 */    /* 0xB6 */    /* 0xB7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &OrMemIxD   , &Unsupported,
 
     /* 0xB8 */    /* 0xB9 */    /* 0xBA */    /* 0xBB */    /* 0xBC */    /* 0xBD */    /* 0xBE */    /* 0xBF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2914,7 +2953,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */    /* 0xB5 */    /* 0xB6 */    /* 0xB7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &OrMemIyD   , &Unsupported,
 
     /* 0xB8 */    /* 0xB9 */    /* 0xBA */    /* 0xBB */    /* 0xBC */    /* 0xBD */    /* 0xBE */    /* 0xBF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &CpMemIyD   , &Unsupported,
