@@ -399,8 +399,21 @@ impl Instruction for AddIyRr {
 }
 
 
-struct AndR { r: Reg8 }
-struct AndN ;
+struct AndR      { r: Reg8 }
+struct AndN      ;
+struct AndMemHl  ;
+struct AndMemIxD ;
+struct AndMemIyD ;
+
+#[inline(always)]
+fn update_flags_and(cpu: &mut Cpu, res: u8) {
+    cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
+    cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
+    cpu.set_flag   ( HALF_CARRY_FLAG                                  );
+    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
+    cpu.clear_flag ( CARRY_FLAG                                       );
+}
 
 impl Instruction for AndR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -413,12 +426,7 @@ impl Instruction for AndR {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
-        cpu.set_flag   ( HALF_CARRY_FLAG                                  );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
-        cpu.clear_flag ( CARRY_FLAG                                       );
+        update_flags_and(cpu, res);
 
         info!("{:#06x}: AND {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -438,14 +446,82 @@ impl Instruction for AndN {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
-        cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
-        cpu.set_flag   ( HALF_CARRY_FLAG                                  );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
-        cpu.clear_flag ( CARRY_FLAG                                       );
+        update_flags_and(cpu, res);
 
         info!("{:#06x}: AND {:#04X}", cpu.get_pc(), n);
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for AndMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let res = a & memval;
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_and(cpu, res);
+
+        info!("{:#06x}: AND A, (HL)", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for AndMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIX));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = a & memval;
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_and(cpu, res);
+
+        if d < 0 {
+            info!("{:#06x}: AND A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: AND A, (IX+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+impl Instruction for AndMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIY));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = a & memval;
+
+        cpu.write_reg8(Reg8::A, res);
+
+        update_flags_and(cpu, res);
+
+        if d < 0 {
+            info!("{:#06x}: AND A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: AND A, (IY+{:#04X})", cpu.get_pc() - 1, d);
+        }
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF));
@@ -2636,7 +2712,7 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SbcMemIxD  , &Unsupported,
 
     /* 0xA0 */    /* 0xA1 */    /* 0xA2 */    /* 0xA3 */    /* 0xA4 */    /* 0xA5 */    /* 0xA6 */    /* 0xA7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AndMemIxD  , &Unsupported,
 
     /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */    /* 0xAD */    /* 0xAE */    /* 0xAF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -2832,7 +2908,7 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SbcMemIyD  , &Unsupported,
 
     /* 0xA0 */    /* 0xA1 */    /* 0xA2 */    /* 0xA3 */    /* 0xA4 */    /* 0xA5 */    /* 0xA6 */    /* 0xA7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AndMemIyD  , &Unsupported,
 
     /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */    /* 0xAD */    /* 0xAE */    /* 0xAF */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -3150,7 +3226,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &SbcR{r:Reg8::B} , &SbcR{r:Reg8::C} , &SbcR{r:Reg8::D} , &SbcR{r:Reg8::E} , &SbcR{r:Reg8::H} , &SbcR{r:Reg8::L} , &SbcMemHl   , &SbcR{r:Reg8::A} ,
 
     /* 0xA0 */         /* 0xA1 */         /* 0xA2 */         /* 0xA3 */         /* 0xA4 */         /* 0xA5 */         /* 0xA6 */    /* 0xA7 */
-    &AndR{r:Reg8::B} , &AndR{r:Reg8::C} , &AndR{r:Reg8::D} , &AndR{r:Reg8::E} , &AndR{r:Reg8::H} , &AndR{r:Reg8::L} , &Unsupported, &AndR{r:Reg8::A} ,
+    &AndR{r:Reg8::B} , &AndR{r:Reg8::C} , &AndR{r:Reg8::D} , &AndR{r:Reg8::E} , &AndR{r:Reg8::H} , &AndR{r:Reg8::L} , &AndMemHl   , &AndR{r:Reg8::A} ,
 
     /* 0xA8 */         /* 0xA9 */         /* 0xAA */         /* 0xAB */         /* 0xAC */         /* 0xAD */         /* 0xAE */    /* 0xAF */
     &XorR{r:Reg8::B} , &XorR{r:Reg8::C} , &XorR{r:Reg8::D} , &XorR{r:Reg8::E} , &XorR{r:Reg8::H} , &XorR{r:Reg8::L} , &XorMemHl   , &XorR{r:Reg8::A} ,
