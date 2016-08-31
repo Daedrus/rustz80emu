@@ -1301,22 +1301,22 @@ struct LdMemIxDN ;
 struct LdMemIxDR { r: Reg8  }
 struct LdMemIyDN ;
 struct LdMemIyDR { r: Reg8  }
-struct LdRN      { r: Reg8  }
-struct LdDdNn    { r: Reg16 }
+struct LdMemNnA  ;
+struct LdMemNnDd { r: Reg16 }
+struct LdMemNnHl ;
+struct LdMemNnIx ;
+struct LdAMemDe  ;
+struct LdAMemNn  ;
 struct LdDdMemNn { r: Reg16 }
+struct LdDdNn    { r: Reg16 }
+struct LdRN      { r: Reg8  }
 struct LdHlMemNn ;
 struct LdRMemIyD { r: Reg8  }
 struct LdSpHl    ;
 struct LdIxNn    ;
 struct LdIxMemNn ;
-struct LdMemNnIx ;
 struct LdRR      { rt: Reg8, rs: Reg8 }
-struct LdMemNnDd { r: Reg16 }
-struct LdMemNnA  ;
 struct LdRMemHl  { r: Reg8  }
-struct LdMemNnHl ;
-struct LdAMemNn  ;
-struct LdAMemDe  ;
 struct LdIyNn    ;
 
 impl Instruction for LdMemBcA {
@@ -1467,16 +1467,128 @@ impl Instruction for LdMemIyDR {
     }
 }
 
-impl Instruction for LdRN {
+impl Instruction for LdMemNnA {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA));
+
+        let a  = cpu.read_reg8(Reg8::A);
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+
+        cpu.write_word(nn, a);
+
+        info!("{:#06x}: LD ({:#06X}), A", cpu.get_pc(), nn);
+        cpu.inc_pc(3);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
+
+impl Instruction for LdMemNnDd {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OutputRegisters::from(self.r)));
 
-        let n = cpu.read_word(cpu.get_pc() + 1);
+        let r = cpu.read_reg16(self.r);
+        let (rhigh, rlow) = (((r & 0xFF00) >> 8) as u8,
+                             ((r & 0x00FF)       as u8));
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
 
-        cpu.write_reg8(self.r, n);
+        cpu.write_word(nn, rlow);
+        cpu.write_word(nn + 1, rhigh);
 
-        info!("{:#06x}: LD {:?}, {:#04X}", cpu.get_pc(), self.r, n);
-        cpu.inc_pc(2);
+        info!("{:#06x}: LD ({:#06X}), {:?}", cpu.get_pc() - 1, nn, self.r);
+        cpu.inc_pc(3);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
+
+impl Instruction for LdMemNnHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OH|OL));
+
+        let hl = cpu.read_reg16(Reg16::HL);
+        let (hlhigh, hllow) = (((hl & 0xFF00) >> 8) as u8,
+                               ((hl & 0x00FF)       as u8));
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+
+        cpu.write_word(nn, hllow);
+        cpu.write_word(nn + 1, hlhigh);
+
+        info!("{:#06x}: LD ({:#06X}), HL", cpu.get_pc(), nn);
+        cpu.inc_pc(3);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
+
+impl Instruction for LdMemNnIx {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OIX));
+
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+        let (ixhigh, ixlow) = (((cpu.get_ix() & 0xFF00) >> 8) as u8,
+                               ((cpu.get_ix() & 0x00FF)       as u8));
+
+        cpu.write_word(nn, ixlow);
+        cpu.write_word(nn + 1, ixhigh);
+
+        info!("{:#06x}: LD ({:#06X}), IX", cpu.get_pc() - 1, nn);
+        cpu.inc_pc(3);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
+
+impl Instruction for LdAMemDe {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OD|OE));
+
+        let de     = cpu.read_reg16(Reg16::DE);
+        let memval = cpu.read_word(de);
+
+        cpu.write_reg8(Reg8::A, memval);
+
+        info!("{:#06x}: LD A, (DE)", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA));
+    }
+}
+
+impl Instruction for LdAMemNn {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA));
+
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+        let memval = cpu.read_word(nn);
+
+        cpu.write_reg8(Reg8::A, memval);
+
+        info!("{:#06x}: LD A, ({:#06X})", cpu.get_pc(), nn);
+        cpu.inc_pc(3);
+
+        debug!("{}", cpu.output(OA));
+    }
+}
+
+impl Instruction for LdDdMemNn {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
+
+        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
+                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
+        let nnmemval = (cpu.read_word(nn    ) as u16) |
+                      ((cpu.read_word(nn + 1) as u16) << 8);
+
+        cpu.write_reg16(self.r, nnmemval);
+
+        info!("{:#06x}: LD {:?}, ({:#06X})", cpu.get_pc(), self.r, nn);
+        cpu.inc_pc(3);
 
         debug!("{}", cpu.output(OutputRegisters::from(self.r)));
     }
@@ -1498,19 +1610,16 @@ impl Instruction for LdDdNn {
     }
 }
 
-impl Instruction for LdDdMemNn {
+impl Instruction for LdRN {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OutputRegisters::from(self.r)));
 
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
-                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
-        let nnmemval = (cpu.read_word(nn    ) as u16) |
-                      ((cpu.read_word(nn + 1) as u16) << 8);
+        let n = cpu.read_word(cpu.get_pc() + 1);
 
-        cpu.write_reg16(self.r, nnmemval);
+        cpu.write_reg8(self.r, n);
 
-        info!("{:#06x}: LD {:?}, ({:#06X})", cpu.get_pc(), self.r, nn);
-        cpu.inc_pc(3);
+        info!("{:#06x}: LD {:?}, {:#04X}", cpu.get_pc(), self.r, n);
+        cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OutputRegisters::from(self.r)));
     }
@@ -1603,25 +1712,6 @@ impl Instruction for LdIxMemNn {
     }
 }
 
-impl Instruction for LdMemNnIx {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIX));
-
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
-                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
-        let (ixhigh, ixlow) = (((cpu.get_ix() & 0xFF00) >> 8) as u8,
-                               ((cpu.get_ix() & 0x00FF)       as u8));
-
-        cpu.write_word(nn, ixlow);
-        cpu.write_word(nn + 1, ixhigh);
-
-        info!("{:#06x}: LD ({:#06X}), IX", cpu.get_pc() - 1, nn);
-        cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(ONONE));
-    }
-}
-
 impl Instruction for LdRR {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OutputRegisters::from(self.rt) | OutputRegisters::from(self.rs)));
@@ -1634,43 +1724,6 @@ impl Instruction for LdRR {
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OutputRegisters::from(self.rt) | OutputRegisters::from(self.rs)));
-    }
-}
-
-impl Instruction for LdMemNnDd {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
-
-        let r = cpu.read_reg16(self.r);
-        let (rhigh, rlow) = (((r & 0xFF00) >> 8) as u8,
-                             ((r & 0x00FF)       as u8));
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
-                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
-
-        cpu.write_word(nn, rlow);
-        cpu.write_word(nn + 1, rhigh);
-
-        info!("{:#06x}: LD ({:#06X}), {:?}", cpu.get_pc() - 1, nn, self.r);
-        cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(ONONE));
-    }
-}
-
-impl Instruction for LdMemNnA {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA));
-
-        let a  = cpu.read_reg8(Reg8::A);
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
-                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
-
-        cpu.write_word(nn, a);
-
-        info!("{:#06x}: LD ({:#06X}), A", cpu.get_pc(), nn);
-        cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(ONONE));
     }
 }
 
@@ -1687,59 +1740,6 @@ impl Instruction for LdRMemHl {
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OutputRegisters::from(self.r)));
-    }
-}
-
-impl Instruction for LdMemNnHl {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL));
-
-        let hl = cpu.read_reg16(Reg16::HL);
-        let (hlhigh, hllow) = (((hl & 0xFF00) >> 8) as u8,
-                               ((hl & 0x00FF)       as u8));
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
-                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
-
-        cpu.write_word(nn, hllow);
-        cpu.write_word(nn + 1, hlhigh);
-
-        info!("{:#06x}: LD ({:#06X}), HL", cpu.get_pc(), nn);
-        cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(ONONE));
-    }
-}
-
-impl Instruction for LdAMemNn {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA));
-
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
-                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
-        let memval = cpu.read_word(nn);
-
-        cpu.write_reg8(Reg8::A, memval);
-
-        info!("{:#06x}: LD A, ({:#06X})", cpu.get_pc(), nn);
-        cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(OA));
-    }
-}
-
-impl Instruction for LdAMemDe {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OD|OE));
-
-        let de     = cpu.read_reg16(Reg16::DE);
-        let memval = cpu.read_word(de);
-
-        cpu.write_reg8(Reg8::A, memval);
-
-        info!("{:#06x}: LD A, (DE)", cpu.get_pc());
-        cpu.inc_pc(1);
-
-        debug!("{}", cpu.output(OA));
     }
 }
 
