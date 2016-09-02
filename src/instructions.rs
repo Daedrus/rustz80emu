@@ -47,6 +47,8 @@ fn update_flags_adc8(cpu: &mut Cpu, op1: u8, op2: u8, c: u8, res: u8) {
     cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (op1 & 0x80 == op2 & 0x80) && (op1 & 0x80 != res & 0x80) );
     cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                               );
     cpu.cond_flag  ( CARRY_FLAG           , op1 as u16 + op2 as u16 + c as u16 > 0xFF                );
+    cpu.cond_flag  ( X_FLAG               , res & 0x08 != 0                                          );
+    cpu.cond_flag  ( Y_FLAG               , res & 0x20 != 0                                          );
 }
 
 #[inline(always)]
@@ -57,6 +59,8 @@ fn update_flags_adc16(cpu: &mut Cpu, op1: u16, op2: u16, c: u16, res: u16) {
     cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (op1 & 0x8000 == op2 & 0x8000) && (op1 & 0x8000 != res & 0x8000) );
     cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                                       );
     cpu.cond_flag  ( CARRY_FLAG           , op1 as u32 + op2 as u32 + c as u32 > 0xFFFF                      );
+    cpu.cond_flag  ( X_FLAG               , (res >> 8) & 0x08 != 0                                           );
+    cpu.cond_flag  ( Y_FLAG               , (res >> 8) & 0x20 != 0                                           );
 }
 
 impl Instruction for AdcR {
@@ -216,13 +220,17 @@ fn update_flags_add8(cpu: &mut Cpu, op1: u8, op2: u8, res: u8) {
     cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , (op1 & 0x80 == op2 & 0x80) && (op1 & 0x80 != res & 0x80) );
     cpu.clear_flag ( ADD_SUBTRACT_FLAG                                                               );
     cpu.cond_flag  ( CARRY_FLAG           , op1 as u16 + op2 as u16 > 0xFF                           );
+    cpu.cond_flag  ( X_FLAG               , res & 0x08 != 0                                          );
+    cpu.cond_flag  ( Y_FLAG               , res & 0x20 != 0                                          );
 }
 
 #[inline(always)]
-fn update_flags_add16(cpu: &mut Cpu, op1: u16, op2: u16) {
+fn update_flags_add16(cpu: &mut Cpu, op1: u16, op2: u16, res: u16) {
     cpu.cond_flag  ( HALF_CARRY_FLAG   , (op1 & 0x0FFF) + (op2 & 0x0FFF) > 0x0FFF );
     cpu.clear_flag ( ADD_SUBTRACT_FLAG                                            );
     cpu.cond_flag  ( CARRY_FLAG        , op1 as u32 + op2 as u32  > 0xFFFF        );
+    cpu.cond_flag  ( X_FLAG            , (res >> 8) & 0x08 != 0                   );
+    cpu.cond_flag  ( Y_FLAG            , (res >> 8) & 0x20 != 0                   );
 }
 
 impl Instruction for AddMemHl {
@@ -349,7 +357,7 @@ impl Instruction for AddHlSs {
 
         cpu.write_reg16(Reg16::HL, res);
 
-        update_flags_add16(cpu, hl, ss);
+        update_flags_add16(cpu, hl, ss, res);
 
         info!("{:#06x}: ADD HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -369,7 +377,7 @@ impl Instruction for AddIxPp {
 
         cpu.set_ix(res);
 
-        update_flags_add16(cpu, ix, ss);
+        update_flags_add16(cpu, ix, ss, res);
 
         info!("{:#06x}: ADD IX, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -389,7 +397,7 @@ impl Instruction for AddIyRr {
 
         cpu.set_iy(res);
 
-        update_flags_add16(cpu, iy, ss);
+        update_flags_add16(cpu, iy, ss, res);
 
         info!("{:#06x}: ADD IY, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -413,6 +421,8 @@ fn update_flags_logical(cpu: &mut Cpu, res: u8) {
     cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
     cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
     cpu.clear_flag ( CARRY_FLAG                                       );
+    cpu.cond_flag  ( X_FLAG               , res & 0x08 != 0           );
+    cpu.cond_flag  ( Y_FLAG               , res & 0x20 != 0           );
 }
 
 impl Instruction for AndR {
@@ -641,6 +651,8 @@ fn update_flags_cp8(cpu: &mut Cpu, op1: u8, op2: u8, res: u8) {
     cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (op1 & 0x80 != op2 & 0x80) && (op1 & 0x80 != res & 0x80) );
     cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                               );
     cpu.cond_flag ( CARRY_FLAG           , op1 < op2                                                );
+    cpu.cond_flag ( X_FLAG               , op2 & 0x08 != 0                                          );
+    cpu.cond_flag ( Y_FLAG               , op2 & 0x20 != 0                                          );
 }
 
 impl Instruction for CpR {
@@ -735,6 +747,8 @@ fn update_flags_dec8(cpu: &mut Cpu, op: u8, res: u8) {
     cpu.cond_flag ( HALF_CARRY_FLAG      , (op & 0x0F) == 0 );
     cpu.cond_flag ( PARITY_OVERFLOW_FLAG , res == 0x7F      );
     cpu.set_flag  ( ADD_SUBTRACT_FLAG                       );
+    cpu.cond_flag ( X_FLAG               , res & 0x08 != 0  );
+    cpu.cond_flag ( Y_FLAG               , res & 0x20 != 0  );
 }
 
 impl Instruction for DecR {
@@ -1042,6 +1056,8 @@ fn update_flags_inc8(cpu: &mut Cpu, op: u8, res: u8) {
     cpu.cond_flag  ( HALF_CARRY_FLAG      , (op & 0x0F) + 1 > 0x0F );
     cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res == 0x80            );
     cpu.clear_flag ( ADD_SUBTRACT_FLAG                             );
+    cpu.cond_flag  ( X_FLAG               , res & 0x08 != 0        );
+    cpu.cond_flag  ( Y_FLAG               , res & 0x20 != 0        );
 }
 
 impl Instruction for IncR {
@@ -2304,6 +2320,8 @@ fn update_flags_sbc8(cpu: &mut Cpu, op1: u8, op2: u8, c: u8, res: u8) {
     cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (op1 & 0x80 != op2 & 0x80) && (op1 & 0x80 != res & 0x80) );
     cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                               );
     cpu.cond_flag ( CARRY_FLAG           , (op1 as u16) < ((op2 as u16) + (c as u16))               );
+    cpu.cond_flag ( X_FLAG               , res & 0x08 != 0                                          );
+    cpu.cond_flag ( Y_FLAG               , res & 0x20 != 0                                          );
 }
 
 #[inline(always)]
@@ -2314,6 +2332,8 @@ fn update_flags_sbc16(cpu: &mut Cpu, op1: u16, op2: u16, c: u16, res: u16) {
     cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (op1 & 0x8000 != op2 & 0x8000) && (op1 & 0x8000 != res & 0x8000) );
     cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                                       );
     cpu.cond_flag ( CARRY_FLAG           , (op1 as u32) < ((op2 as u32) + (c as u32))                       );
+    cpu.cond_flag ( X_FLAG               , (res >> 8) & 0x08 != 0                                           );
+    cpu.cond_flag ( Y_FLAG               , (res >> 8) & 0x20 != 0                                           );
 }
 
 impl Instruction for SbcR {
@@ -2470,6 +2490,8 @@ fn update_flags_sub8(cpu: &mut Cpu, op1: u8, op2: u8, res: u8) {
     cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (op1 & 0x80 != op2 & 0x80) && (op1 & 0x80 != res & 0x80) );
     cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                               );
     cpu.cond_flag ( CARRY_FLAG           , (op1 as u16) < (op2 as u16)                              );
+    cpu.cond_flag ( X_FLAG               , res & 0x08 != 0                                          );
+    cpu.cond_flag ( Y_FLAG               , res & 0x20 != 0                                          );
 }
 
 impl Instruction for SubR {
@@ -3450,7 +3472,7 @@ mod test {
         cpu.write_reg8(Reg8::B, 0x0F);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0x1E);
-        assert!(cpu.check_flags(HALF_CARRY_FLAG));
+        assert!(cpu.check_flags(HALF_CARRY_FLAG | X_FLAG));
 
         // Test overflow flag
         cpu.clear_flag(ALL_FLAGS);
@@ -3458,7 +3480,7 @@ mod test {
         cpu.write_reg8(Reg8::B, 0x69);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0xE1);
-        assert!(cpu.check_flags(SIGN_FLAG|PARITY_OVERFLOW_FLAG|HALF_CARRY_FLAG));
+        assert!(cpu.check_flags(SIGN_FLAG | PARITY_OVERFLOW_FLAG | HALF_CARRY_FLAG | Y_FLAG));
 
         // Test carry flag
         cpu.clear_flag(ALL_FLAGS);
@@ -3466,7 +3488,7 @@ mod test {
         cpu.write_reg8(Reg8::B, 0xFF);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0xFE);
-        assert!(cpu.check_flags(SIGN_FLAG|CARRY_FLAG|HALF_CARRY_FLAG));
+        assert!(cpu.check_flags(SIGN_FLAG | CARRY_FLAG | HALF_CARRY_FLAG | X_FLAG | Y_FLAG));
     }
 
     #[test]
@@ -3488,7 +3510,7 @@ mod test {
         cpu.write_reg16(Reg16::BC, 0xFFFF);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg16(Reg16::HL) == 0xFFFE);
-        assert!(cpu.check_flags(CARRY_FLAG|HALF_CARRY_FLAG));
+        assert!(cpu.check_flags(CARRY_FLAG | HALF_CARRY_FLAG | X_FLAG | Y_FLAG));
     }
 
     #[test]
@@ -3522,7 +3544,7 @@ mod test {
         cpu.write_reg8(Reg8::A, 0x7F);
         cpu.write_reg8(Reg8::B, 0xA0);
         instr.execute(&mut cpu);
-        assert!(cpu.check_flags(SIGN_FLAG | ADD_SUBTRACT_FLAG | CARRY_FLAG | PARITY_OVERFLOW_FLAG));
+        assert!(cpu.check_flags(SIGN_FLAG | ADD_SUBTRACT_FLAG | CARRY_FLAG | PARITY_OVERFLOW_FLAG | Y_FLAG));
     }
 
     #[test]
@@ -3549,21 +3571,21 @@ mod test {
         cpu.write_reg8(Reg8::A, 0x10);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0x0F);
-        assert!(cpu.check_flags(HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG));
+        assert!(cpu.check_flags(HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG | X_FLAG));
 
         // Test overflow flag
         cpu.clear_flag(ALL_FLAGS);
         cpu.write_reg8(Reg8::A, 0x80);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0x7F);
-        assert!(cpu.check_flags(PARITY_OVERFLOW_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG));
+        assert!(cpu.check_flags(PARITY_OVERFLOW_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG | X_FLAG | Y_FLAG));
 
         // Test sign flag
         cpu.clear_flag(ALL_FLAGS);
         cpu.write_reg8(Reg8::A, 0x00);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0xFF);
-        assert!(cpu.check_flags(SIGN_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG));
+        assert!(cpu.check_flags(SIGN_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG | X_FLAG | Y_FLAG));
     }
 
     #[test]
@@ -3628,7 +3650,7 @@ mod test {
         cpu.write_reg8(Reg8::B, 0x02);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0xFF);
-        assert!(cpu.check_flags(SIGN_FLAG | ADD_SUBTRACT_FLAG | HALF_CARRY_FLAG | CARRY_FLAG));
+        assert!(cpu.check_flags(SIGN_FLAG | ADD_SUBTRACT_FLAG | HALF_CARRY_FLAG | CARRY_FLAG | X_FLAG | Y_FLAG));
 
         // Test overflow flag
         cpu.clear_flag(ALL_FLAGS);
@@ -3636,7 +3658,7 @@ mod test {
         cpu.write_reg8(Reg8::B, 0x01);
         instr.execute(&mut cpu);
         assert!(cpu.read_reg8(Reg8::A) == 0x7F);
-        assert!(cpu.check_flags(PARITY_OVERFLOW_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG));
+        assert!(cpu.check_flags(PARITY_OVERFLOW_FLAG | HALF_CARRY_FLAG | ADD_SUBTRACT_FLAG | X_FLAG | Y_FLAG));
     }
 }
 
