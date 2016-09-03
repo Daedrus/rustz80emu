@@ -2388,7 +2388,7 @@ impl Instruction for SbcN {
         update_flags_sbc8(cpu, a, n, c, res);
 
         info!("{:#06x}: SBC A, {:#04X}", cpu.get_pc(), n);
-        cpu.inc_pc(1);
+        cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF));
     }
