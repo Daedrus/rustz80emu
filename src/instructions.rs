@@ -2154,9 +2154,9 @@ impl Instruction for RlR {
 
         cpu.write_reg8(self.r, res);
 
-        cpu.clear_flag ( HALF_CARRY_FLAG                      );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                    );
-        cpu.cond_flag  ( CARRY_FLAG           , r & 0x80 != 0 );
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                 );
+        cpu.cond_flag  ( CARRY_FLAG      , r & 0x80 != 0 );
 
         info!("{:#06x}: RL {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -2175,9 +2175,11 @@ impl Instruction for RlcA {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.clear_flag ( HALF_CARRY_FLAG                   );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                 );
-        cpu.cond_flag  ( CARRY_FLAG        , a & 0x80 != 0 );
+        cpu.clear_flag ( HALF_CARRY_FLAG                     );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                   );
+        cpu.cond_flag  ( CARRY_FLAG        , a & 0x80 != 0   );
+        cpu.cond_flag  ( X_FLAG            , res & 0x08 != 0 );
+        cpu.cond_flag  ( Y_FLAG            , res & 0x20 != 0 );
 
         info!("{:#06x}: RLCA", cpu.get_pc());
         cpu.inc_pc(1);
@@ -2198,11 +2200,14 @@ impl Instruction for RrA {
 
         let mut res = a.rotate_right(1);
         if cpu.get_flag(CARRY_FLAG) { res |= 0x80; } else { res &= 0x7F; }
+
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.clear_flag ( HALF_CARRY_FLAG                      );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                    );
-        cpu.cond_flag  ( CARRY_FLAG           , a & 0x01 != 0 );
+        cpu.clear_flag ( HALF_CARRY_FLAG                     );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                   );
+        cpu.cond_flag  ( CARRY_FLAG        , a & 0x01 != 0   );
+        cpu.cond_flag  ( X_FLAG            , res & 0x08 != 0 );
+        cpu.cond_flag  ( Y_FLAG            , res & 0x20 != 0 );
 
         info!("{:#06x}: RRA", cpu.get_pc());
         cpu.inc_pc(1);
@@ -2221,9 +2226,11 @@ impl Instruction for RrcA {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.clear_flag ( HALF_CARRY_FLAG                      );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                    );
-        cpu.cond_flag  ( CARRY_FLAG           , a & 0x01 != 0 );
+        cpu.clear_flag ( HALF_CARRY_FLAG                     );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                   );
+        cpu.cond_flag  ( CARRY_FLAG        , a & 0x01 != 0   );
+        cpu.cond_flag  ( X_FLAG            , res & 0x08 != 0 );
+        cpu.cond_flag  ( Y_FLAG            , res & 0x20 != 0 );
 
         info!("{:#06x}: RRCA", cpu.get_pc());
         cpu.inc_pc(1);
