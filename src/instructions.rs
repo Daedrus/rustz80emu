@@ -417,7 +417,6 @@ struct AndMemIyD ;
 fn update_flags_logical(cpu: &mut Cpu, res: u8) {
     cpu.cond_flag  ( SIGN_FLAG            , res & 0x80 != 0           );
     cpu.cond_flag  ( ZERO_FLAG            , res == 0                  );
-    cpu.clear_flag ( HALF_CARRY_FLAG                                  );
     cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
     cpu.clear_flag ( ADD_SUBTRACT_FLAG                                );
     cpu.clear_flag ( CARRY_FLAG                                       );
@@ -437,6 +436,7 @@ impl Instruction for AndR {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.set_flag(HALF_CARRY_FLAG);
 
         info!("{:#06x}: AND {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -457,6 +457,7 @@ impl Instruction for AndN {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.set_flag(HALF_CARRY_FLAG);
 
         info!("{:#06x}: AND {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
@@ -478,6 +479,7 @@ impl Instruction for AndMemHl {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.set_flag(HALF_CARRY_FLAG);
 
         info!("{:#06x}: AND A, (HL)", cpu.get_pc());
         cpu.inc_pc(1);
@@ -500,6 +502,7 @@ impl Instruction for AndMemIxD {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.set_flag(HALF_CARRY_FLAG);
 
         if d < 0 {
             info!("{:#06x}: AND A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
@@ -526,6 +529,7 @@ impl Instruction for AndMemIyD {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.set_flag(HALF_CARRY_FLAG);
 
         if d < 0 {
             info!("{:#06x}: AND A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
@@ -1861,6 +1865,7 @@ impl Instruction for OrR {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.clear_flag(HALF_CARRY_FLAG);
 
         info!("{:#06x}: OR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -1881,6 +1886,7 @@ impl Instruction for OrN {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.clear_flag(HALF_CARRY_FLAG);
 
         info!("{:#06x}: OR {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
@@ -1902,6 +1908,7 @@ impl Instruction for OrMemHl {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.clear_flag(HALF_CARRY_FLAG);
 
         info!("{:#06x}: OR (HL)", cpu.get_pc());
         cpu.inc_pc(1);
@@ -1924,6 +1931,7 @@ impl Instruction for OrMemIxD {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.clear_flag(HALF_CARRY_FLAG);
 
         if d < 0 {
             info!("{:#06x}: OR A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
@@ -1950,6 +1958,7 @@ impl Instruction for OrMemIyD {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.clear_flag(HALF_CARRY_FLAG);
 
         if d < 0 {
             info!("{:#06x}: OR A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
@@ -2626,6 +2635,7 @@ impl Instruction for XorR {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.clear_flag(HALF_CARRY_FLAG);
 
         info!("{:#06x}: XOR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
@@ -2646,6 +2656,7 @@ impl Instruction for XorN {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.clear_flag(HALF_CARRY_FLAG);
 
         info!("{:#06x}: XOR {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
@@ -2667,6 +2678,7 @@ impl Instruction for XorMemHl {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.clear_flag(HALF_CARRY_FLAG);
 
         info!("{:#06x}: XOR (HL)", cpu.get_pc());
         cpu.inc_pc(1);
@@ -2689,6 +2701,7 @@ impl Instruction for XorMemIxD {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.clear_flag(HALF_CARRY_FLAG);
 
         if d < 0 {
             info!("{:#06x}: XOR A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
@@ -2715,6 +2728,7 @@ impl Instruction for XorMemIyD {
         cpu.write_reg8(Reg8::A, res);
 
         update_flags_logical(cpu, res);
+        cpu.clear_flag(HALF_CARRY_FLAG);
 
         if d < 0 {
             info!("{:#06x}: XOR A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
