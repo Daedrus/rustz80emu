@@ -2895,29 +2895,29 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     /* 0x78 */    /* 0x79 */    /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */    /* 0x7F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */    /* 0x85 */    /* 0x86 */    /* 0x87 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddMemIxD  , &Unsupported,
+    /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */          /* 0x85 */          /* 0x86 */    /* 0x87 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddR{r:Reg8::IXH}, &AddR{r:Reg8::IXL}, &AddMemIxD  , &Unsupported,
 
-    /* 0x88 */    /* 0x89 */    /* 0x8A */    /* 0x8B */    /* 0x8C */    /* 0x8D */    /* 0x8E */    /* 0x8F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AdcMemIxD  , &Unsupported,
+    /* 0x88 */    /* 0x89 */    /* 0x8A */    /* 0x8B */    /* 0x8C */          /* 0x8D */          /* 0x8E */    /* 0x8F */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AdcR{r:Reg8::IXH}, &AdcR{r:Reg8::IXL}, &AdcMemIxD  , &Unsupported,
 
-    /* 0x90 */    /* 0x91 */    /* 0x92 */    /* 0x93 */    /* 0x94 */    /* 0x95 */    /* 0x96 */    /* 0x97 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SubMemIxD  , &Unsupported,
+    /* 0x90 */    /* 0x91 */    /* 0x92 */    /* 0x93 */    /* 0x94 */          /* 0x95 */          /* 0x96 */    /* 0x97 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SubR{r:Reg8::IXH}, &SubR{r:Reg8::IXL}, &SubMemIxD  , &Unsupported,
 
-    /* 0x98 */    /* 0x99 */    /* 0x9A */    /* 0x9B */    /* 0x9C */    /* 0x9D */    /* 0x9E */    /* 0x9F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SbcMemIxD  , &Unsupported,
+    /* 0x98 */    /* 0x99 */    /* 0x9A */    /* 0x9B */    /* 0x9C */          /* 0x9D */          /* 0x9E */    /* 0x9F */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SbcR{r:Reg8::IXH}, &SbcR{r:Reg8::IXL}, &SbcMemIxD  , &Unsupported,
 
-    /* 0xA0 */    /* 0xA1 */    /* 0xA2 */    /* 0xA3 */    /* 0xA4 */    /* 0xA5 */    /* 0xA6 */    /* 0xA7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AndMemIxD  , &Unsupported,
+    /* 0xA0 */    /* 0xA1 */    /* 0xA2 */    /* 0xA3 */    /* 0xA4 */          /* 0xA5 */          /* 0xA6 */    /* 0xA7 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AndR{r:Reg8::IXH}, &AndR{r:Reg8::IXL}, &AndMemIxD  , &Unsupported,
 
-    /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */    /* 0xAD */    /* 0xAE */    /* 0xAF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &XorMemIxD  , &Unsupported,
+    /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */          /* 0xAD */          /* 0xAE */    /* 0xAF */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &XorR{r:Reg8::IXH}, &XorR{r:Reg8::IXL}, &XorMemIxD  , &Unsupported,
 
-    /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */    /* 0xB5 */    /* 0xB6 */    /* 0xB7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &OrMemIxD   , &Unsupported,
+    /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */          /* 0xB5 */          /* 0xB6 */    /* 0xB7 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &OrR{r:Reg8::IXH} , &OrR{r:Reg8::IXL} , &OrMemIxD   , &Unsupported,
 
-    /* 0xB8 */    /* 0xB9 */    /* 0xBA */    /* 0xBB */    /* 0xBC */    /* 0xBD */    /* 0xBE */    /* 0xBF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0xB8 */    /* 0xB9 */    /* 0xBA */    /* 0xBB */    /* 0xBC */          /* 0xBD */          /* 0xBE */    /* 0xBF */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &CpR{r:Reg8::IXH} , &CpR{r:Reg8::IXL} , &Unsupported, &Unsupported,
 
     /* 0xC0 */    /* 0xC1 */    /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */    /* 0xC6 */    /* 0xC7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -3091,29 +3091,29 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     /* 0x78 */    /* 0x79 */    /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */             /* 0x7F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::A}, &Unsupported,
 
-    /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */    /* 0x85 */    /* 0x86 */    /* 0x87 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddMemIyD  , &Unsupported,
+    /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */          /* 0x85 */          /* 0x86 */    /* 0x87 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddR{r:Reg8::IYH}, &AddR{r:Reg8::IYL}, &AddMemIyD  , &Unsupported,
 
-    /* 0x88 */    /* 0x89 */    /* 0x8A */    /* 0x8B */    /* 0x8C */    /* 0x8D */    /* 0x8E */    /* 0x8F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AdcMemIyD  , &Unsupported,
+    /* 0x88 */    /* 0x89 */    /* 0x8A */    /* 0x8B */    /* 0x8C */          /* 0x8D */          /* 0x8E */    /* 0x8F */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AdcR{r:Reg8::IYH}, &AdcR{r:Reg8::IYL}, &AdcMemIyD  , &Unsupported,
 
-    /* 0x90 */    /* 0x91 */    /* 0x92 */    /* 0x93 */    /* 0x94 */    /* 0x95 */    /* 0x96 */    /* 0x97 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SubMemIyD  , &Unsupported,
+    /* 0x90 */    /* 0x91 */    /* 0x92 */    /* 0x93 */    /* 0x94 */          /* 0x95 */          /* 0x96 */    /* 0x97 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SubR{r:Reg8::IYH}, &SubR{r:Reg8::IYL}, &SubMemIyD  , &Unsupported,
 
-    /* 0x98 */    /* 0x99 */    /* 0x9A */    /* 0x9B */    /* 0x9C */    /* 0x9D */    /* 0x9E */    /* 0x9F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SbcMemIyD  , &Unsupported,
+    /* 0x98 */    /* 0x99 */    /* 0x9A */    /* 0x9B */    /* 0x9C */          /* 0x9D */          /* 0x9E */    /* 0x9F */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SbcR{r:Reg8::IYH}, &SbcR{r:Reg8::IYL}, &SbcMemIyD  , &Unsupported,
 
-    /* 0xA0 */    /* 0xA1 */    /* 0xA2 */    /* 0xA3 */    /* 0xA4 */    /* 0xA5 */    /* 0xA6 */    /* 0xA7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AndMemIyD  , &Unsupported,
+    /* 0xA0 */    /* 0xA1 */    /* 0xA2 */    /* 0xA3 */    /* 0xA4 */          /* 0xA5 */          /* 0xA6 */    /* 0xA7 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AndR{r:Reg8::IYH}, &AndR{r:Reg8::IYL}, &AndMemIyD  , &Unsupported,
 
-    /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */    /* 0xAD */    /* 0xAE */    /* 0xAF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &XorMemIyD  , &Unsupported,
+    /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */          /* 0xAD */          /* 0xAE */    /* 0xAF */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &XorR{r:Reg8::IYH}, &XorR{r:Reg8::IYL}, &XorMemIyD  , &Unsupported,
 
-    /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */    /* 0xB5 */    /* 0xB6 */    /* 0xB7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &OrMemIyD   , &Unsupported,
+    /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */          /* 0xB5 */          /* 0xB6 */    /* 0xB7 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &OrR{r:Reg8::IYH} , &OrR{r:Reg8::IYL} , &OrMemIyD   , &Unsupported,
 
-    /* 0xB8 */    /* 0xB9 */    /* 0xBA */    /* 0xBB */    /* 0xBC */    /* 0xBD */    /* 0xBE */    /* 0xBF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &CpMemIyD   , &Unsupported,
+    /* 0xB8 */    /* 0xB9 */    /* 0xBA */    /* 0xBB */    /* 0xBC */          /* 0xBD */          /* 0xBE */    /* 0xBF */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &CpR{r:Reg8::IYH} , &CpR{r:Reg8::IYL} , &CpMemIyD   , &Unsupported,
 
     /* 0xC0 */    /* 0xC1 */    /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */    /* 0xC6 */    /* 0xC7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,

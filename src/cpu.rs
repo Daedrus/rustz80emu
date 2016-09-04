@@ -32,7 +32,12 @@ pub enum Reg8 {
     D = 0b010,
     E = 0b011,
     H = 0b100,
-    L = 0b101
+    L = 0b101,
+
+    IXL = 0b1000,
+    IXH = 0b1001,
+    IYL = 0b1010,
+    IYH = 0b1011
 }
 }
 
@@ -135,7 +140,9 @@ impl From<Reg8> for OutputRegisters {
             Reg8::D => OD,
             Reg8::E => OE,
             Reg8::H => OH,
-            Reg8::L => OL
+            Reg8::L => OL,
+            Reg8::IXL | Reg8::IXH => OIX,
+            Reg8::IYL | Reg8::IYH => OIY
         }
     }
 }
@@ -298,13 +305,17 @@ impl Cpu {
 
     pub fn read_reg8(&self, reg: Reg8) -> u8 {
         let val = match reg {
-            Reg8::A => self.a,
-            Reg8::B => self.b,
-            Reg8::C => self.c,
-            Reg8::D => self.d,
-            Reg8::E => self.e,
-            Reg8::H => self.h,
-            Reg8::L => self.l
+            Reg8::A   => self.a,
+            Reg8::B   => self.b,
+            Reg8::C   => self.c,
+            Reg8::D   => self.d,
+            Reg8::E   => self.e,
+            Reg8::H   => self.h,
+            Reg8::L   => self.l,
+            Reg8::IXL =>  (self.ix & 0x00FF)       as u8,
+            Reg8::IXH => ((self.ix & 0xFF00) >> 8) as u8,
+            Reg8::IYL =>  (self.iy & 0x00FF)       as u8,
+            Reg8::IYH => ((self.iy & 0xFF00) >> 8) as u8
         };
 
         debug!("                Read value {:#04X} from register {:?}", val, reg);
@@ -319,7 +330,8 @@ impl Cpu {
             Reg8::D => self.d = val,
             Reg8::E => self.e = val,
             Reg8::H => self.h = val,
-            Reg8::L => self.l = val
+            Reg8::L => self.l = val,
+            _       => unreachable!()
         }
 
         debug!("                Write value {:#04X} to register {:?}", val, reg);
