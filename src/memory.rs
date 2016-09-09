@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[derive(RustcEncodable, RustcDecodable)]
 pub struct Memory {
     rom: u8,
     ram_0x4000_0x7FFF: usize,

@@ -10,6 +10,8 @@ num = "0.1.34"
 bitflags = "0.7.0"
 log = "0.3.6"
 env_logger = "0.3.4"
+bincode = "*"
+rustc-serialize = "*"
 
 [lib]
 name = "z80emulib"

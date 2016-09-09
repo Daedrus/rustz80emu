@@ -24,7 +24,7 @@ pub enum Reg16 {
 }
 
 enum_from_primitive! {
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, RustcEncodable, RustcDecodable)]
 pub enum Reg8 {
     A = 0b111,
     B = 0b000,
@@ -42,7 +42,7 @@ pub enum Reg8 {
 }
 
 enum_from_primitive! {
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, RustcEncodable, RustcDecodable)]
 pub enum Port {
     MEMORY = 0x7ffd,
     AY38912_REG14 = 0xfffd,
@@ -52,7 +52,7 @@ pub enum Port {
 }
 
 enum_from_primitive! {
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, RustcEncodable, RustcDecodable)]
 pub enum FlagCond {
     NZ = 0b000,
     Z  = 0b001,
@@ -66,6 +66,7 @@ pub enum FlagCond {
 }
 
 bitflags! {
+#[derive(RustcEncodable, RustcDecodable)]
     pub flags StatusIndicatorFlags: u8 {
         const EMPTY_FLAGS          = 0b00000000,
 
@@ -83,6 +84,7 @@ bitflags! {
 }
 
 bitflags! {
+#[derive(RustcEncodable, RustcDecodable)]
     pub flags OutputRegisters: u32 {
         const ONONE = 0x00000000,
 
@@ -147,6 +149,7 @@ impl From<Reg8> for OutputRegisters {
     }
 }
 
+#[derive(RustcEncodable, RustcDecodable)]
 pub struct Cpu {
     // main register set
     a: u8, f: StatusIndicatorFlags,
