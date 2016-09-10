@@ -645,6 +645,7 @@ impl Instruction for Ccf {
 struct CpR      { r: Reg8 }
 struct CpN      ;
 struct CpMemHl  ;
+struct CpMemIxD ;
 struct CpMemIyD ;
 
 #[inline(always)]
@@ -709,6 +710,30 @@ impl Instruction for CpMemHl {
 
         info!("{:#06x}: CP (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for CpMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OIY));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = a.wrapping_sub(memval);
+
+        update_flags_cp8(cpu, a, memval, res);
+
+        if d < 0 {
+            info!("{:#06x}: CP (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: CP (IX+{:#04X})", cpu.get_pc() - 1, d);
+        }
+        cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF));
     }
@@ -2917,7 +2942,7 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &OrR{r:Reg8::IXH} , &OrR{r:Reg8::IXL} , &OrMemIxD   , &Unsupported,
 
     /* 0xB8 */    /* 0xB9 */    /* 0xBA */    /* 0xBB */    /* 0xBC */          /* 0xBD */          /* 0xBE */    /* 0xBF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &CpR{r:Reg8::IXH} , &CpR{r:Reg8::IXL} , &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &CpR{r:Reg8::IXH} , &CpR{r:Reg8::IXL} , &CpMemIxD   , &Unsupported,
 
     /* 0xC0 */    /* 0xC1 */    /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */    /* 0xC6 */    /* 0xC7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
