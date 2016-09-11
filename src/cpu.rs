@@ -385,6 +385,7 @@ impl Cpu {
     }
 
     pub fn inc_pc(&mut self, val: u16) { self.pc += val; }
+    pub fn dec_pc(&mut self, val: u16) { self.pc -= val; }
     pub fn set_pc(&mut self, val: u16) { self.pc = val; }
     pub fn get_pc(&self) -> u16 { self.pc }
 

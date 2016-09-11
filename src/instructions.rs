@@ -838,6 +838,69 @@ impl Instruction for CpMemIyD {
 }
 
 
+struct Cpd;
+struct Cpdr;
+
+#[inline(always)]
+fn update_flags_cpd(cpu: &mut Cpu, a: u8, memval: u8, bc: u16, res: u8) {
+    cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0              );
+    cpu.cond_flag ( ZERO_FLAG            , res == 0                     );
+    cpu.cond_flag ( HALF_CARRY_FLAG      , (a & 0x0F) < (memval & 0x0F) );
+    cpu.cond_flag ( PARITY_OVERFLOW_FLAG , bc != 0                      );
+    cpu.set_flag  ( ADD_SUBTRACT_FLAG                                   );
+
+    let res = if cpu.get_flag(HALF_CARRY_FLAG) { res - 1 } else { res };
+
+    cpu.cond_flag ( X_FLAG               , res & 0x08 != 0              );
+    cpu.cond_flag ( Y_FLAG               , res & 0x02 != 0              );
+}
+
+#[inline(always)]
+fn cpd(cpu: &mut Cpu) {
+    let bc     = cpu.read_reg16(Reg16::BC);
+    let hl     = cpu.read_reg16(Reg16::HL);
+    let a      = cpu.read_reg8(Reg8::A);
+    let memval = cpu.read_word(hl);
+
+    let res = a.wrapping_sub(memval);
+
+    cpu.write_reg16(Reg16::BC, bc.wrapping_sub(1));
+    cpu.write_reg16(Reg16::HL, hl.wrapping_sub(1));
+
+    update_flags_cpd(cpu, a, memval, bc.wrapping_sub(1), res);
+}
+
+impl Instruction for Cpd {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OB|OC|OH|OL|OF));
+
+        cpd(cpu);
+
+        info!("{:#06x}: CPD", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OB|OC|OH|OL|OF));
+    }
+}
+
+impl Instruction for Cpdr {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OB|OC|OH|OL|OF));
+
+        cpd(cpu);
+
+        info!("{:#06x}: CPDR", cpu.get_pc() - 1);
+        if cpu.get_flag(PARITY_OVERFLOW_FLAG) && !cpu.get_flag(ZERO_FLAG) {
+            cpu.dec_pc(1);
+        } else {
+            cpu.inc_pc(1);
+        }
+
+        debug!("{}", cpu.output(OB|OC|OH|OL|OF));
+    }
+}
+
+
 struct DecR      { r: Reg8  }
 struct DecMemHl  ;
 struct DecMemIxD ;
@@ -3152,13 +3215,13 @@ pub const INSTR_TABLE_ED: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */    /* 0xAD */    /* 0xAE */    /* 0xAF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Cpd        , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */    /* 0xB5 */    /* 0xB6 */    /* 0xB7 */
     &Ldir       , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xB8 */    /* 0xB9 */    /* 0xBA */    /* 0xBB */    /* 0xBC */    /* 0xBD */    /* 0xBE */    /* 0xBF */
-    &Lddr       , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Lddr       , &Cpdr       , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xC0 */    /* 0xC1 */    /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */    /* 0xC6 */    /* 0xC7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
