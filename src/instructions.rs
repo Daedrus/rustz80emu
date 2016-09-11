@@ -964,6 +964,100 @@ impl Instruction for Cpir {
 }
 
 
+struct Cpl;
+
+impl Instruction for Cpl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF));
+
+        let a = cpu.read_reg8(Reg8::A);
+
+        let res = a ^ 0xFF;
+
+        cpu.set_flag  ( HALF_CARRY_FLAG                        );
+        cpu.set_flag  ( ADD_SUBTRACT_FLAG                      );
+        cpu.cond_flag ( X_FLAG               , res & 0x08 != 0 );
+        cpu.cond_flag ( Y_FLAG               , res & 0x20 != 0 );
+
+        cpu.write_reg8(Reg8::A, res);
+
+        info!("{:#06x}: DAA", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+
+struct Daa;
+
+impl Instruction for Daa {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF));
+
+        let a = cpu.read_reg8(Reg8::A);
+
+        let diff = match (cpu.get_flag(CARRY_FLAG),
+                          (a & 0xF0) >> 4,
+                          cpu.get_flag(HALF_CARRY_FLAG),
+                           a & 0x0F) {
+            (false, 0x0...0x9, false, 0x0...0x9) => 0x00,
+            (false, 0x0...0x9, true , 0x0...0x9) => 0x06,
+            (false, 0x0...0x8, _    , 0xA...0xF) => 0x06,
+            (false, 0xA...0xF, false, 0x0...0x9) => 0x60,
+            (true , _        , false, 0x0...0x9) => 0x60,
+            (true , _        , true , 0x0...0x9) => 0x66,
+            (true , _        , _    , 0xA...0xF) => 0x66,
+            (false, 0x9...0xF, _    , 0xA...0xF) => 0x66,
+            (false, 0xA...0xF, true , 0x0...0x9) => 0x66,
+            _ => unreachable!()
+        };
+
+        let res = if cpu.get_flag(ADD_SUBTRACT_FLAG) {
+            a.wrapping_sub(diff)
+        } else {
+            a.wrapping_add(diff)
+        };
+        cpu.write_reg8(Reg8::A, res);
+
+        let h = match (cpu.get_flag(ADD_SUBTRACT_FLAG),
+                       cpu.get_flag(HALF_CARRY_FLAG),
+                       a & 0x0F) {
+            (false, _    , 0x0...0x9) => false,
+            (false, _    , 0xA...0xF) => true ,
+            (true , false, _        ) => false,
+            (true , true , 0x6...0xF) => false,
+            (true , true , 0x0...0x5) => true ,
+            _ => unreachable!()
+        };
+
+        let c = match (cpu.get_flag(CARRY_FLAG),
+                       (a & 0xF0) >> 4,
+                        a & 0x0F) {
+            (false, 0x0...0x9, 0x0...0x9) => false,
+            (false, 0x0...0x8, 0xA...0xF) => false,
+            (false, 0x9...0xF, 0xA...0xF) => true ,
+            (false, 0xA...0xF, 0x0...0x9) => true ,
+            (true , _        , _        ) => true ,
+            _ => unreachable!()
+        };
+
+        cpu.cond_flag ( SIGN_FLAG            , res & 0x80 != 0           );
+        cpu.cond_flag ( ZERO_FLAG            , res == 0                  );
+        cpu.cond_flag ( HALF_CARRY_FLAG      , h                         );
+        cpu.cond_flag ( PARITY_OVERFLOW_FLAG , res.count_ones() % 2 == 0 );
+        cpu.cond_flag ( CARRY_FLAG           , c                         );
+        cpu.cond_flag ( X_FLAG               , res & 0x08 != 0           );
+        cpu.cond_flag ( Y_FLAG               , res & 0x20 != 0           );
+
+        info!("{:#06x}: DAA", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+
 struct DecR      { r: Reg8  }
 struct DecMemHl  ;
 struct DecMemIxD ;
@@ -3619,10 +3713,10 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &JrE        , &AddHlSs{r:Reg16::DE}, &LdAMemDe   , &DecSs{r:Reg16::DE}, &IncR{r:Reg8::E}, &DecR{r:Reg8::E}, &LdRN{r:Reg8::E}, &RrA        ,
 
     /* 0x20 */    /* 0x21 */             /* 0x22 */    /* 0x23 */           /* 0x24 */        /* 0x25 */        /* 0x26 */        /* 0x27 */
-    &JrNz       , &LdDdNn{r:Reg16::HL} , &LdMemNnHl  , &IncSs{r:Reg16::HL}, &IncR{r:Reg8::H}, &DecR{r:Reg8::H}, &LdRN{r:Reg8::H}, &Unsupported,
+    &JrNz       , &LdDdNn{r:Reg16::HL} , &LdMemNnHl  , &IncSs{r:Reg16::HL}, &IncR{r:Reg8::H}, &DecR{r:Reg8::H}, &LdRN{r:Reg8::H}, &Daa        ,
 
     /* 0x28 */    /* 0x29 */             /* 0x2A */    /* 0x2B */           /* 0x2C */        /* 0x2D */        /* 0x2E */        /* 0x2F */
-    &JrZ        , &AddHlSs{r:Reg16::HL}, &LdHlMemNn  , &DecSs{r:Reg16::HL}, &IncR{r:Reg8::L}, &DecR{r:Reg8::L}, &LdRN{r:Reg8::L}, &Unsupported,
+    &JrZ        , &AddHlSs{r:Reg16::HL}, &LdHlMemNn  , &DecSs{r:Reg16::HL}, &IncR{r:Reg8::L}, &DecR{r:Reg8::L}, &LdRN{r:Reg8::L}, &Cpl        ,
 
     /* 0x30 */    /* 0x31 */             /* 0x32 */    /* 0x33 */           /* 0x34 */        /* 0x35 */        /* 0x36 */        /* 0x37 */
     &JrNcE      , &LdDdNn{r:Reg16::SP} , &LdMemNnA   , &IncSs{r:Reg16::SP}, &IncMemHl       , &DecMemHl       , &LdMemHlN       , &Scf        ,
