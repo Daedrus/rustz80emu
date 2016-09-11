@@ -543,7 +543,41 @@ impl Instruction for AndMemIyD {
 }
 
 
+struct BitBMemIxD { b: u8 }
 struct BitBMemIyD { b: u8 }
+
+#[inline(always)]
+fn update_flags_bit(cpu: &mut Cpu, b: u8, bit_is_set: bool) {
+    cpu.cond_flag  ( SIGN_FLAG            , b == 0b111 && bit_is_set );
+    cpu.cond_flag  ( ZERO_FLAG            , !bit_is_set              );
+    cpu.set_flag   ( HALF_CARRY_FLAG                                 );
+    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , !bit_is_set              );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                               );
+}
+
+impl Instruction for BitBMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIX));
+
+        let d    = cpu.read_word(cpu.get_pc()) as i8;
+        let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
+
+        let memval = cpu.read_word(addr);
+
+        update_flags_bit(cpu, self.b, memval & (1 << self.b) != 0);
+        cpu.cond_flag ( X_FLAG , memval & 0b011 != 0 );
+        cpu.cond_flag ( Y_FLAG , memval & 0b101 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: BIT {}, (IX-{:#04X})", cpu.get_pc() - 2, self.b, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: BIT {}, (IX+{:#04X})", cpu.get_pc() - 2, self.b, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
 
 impl Instruction for BitBMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
@@ -554,9 +588,9 @@ impl Instruction for BitBMemIyD {
 
         let memval = cpu.read_word(addr);
 
-        cpu.cond_flag  ( ZERO_FLAG       , memval & (1 << self.b) == 0 );
-        cpu.set_flag   ( HALF_CARRY_FLAG                               );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                             );
+        update_flags_bit(cpu, self.b, memval & (1 << self.b) != 0);
+        cpu.cond_flag ( X_FLAG , memval & 0b011 != 0 );
+        cpu.cond_flag ( Y_FLAG , memval & 0b101 != 0 );
 
         if d < 0 {
             info!("{:#06x}: BIT {}, (IY-{:#04X})", cpu.get_pc() - 2, self.b, (d ^ 0xFF) + 1);
@@ -717,7 +751,7 @@ impl Instruction for CpMemHl {
 
 impl Instruction for CpMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIY));
+        debug!("{}", cpu.output(OA|OF|OIX));
 
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
@@ -2078,8 +2112,30 @@ impl Instruction for PushQq {
 }
 
 
+struct ResBMemIxD { b: u8 }
 struct ResBMemIyD { b: u8 }
 struct ResBMemHl  { b: u8 }
+
+impl Instruction for ResBMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OIX));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        cpu.write_word(addr, memval & !(1 << self.b));
+
+        if d < 0 {
+            info!("{:#06x}: RES {}, (IX-{:#04X})", cpu.get_pc() - 2, self.b, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: RES {}, (IX+{:#04X})", cpu.get_pc() - 2, self.b, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
 
 impl Instruction for ResBMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
@@ -2305,8 +2361,30 @@ impl Instruction for Scf {
 }
 
 
+struct SetBMemIxD { b: u8 }
 struct SetBMemIyD { b: u8 }
 struct SetBMemHl  { b: u8 }
+
+impl Instruction for SetBMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OIX));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        cpu.write_word(addr, memval | (1 << self.b));
+
+        if d < 0 {
+            info!("{:#06x}: SET {}, (IX-{:#04X})", cpu.get_pc() - 2, self.b, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SET {}, (IX+{:#04X})", cpu.get_pc() - 2, self.b, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(ONONE));
+    }
+}
 
 impl Instruction for SetBMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
@@ -3190,77 +3268,77 @@ pub const INSTR_TABLE_DDCB: [&'static Instruction; 256] = [
     /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x40 */    /* 0x41 */    /* 0x42 */    /* 0x43 */    /* 0x44 */    /* 0x45 */    /* 0x46 */    /* 0x47 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x40 */    /* 0x41 */    /* 0x42 */    /* 0x43 */    /* 0x44 */    /* 0x45 */    /* 0x46 */        /* 0x47 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:0}, &Unsupported,
 
-    /* 0x48 */    /* 0x49 */    /* 0x4A */    /* 0x4B */    /* 0x4C */    /* 0x4D */    /* 0x4E */    /* 0x4F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x48 */    /* 0x49 */    /* 0x4A */    /* 0x4B */    /* 0x4C */    /* 0x4D */    /* 0x4E */        /* 0x4F */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:1}, &Unsupported,
 
-    /* 0x50 */    /* 0x51 */    /* 0x52 */    /* 0x53 */    /* 0x54 */    /* 0x55 */    /* 0x56 */    /* 0x57 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x50 */    /* 0x51 */    /* 0x52 */    /* 0x53 */    /* 0x54 */    /* 0x55 */    /* 0x56 */        /* 0x57 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:2}, &Unsupported,
 
-    /* 0x58 */    /* 0x59 */    /* 0x5A */    /* 0x5B */    /* 0x5C */    /* 0x5D */    /* 0x5E */    /* 0x5F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x58 */    /* 0x59 */    /* 0x5A */    /* 0x5B */    /* 0x5C */    /* 0x5D */    /* 0x5E */        /* 0x5F */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:3}, &Unsupported,
 
-    /* 0x60 */    /* 0x61 */    /* 0x62 */    /* 0x63 */    /* 0x64 */    /* 0x65 */    /* 0x66 */    /* 0x67 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x60 */    /* 0x61 */    /* 0x62 */    /* 0x63 */    /* 0x64 */    /* 0x65 */    /* 0x66 */        /* 0x67 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:4}, &Unsupported,
 
-    /* 0x68 */    /* 0x69 */    /* 0x6A */    /* 0x6B */    /* 0x6C */    /* 0x6D */    /* 0x6E */    /* 0x6F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x68 */    /* 0x69 */    /* 0x6A */    /* 0x6B */    /* 0x6C */    /* 0x6D */    /* 0x6E */        /* 0x6F */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:5}, &Unsupported,
 
-    /* 0x70 */    /* 0x71 */    /* 0x72 */    /* 0x73 */    /* 0x74 */    /* 0x75 */    /* 0x76 */    /* 0x77 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x70 */    /* 0x71 */    /* 0x72 */    /* 0x73 */    /* 0x74 */    /* 0x75 */    /* 0x76 */        /* 0x77 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:6}, &Unsupported,
 
-    /* 0x78 */    /* 0x79 */    /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */    /* 0x7F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x78 */    /* 0x79 */    /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */        /* 0x7F */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:7}, &Unsupported,
 
     /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */    /* 0x85 */    /* 0x86 */    /* 0x87 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &ResBMemIxD{b:0}, &Unsupported,
 
     /* 0x88 */    /* 0x89 */    /* 0x8A */    /* 0x8B */    /* 0x8C */    /* 0x8D */    /* 0x8E */    /* 0x8F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &ResBMemIxD{b:1}, &Unsupported,
 
     /* 0x90 */    /* 0x91 */    /* 0x92 */    /* 0x93 */    /* 0x94 */    /* 0x95 */    /* 0x96 */    /* 0x97 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &ResBMemIxD{b:2}, &Unsupported,
 
     /* 0x98 */    /* 0x99 */    /* 0x9A */    /* 0x9B */    /* 0x9C */    /* 0x9D */    /* 0x9E */    /* 0x9F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &ResBMemIxD{b:3}, &Unsupported,
 
     /* 0xA0 */    /* 0xA1 */    /* 0xA2 */    /* 0xA3 */    /* 0xA4 */    /* 0xA5 */    /* 0xA6 */    /* 0xA7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &ResBMemIxD{b:4}, &Unsupported,
 
     /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */    /* 0xAD */    /* 0xAE */    /* 0xAF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &ResBMemIxD{b:5}, &Unsupported,
 
     /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */    /* 0xB5 */    /* 0xB6 */    /* 0xB7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &ResBMemIxD{b:6}, &Unsupported,
 
     /* 0xB8 */    /* 0xB9 */    /* 0xBA */    /* 0xBB */    /* 0xBC */    /* 0xBD */    /* 0xBE */    /* 0xBF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &ResBMemIxD{b:7}, &Unsupported,
 
-    /* 0xC0 */    /* 0xC1 */    /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */    /* 0xC6 */    /* 0xC7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0xC0 */    /* 0xC1 */    /* 0xC2 */    /* 0xC3 */    /* 0xC4 */    /* 0xC5 */    /* 0xC6 */        /* 0xC7 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SetBMemIxD{b:0}, &Unsupported,
 
-    /* 0xC8 */    /* 0xC9 */    /* 0xCA */    /* 0xCB */    /* 0xCC */    /* 0xCD */    /* 0xCE */    /* 0xCF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0xC8 */    /* 0xC9 */    /* 0xCA */    /* 0xCB */    /* 0xCC */    /* 0xCD */    /* 0xCE */        /* 0xCF */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SetBMemIxD{b:1}, &Unsupported,
 
-    /* 0xD0 */    /* 0xD1 */    /* 0xD2 */    /* 0xD3 */    /* 0xD4 */    /* 0xD5 */    /* 0xD6 */    /* 0xD7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0xD0 */    /* 0xD1 */    /* 0xD2 */    /* 0xD3 */    /* 0xD4 */    /* 0xD5 */    /* 0xD6 */        /* 0xD7 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SetBMemIxD{b:2}, &Unsupported,
 
-    /* 0xD8 */    /* 0xD9 */    /* 0xDA */    /* 0xDB */    /* 0xDC */    /* 0xDD */    /* 0xDE */    /* 0xDF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0xD8 */    /* 0xD9 */    /* 0xDA */    /* 0xDB */    /* 0xDC */    /* 0xDD */    /* 0xDE */        /* 0xDF */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SetBMemIxD{b:3}, &Unsupported,
 
-    /* 0xE0 */    /* 0xE1 */    /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */    /* 0xE6 */    /* 0xE7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0xE0 */    /* 0xE1 */    /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */    /* 0xE6 */        /* 0xE7 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SetBMemIxD{b:4}, &Unsupported,
 
-    /* 0xE8 */    /* 0xE9 */    /* 0xEA */    /* 0xEB */    /* 0xEC */    /* 0xED */    /* 0xEE */    /* 0xEF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0xE8 */    /* 0xE9 */    /* 0xEA */    /* 0xEB */    /* 0xEC */    /* 0xED */    /* 0xEE */        /* 0xEF */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SetBMemIxD{b:5}, &Unsupported,
 
-    /* 0xF0 */    /* 0xF1 */    /* 0xF2 */    /* 0xF3 */    /* 0xF4 */    /* 0xF5 */    /* 0xF6 */    /* 0xF7 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0xF0 */    /* 0xF1 */    /* 0xF2 */    /* 0xF3 */    /* 0xF4 */    /* 0xF5 */    /* 0xF6 */        /* 0xF7 */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SetBMemIxD{b:6}, &Unsupported,
 
-    /* 0xF8 */    /* 0xF9 */    /* 0xFA */    /* 0xFB */    /* 0xFC */    /* 0xFD */    /* 0xFE */    /* 0xFF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported
+    /* 0xF8 */    /* 0xF9 */    /* 0xFA */    /* 0xFB */    /* 0xFC */    /* 0xFD */    /* 0xFE */        /* 0xFF */
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SetBMemIxD{b:7}, &Unsupported
 ];
 
 pub const INSTR_TABLE_FDCB: [&'static Instruction; 256] = [
