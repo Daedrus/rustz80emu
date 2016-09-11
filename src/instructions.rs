@@ -1643,7 +1643,6 @@ struct LdMemIyDR { r: Reg8  }
 struct LdMemNnA  ;
 struct LdMemNnDd { r: Reg16 }
 struct LdMemNnHl ;
-struct LdMemNnIx ;
 struct LdAMemDe  ;
 struct LdAMemNn  ;
 struct LdDdMemNn { r: Reg16 }
@@ -1652,11 +1651,8 @@ struct LdRN      { r: Reg8  }
 struct LdHlMemNn ;
 struct LdRMemIyD { r: Reg8  }
 struct LdSpHl    ;
-struct LdIxNn    ;
-struct LdIxMemNn ;
 struct LdRR      { rt: Reg8, rs: Reg8 }
 struct LdRMemHl  { r: Reg8  }
-struct LdIyNn    ;
 
 impl Instruction for LdMemBcA {
     fn execute(&self, cpu: &mut Cpu) {
@@ -1863,25 +1859,6 @@ impl Instruction for LdMemNnHl {
     }
 }
 
-impl Instruction for LdMemNnIx {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIX));
-
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
-                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
-        let (ixhigh, ixlow) = (((cpu.get_ix() & 0xFF00) >> 8) as u8,
-                               ((cpu.get_ix() & 0x00FF)       as u8));
-
-        cpu.write_word(nn, ixlow);
-        cpu.write_word(nn + 1, ixhigh);
-
-        info!("{:#06x}: LD ({:#06X}), IX", cpu.get_pc() - 1, nn);
-        cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(ONONE));
-    }
-}
-
 impl Instruction for LdAMemDe {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OD|OE));
@@ -2017,40 +1994,6 @@ impl Instruction for LdSpHl {
     }
 }
 
-impl Instruction for LdIxNn {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIX));
-
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
-                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
-
-        cpu.set_ix(nn);
-
-        info!("{:#06x}: LD IX, {:#06X}", cpu.get_pc() - 1, nn);
-        cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(OIX));
-    }
-}
-
-impl Instruction for LdIxMemNn {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIX));
-
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
-                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
-        let nnmemval = (cpu.read_word(nn    ) as u16) |
-                      ((cpu.read_word(nn + 1) as u16) << 8);
-
-        cpu.set_ix(nnmemval);
-
-        info!("{:#06x}: LD IX, TODO {:#06X}", cpu.get_pc() - 1, nnmemval);
-        cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(OIX));
-    }
-}
-
 impl Instruction for LdRR {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OutputRegisters::from(self.rt) | OutputRegisters::from(self.rs)));
@@ -2079,22 +2022,6 @@ impl Instruction for LdRMemHl {
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OutputRegisters::from(self.r)));
-    }
-}
-
-impl Instruction for LdIyNn {
-    fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIY));
-
-        let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
-                 ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
-
-        cpu.set_iy(nn);
-
-        info!("{:#06x}: LD IY, {:#06X}", cpu.get_pc() - 1, nn);
-        cpu.inc_pc(3);
-
-        debug!("{}", cpu.output(OIY));
     }
 }
 
@@ -3222,11 +3149,11 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     /* 0x18 */    /* 0x19 */             /* 0x1A */    /* 0x1B */    /* 0x1C */    /* 0x1D */    /* 0x1E */    /* 0x1F */
     &Unsupported, &AddIxPp{r:Reg16::DE}, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x20 */    /* 0x21 */             /* 0x22 */    /* 0x23 */           /* 0x24 */          /* 0x25 */          /* 0x26 */    /* 0x27 */
-    &Unsupported, &LdIxNn     ,          &LdMemNnIx  , &IncSs{r:Reg16::IX}, &IncR{r:Reg8::IXH}, &DecR{r:Reg8::IXH}, &Unsupported, &Unsupported,
+    /* 0x20 */    /* 0x21 */             /* 0x22 */                 /* 0x23 */           /* 0x24 */          /* 0x25 */          /* 0x26 */    /* 0x27 */
+    &Unsupported, &LdDdNn{r:Reg16::IX} , &LdMemNnDd{r:Reg16::IX}  , &IncSs{r:Reg16::IX}, &IncR{r:Reg8::IXH}, &DecR{r:Reg8::IXH}, &Unsupported, &Unsupported,
 
-    /* 0x28 */    /* 0x29 */             /* 0x2A */    /* 0x2B */           /* 0x2C */          /* 0x2D */          /* 0x2E */    /* 0x2F */
-    &Unsupported, &AddIxPp{r:Reg16::IX}, &LdIxMemNn  , &DecSs{r:Reg16::IX}, &IncR{r:Reg8::IXL}, &DecR{r:Reg8::IXL}, &Unsupported, &Unsupported,
+    /* 0x28 */    /* 0x29 */             /* 0x2A */                 /* 0x2B */           /* 0x2C */          /* 0x2D */          /* 0x2E */    /* 0x2F */
+    &Unsupported, &AddIxPp{r:Reg16::IX}, &LdDdMemNn{r:Reg16::IX}  , &DecSs{r:Reg16::IX}, &IncR{r:Reg8::IXL}, &DecR{r:Reg8::IXL}, &Unsupported, &Unsupported,
 
     /* 0x30 */    /* 0x31 */             /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
     &Unsupported, &Unsupported,          &Unsupported, &Unsupported, &IncMemIxD  , &DecMemIxD  , &LdMemIxDN  , &Unsupported,
@@ -3419,10 +3346,10 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     &Unsupported, &AddIyRr{r:Reg16::DE}, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x20 */    /* 0x21 */             /* 0x22 */    /* 0x23 */           /* 0x24 */          /* 0x25 */          /* 0x26 */    /* 0x27 */
-    &Unsupported, &LdIyNn     ,          &Unsupported, &IncSs{r:Reg16::IY}, &IncR{r:Reg8::IYH}, &DecR{r:Reg8::IYH}, &Unsupported, &Unsupported,
+    &Unsupported, &LdDdNn{r:Reg16::IY} , &Unsupported, &IncSs{r:Reg16::IY}, &IncR{r:Reg8::IYH}, &DecR{r:Reg8::IYH}, &Unsupported, &Unsupported,
 
-    /* 0x28 */    /* 0x29 */             /* 0x2A */    /* 0x2B */           /* 0x2C */          /* 0x2D */          /* 0x2E */    /* 0x2F */
-    &Unsupported, &AddIyRr{r:Reg16::IY}, &Unsupported, &DecSs{r:Reg16::IY}, &IncR{r:Reg8::IYL}, &DecR{r:Reg8::IYL}, &Unsupported, &Unsupported,
+    /* 0x28 */    /* 0x29 */             /* 0x2A */               /* 0x2B */           /* 0x2C */          /* 0x2D */          /* 0x2E */    /* 0x2F */
+    &Unsupported, &AddIyRr{r:Reg16::IY}, &LdDdMemNn{r:Reg16::IY}, &DecSs{r:Reg16::IY}, &IncR{r:Reg8::IYL}, &DecR{r:Reg8::IYL}, &Unsupported, &Unsupported,
 
     /* 0x30 */    /* 0x31 */             /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
     &Unsupported, &Unsupported,          &Unsupported, &Unsupported, &IncMemIyD  , &DecMemIyD  , &LdMemIyDN,   &Unsupported,
