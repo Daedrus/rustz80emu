@@ -334,7 +334,10 @@ impl Cpu {
             Reg8::E => self.e = val,
             Reg8::H => self.h = val,
             Reg8::L => self.l = val,
-            _       => unreachable!()
+            Reg8::IXL => self.ix = (self.ix & 0xFF00) | val as u16,
+            Reg8::IXH => self.ix = (self.ix & 0x00FF) | ((val as u16) << 8),
+            Reg8::IYL => self.iy = (self.iy & 0xFF00) | val as u16,
+            Reg8::IYH => self.iy = (self.iy & 0x00FF) | ((val as u16) << 8),
         }
 
         debug!("                Write value {:#04X} to register {:?}", val, reg);
