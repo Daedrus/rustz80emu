@@ -1643,12 +1643,14 @@ struct LdMemIyDR { r: Reg8  }
 struct LdMemNnA  ;
 struct LdMemNnDd { r: Reg16 }
 struct LdMemNnHl ;
+struct LdAMemBc  ;
 struct LdAMemDe  ;
 struct LdAMemNn  ;
 struct LdDdMemNn { r: Reg16 }
 struct LdDdNn    { r: Reg16 }
 struct LdRN      { r: Reg8  }
 struct LdHlMemNn ;
+struct LdRMemIxD { r: Reg8  }
 struct LdRMemIyD { r: Reg8  }
 struct LdSpHl    ;
 struct LdRR      { rt: Reg8, rs: Reg8 }
@@ -1859,6 +1861,22 @@ impl Instruction for LdMemNnHl {
     }
 }
 
+impl Instruction for LdAMemBc {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OB|OC));
+
+        let bc     = cpu.read_reg16(Reg16::BC);
+        let memval = cpu.read_word(bc);
+
+        cpu.write_reg8(Reg8::A, memval);
+
+        info!("{:#06x}: LD A, (BC)", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA));
+    }
+}
+
 impl Instruction for LdAMemDe {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OD|OE));
@@ -1956,6 +1974,27 @@ impl Instruction for LdHlMemNn {
         cpu.inc_pc(3);
 
         debug!("{}", cpu.output(OH|OL));
+    }
+}
+
+impl Instruction for LdRMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OIX|OutputRegisters::from(self.r)));
+
+        let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        cpu.write_reg8(self.r, memval);
+
+        if d < 0 {
+            info!("{:#06x}: LD {:?}, (IX-{:#04X})", cpu.get_pc() - 1, self.r, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: LD {:?}, (IX+{:#04X})", cpu.get_pc() - 1, self.r, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
     }
 }
 
@@ -3149,11 +3188,11 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     /* 0x18 */    /* 0x19 */             /* 0x1A */    /* 0x1B */    /* 0x1C */    /* 0x1D */    /* 0x1E */    /* 0x1F */
     &Unsupported, &AddIxPp{r:Reg16::DE}, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x20 */    /* 0x21 */             /* 0x22 */                 /* 0x23 */           /* 0x24 */          /* 0x25 */          /* 0x26 */    /* 0x27 */
-    &Unsupported, &LdDdNn{r:Reg16::IX} , &LdMemNnDd{r:Reg16::IX}  , &IncSs{r:Reg16::IX}, &IncR{r:Reg8::IXH}, &DecR{r:Reg8::IXH}, &Unsupported, &Unsupported,
+    /* 0x20 */    /* 0x21 */             /* 0x22 */                 /* 0x23 */           /* 0x24 */          /* 0x25 */          /* 0x26 */          /* 0x27 */
+    &Unsupported, &LdDdNn{r:Reg16::IX} , &LdMemNnDd{r:Reg16::IX}  , &IncSs{r:Reg16::IX}, &IncR{r:Reg8::IXH}, &DecR{r:Reg8::IXH}, &LdRN{r:Reg8::IXH}, &Unsupported,
 
-    /* 0x28 */    /* 0x29 */             /* 0x2A */                 /* 0x2B */           /* 0x2C */          /* 0x2D */          /* 0x2E */    /* 0x2F */
-    &Unsupported, &AddIxPp{r:Reg16::IX}, &LdDdMemNn{r:Reg16::IX}  , &DecSs{r:Reg16::IX}, &IncR{r:Reg8::IXL}, &DecR{r:Reg8::IXL}, &Unsupported, &Unsupported,
+    /* 0x28 */    /* 0x29 */             /* 0x2A */                 /* 0x2B */           /* 0x2C */          /* 0x2D */          /* 0x2E */          /* 0x2F */
+    &Unsupported, &AddIxPp{r:Reg16::IX}, &LdDdMemNn{r:Reg16::IX}  , &DecSs{r:Reg16::IX}, &IncR{r:Reg8::IXL}, &DecR{r:Reg8::IXL}, &LdRN{r:Reg8::IXL}, &Unsupported,
 
     /* 0x30 */    /* 0x31 */             /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
     &Unsupported, &Unsupported,          &Unsupported, &Unsupported, &IncMemIxD  , &DecMemIxD  , &LdMemIxDN  , &Unsupported,
@@ -3162,28 +3201,28 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &AddIxPp{r:Reg16::SP}, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x40 */    /* 0x41 */    /* 0x42 */    /* 0x43 */    /* 0x44 */    /* 0x45 */    /* 0x46 */    /* 0x47 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::B}, &Unsupported,
 
     /* 0x48 */    /* 0x49 */    /* 0x4A */    /* 0x4B */    /* 0x4C */    /* 0x4D */    /* 0x4E */    /* 0x4F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::C}, &Unsupported,
 
     /* 0x50 */    /* 0x51 */    /* 0x52 */    /* 0x53 */    /* 0x54 */    /* 0x55 */    /* 0x56 */    /* 0x57 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::D}, &Unsupported,
 
     /* 0x58 */    /* 0x59 */    /* 0x5A */    /* 0x5B */    /* 0x5C */    /* 0x5D */    /* 0x5E */    /* 0x5F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::E}, &Unsupported,
 
     /* 0x60 */    /* 0x61 */    /* 0x62 */    /* 0x63 */    /* 0x64 */    /* 0x65 */    /* 0x66 */    /* 0x67 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::H}, &Unsupported,
 
     /* 0x68 */    /* 0x69 */    /* 0x6A */    /* 0x6B */    /* 0x6C */    /* 0x6D */    /* 0x6E */    /* 0x6F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::L}, &Unsupported,
 
     /* 0x70 */             /* 0x71 */             /* 0x72 */             /* 0x73 */             /* 0x74 */             /* 0x75 */             /* 0x76 */    /* 0x77 */
     &LdMemIxDR{r:Reg8::B}, &LdMemIxDR{r:Reg8::C}, &LdMemIxDR{r:Reg8::D}, &LdMemIxDR{r:Reg8::E}, &LdMemIxDR{r:Reg8::H}, &LdMemIxDR{r:Reg8::L}, &Unsupported, &LdMemIxDR{r:Reg8::A},
 
     /* 0x78 */    /* 0x79 */    /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */    /* 0x7F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::A}, &Unsupported,
 
     /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */          /* 0x85 */          /* 0x86 */    /* 0x87 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddR{r:Reg8::IXH}, &AddR{r:Reg8::IXL}, &AddMemIxD  , &Unsupported,
@@ -3345,11 +3384,11 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     /* 0x18 */    /* 0x19 */             /* 0x1A */    /* 0x1B */    /* 0x1C */    /* 0x1D */    /* 0x1E */    /* 0x1F */
     &Unsupported, &AddIyRr{r:Reg16::DE}, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x20 */    /* 0x21 */             /* 0x22 */    /* 0x23 */           /* 0x24 */          /* 0x25 */          /* 0x26 */    /* 0x27 */
-    &Unsupported, &LdDdNn{r:Reg16::IY} , &Unsupported, &IncSs{r:Reg16::IY}, &IncR{r:Reg8::IYH}, &DecR{r:Reg8::IYH}, &Unsupported, &Unsupported,
+    /* 0x20 */    /* 0x21 */             /* 0x22 */               /* 0x23 */           /* 0x24 */          /* 0x25 */          /* 0x26 */          /* 0x27 */
+    &Unsupported, &LdDdNn{r:Reg16::IY} , &LdMemNnDd{r:Reg16::IY}, &IncSs{r:Reg16::IY}, &IncR{r:Reg8::IYH}, &DecR{r:Reg8::IYH}, &LdRN{r:Reg8::IYH}, &Unsupported,
 
-    /* 0x28 */    /* 0x29 */             /* 0x2A */               /* 0x2B */           /* 0x2C */          /* 0x2D */          /* 0x2E */    /* 0x2F */
-    &Unsupported, &AddIyRr{r:Reg16::IY}, &LdDdMemNn{r:Reg16::IY}, &DecSs{r:Reg16::IY}, &IncR{r:Reg8::IYL}, &DecR{r:Reg8::IYL}, &Unsupported, &Unsupported,
+    /* 0x28 */    /* 0x29 */             /* 0x2A */               /* 0x2B */           /* 0x2C */          /* 0x2D */          /* 0x2E */          /* 0x2F */
+    &Unsupported, &AddIyRr{r:Reg16::IY}, &LdDdMemNn{r:Reg16::IY}, &DecSs{r:Reg16::IY}, &IncR{r:Reg8::IYL}, &DecR{r:Reg8::IYL}, &LdRN{r:Reg8::IYL}, &Unsupported,
 
     /* 0x30 */    /* 0x31 */             /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
     &Unsupported, &Unsupported,          &Unsupported, &Unsupported, &IncMemIyD  , &DecMemIyD  , &LdMemIyDN,   &Unsupported,
@@ -3631,7 +3670,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &Nop        , &LdDdNn{r:Reg16::BC} , &LdMemBcA   , &IncSs{r:Reg16::BC}, &IncR{r:Reg8::B}, &DecR{r:Reg8::B}, &LdRN{r:Reg8::B}, &RlcA       ,
 
     /* 0x08 */    /* 0x09 */             /* 0x0A */    /* 0x0B */           /* 0x0C */        /* 0x0D */        /* 0x0E */        /* 0x0F */
-    &ExAfAfAlt  , &AddHlSs{r:Reg16::BC}, &Unsupported, &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &RrcA       ,
+    &ExAfAfAlt  , &AddHlSs{r:Reg16::BC}, &LdAMemBc   , &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &RrcA       ,
 
     /* 0x10 */    /* 0x11 */             /* 0x12 */    /* 0x13 */           /* 0x14 */        /* 0x15 */        /* 0x16 */        /* 0x17 */
     &Djnz       , &LdDdNn{r:Reg16::DE} , &LdMemDeA   , &IncSs{r:Reg16::DE}, &IncR{r:Reg8::D}, &DecR{r:Reg8::D}, &LdRN{r:Reg8::D}, &Unsupported,
