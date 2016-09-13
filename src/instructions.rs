@@ -3200,29 +3200,35 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     /* 0x38 */    /* 0x39 */             /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
     &Unsupported, &AddIxPp{r:Reg16::SP}, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x40 */    /* 0x41 */    /* 0x42 */    /* 0x43 */    /* 0x44 */    /* 0x45 */    /* 0x46 */    /* 0x47 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::B}, &Unsupported,
+    /* 0x40 */          /* 0x41 */        /* 0x42 */         /* 0x43 */         /* 0x44 */                      /* 0x45 */                      /* 0x46 */             /* 0x47 */
+    INSTR_TABLE[0x40], INSTR_TABLE[0x41], INSTR_TABLE[0x42], INSTR_TABLE[0x43], &LdRR{rt:Reg8::B,rs:Reg8::IXH}, &LdRR{rt:Reg8::B,rs:Reg8::IXL}, &LdRMemIxD{r:Reg8::B}, INSTR_TABLE[0x47],
 
-    /* 0x48 */    /* 0x49 */    /* 0x4A */    /* 0x4B */    /* 0x4C */    /* 0x4D */    /* 0x4E */    /* 0x4F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::C}, &Unsupported,
+    /* 0x48 */          /* 0x49 */        /* 0x4A */         /* 0x4B */         /* 0x4C */                      /* 0x4D */                      /* 0x4E */             /* 0x4F */
+    INSTR_TABLE[0x48], INSTR_TABLE[0x49], INSTR_TABLE[0x4A], INSTR_TABLE[0x4B], &LdRR{rt:Reg8::C,rs:Reg8::IXH}, &LdRR{rt:Reg8::C,rs:Reg8::IXL}, &LdRMemIxD{r:Reg8::C}, INSTR_TABLE[0x4F],
 
-    /* 0x50 */    /* 0x51 */    /* 0x52 */    /* 0x53 */    /* 0x54 */    /* 0x55 */    /* 0x56 */    /* 0x57 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::D}, &Unsupported,
+    /* 0x50 */          /* 0x51 */        /* 0x52 */         /* 0x53 */         /* 0x54 */                      /* 0x55 */                      /* 0x56 */             /* 0x57 */
+    INSTR_TABLE[0x50], INSTR_TABLE[0x51], INSTR_TABLE[0x52], INSTR_TABLE[0x53], &LdRR{rt:Reg8::D,rs:Reg8::IXH}, &LdRR{rt:Reg8::D,rs:Reg8::IXL}, &LdRMemIxD{r:Reg8::D}, INSTR_TABLE[0x57],
 
-    /* 0x58 */    /* 0x59 */    /* 0x5A */    /* 0x5B */    /* 0x5C */    /* 0x5D */    /* 0x5E */    /* 0x5F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::E}, &Unsupported,
+    /* 0x58 */          /* 0x59 */        /* 0x5A */         /* 0x5B */         /* 0x5C */                      /* 0x5D */                      /* 0x5E */             /* 0x5F */
+    INSTR_TABLE[0x58], INSTR_TABLE[0x59], INSTR_TABLE[0x5A], INSTR_TABLE[0x5B], &LdRR{rt:Reg8::E,rs:Reg8::IXH}, &LdRR{rt:Reg8::E,rs:Reg8::IXL}, &LdRMemIxD{r:Reg8::E}, INSTR_TABLE[0x5F],
 
-    /* 0x60 */    /* 0x61 */    /* 0x62 */    /* 0x63 */    /* 0x64 */    /* 0x65 */    /* 0x66 */    /* 0x67 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::H}, &Unsupported,
+    /* 0x60 */                        /* 0x61 */                        /* 0x62 */                      /* 0x63 */
+    &LdRR{rt:Reg8::IXH,rs:Reg8::B}  , &LdRR{rt:Reg8::IXH,rs:Reg8::C}  , &LdRR{rt:Reg8::IXH,rs:Reg8::D}, &LdRR{rt:Reg8::IXH,rs:Reg8::E},
 
-    /* 0x68 */    /* 0x69 */    /* 0x6A */    /* 0x6B */    /* 0x6C */    /* 0x6D */    /* 0x6E */    /* 0x6F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::L}, &Unsupported,
+    /* 0x64 */                        /* 0x65 */                        /* 0x66 */                      /* 0x67 */
+    &LdRR{rt:Reg8::IXH,rs:Reg8::IXH}, &LdRR{rt:Reg8::IXH,rs:Reg8::IXL}, &LdRMemIxD{r:Reg8::H}         , &LdRR{rt:Reg8::IXH,rs:Reg8::A},
+
+    /* 0x68 */                        /* 0x69 */                        /* 0x6A */                      /* 0x6B */
+    &LdRR{rt:Reg8::IXL,rs:Reg8::B}  , &LdRR{rt:Reg8::IXL,rs:Reg8::C}  , &LdRR{rt:Reg8::IXL,rs:Reg8::D}, &LdRR{rt:Reg8::IXL,rs:Reg8::E},
+
+    /* 0x6C */                        /* 0x6D */                        /* 0x6E */                      /* 0x6F */
+    &LdRR{rt:Reg8::IXL,rs:Reg8::IXH}, &LdRR{rt:Reg8::IXL,rs:Reg8::IXL}, &LdRMemIxD{r:Reg8::L}         , &LdRR{rt:Reg8::IXL,rs:Reg8::A},
 
     /* 0x70 */             /* 0x71 */             /* 0x72 */             /* 0x73 */             /* 0x74 */             /* 0x75 */             /* 0x76 */    /* 0x77 */
     &LdMemIxDR{r:Reg8::B}, &LdMemIxDR{r:Reg8::C}, &LdMemIxDR{r:Reg8::D}, &LdMemIxDR{r:Reg8::E}, &LdMemIxDR{r:Reg8::H}, &LdMemIxDR{r:Reg8::L}, &Unsupported, &LdMemIxDR{r:Reg8::A},
 
-    /* 0x78 */    /* 0x79 */    /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */    /* 0x7F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIxD{r:Reg8::A}, &Unsupported,
+    /* 0x78 */          /* 0x79 */        /* 0x7A */         /* 0x7B */         /* 0x7C */                      /* 0x7D */                      /* 0x7E */             /* 0x7F */
+    INSTR_TABLE[0x78], INSTR_TABLE[0x79], INSTR_TABLE[0x7A], INSTR_TABLE[0x7B], &LdRR{rt:Reg8::A,rs:Reg8::IXH}, &LdRR{rt:Reg8::A,rs:Reg8::IXL}, &LdRMemIxD{r:Reg8::A}, INSTR_TABLE[0x7F],
 
     /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */          /* 0x85 */          /* 0x86 */    /* 0x87 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddR{r:Reg8::IXH}, &AddR{r:Reg8::IXL}, &AddMemIxD  , &Unsupported,
@@ -3396,29 +3402,35 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
     /* 0x38 */    /* 0x39 */             /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
     &Unsupported, &AddIyRr{r:Reg16::SP}, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x40 */    /* 0x41 */    /* 0x42 */    /* 0x43 */    /* 0x44 */    /* 0x45 */    /* 0x46 */             /* 0x47 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::B}, &Unsupported,
+    /* 0x40 */          /* 0x41 */        /* 0x42 */         /* 0x43 */         /* 0x44 */                      /* 0x45 */                      /* 0x46 */             /* 0x47 */
+    INSTR_TABLE[0x40], INSTR_TABLE[0x41], INSTR_TABLE[0x42], INSTR_TABLE[0x43], &LdRR{rt:Reg8::B,rs:Reg8::IYH}, &LdRR{rt:Reg8::B,rs:Reg8::IYL}, &LdRMemIyD{r:Reg8::B}, INSTR_TABLE[0x47],
 
-    /* 0x48 */    /* 0x49 */    /* 0x4A */    /* 0x4B */    /* 0x4C */    /* 0x4D */    /* 0x4E */             /* 0x4F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::C}, &Unsupported,
+    /* 0x48 */          /* 0x49 */        /* 0x4A */         /* 0x4B */         /* 0x4C */                      /* 0x4D */                      /* 0x4E */             /* 0x4F */
+    INSTR_TABLE[0x48], INSTR_TABLE[0x49], INSTR_TABLE[0x4A], INSTR_TABLE[0x4B], &LdRR{rt:Reg8::C,rs:Reg8::IYH}, &LdRR{rt:Reg8::C,rs:Reg8::IYL}, &LdRMemIyD{r:Reg8::C}, INSTR_TABLE[0x4F],
 
-    /* 0x50 */    /* 0x51 */    /* 0x52 */    /* 0x53 */    /* 0x54 */    /* 0x55 */    /* 0x56 */             /* 0x57 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::D}, &Unsupported,
+    /* 0x50 */          /* 0x51 */        /* 0x52 */         /* 0x53 */         /* 0x54 */                      /* 0x55 */                      /* 0x56 */             /* 0x57 */
+    INSTR_TABLE[0x50], INSTR_TABLE[0x51], INSTR_TABLE[0x52], INSTR_TABLE[0x53], &LdRR{rt:Reg8::D,rs:Reg8::IYH}, &LdRR{rt:Reg8::D,rs:Reg8::IYL}, &LdRMemIyD{r:Reg8::D}, INSTR_TABLE[0x57],
 
-    /* 0x58 */    /* 0x59 */    /* 0x5A */    /* 0x5B */    /* 0x5C */    /* 0x5D */    /* 0x5E */             /* 0x5F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::E}, &Unsupported,
+    /* 0x58 */          /* 0x59 */        /* 0x5A */         /* 0x5B */         /* 0x5C */                      /* 0x5D */                      /* 0x5E */             /* 0x5F */
+    INSTR_TABLE[0x58], INSTR_TABLE[0x59], INSTR_TABLE[0x5A], INSTR_TABLE[0x5B], &LdRR{rt:Reg8::E,rs:Reg8::IYH}, &LdRR{rt:Reg8::E,rs:Reg8::IYL}, &LdRMemIyD{r:Reg8::E}, INSTR_TABLE[0x5F],
 
-    /* 0x60 */    /* 0x61 */    /* 0x62 */    /* 0x63 */    /* 0x64 */    /* 0x65 */    /* 0x66 */             /* 0x67 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::H}, &Unsupported,
+    /* 0x60 */                        /* 0x61 */                        /* 0x62 */                      /* 0x63 */
+    &LdRR{rt:Reg8::IYH,rs:Reg8::B}  , &LdRR{rt:Reg8::IYH,rs:Reg8::C}  , &LdRR{rt:Reg8::IYH,rs:Reg8::D}, &LdRR{rt:Reg8::IYH,rs:Reg8::E},
 
-    /* 0x68 */    /* 0x69 */    /* 0x6A */    /* 0x6B */    /* 0x6C */    /* 0x6D */    /* 0x6E */             /* 0x6F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::L}, &Unsupported,
+    /* 0x64 */                        /* 0x65 */                        /* 0x66 */                      /* 0x67 */
+    &LdRR{rt:Reg8::IYH,rs:Reg8::IYH}, &LdRR{rt:Reg8::IYH,rs:Reg8::IYL}, &LdRMemIyD{r:Reg8::H}         , &LdRR{rt:Reg8::IYH,rs:Reg8::A},
+
+    /* 0x68 */                        /* 0x69 */                        /* 0x6A */                      /* 0x6B */
+    &LdRR{rt:Reg8::IYL,rs:Reg8::B}  , &LdRR{rt:Reg8::IYL,rs:Reg8::C}  , &LdRR{rt:Reg8::IYL,rs:Reg8::D}, &LdRR{rt:Reg8::IYL,rs:Reg8::E},
+
+    /* 0x6C */                        /* 0x6D */                        /* 0x6E */                      /* 0x6F */
+    &LdRR{rt:Reg8::IYL,rs:Reg8::IYH}, &LdRR{rt:Reg8::IYL,rs:Reg8::IYL}, &LdRMemIyD{r:Reg8::L}         , &LdRR{rt:Reg8::IYL,rs:Reg8::A},
 
     /* 0x70 */             /* 0x71 */             /* 0x72 */             /* 0x73 */             /* 0x74 */             /* 0x75 */             /* 0x76 */    /* 0x77 */
     &LdMemIyDR{r:Reg8::B}, &LdMemIyDR{r:Reg8::C}, &LdMemIyDR{r:Reg8::D}, &LdMemIyDR{r:Reg8::E}, &LdMemIyDR{r:Reg8::H}, &LdMemIyDR{r:Reg8::L}, &Unsupported, &LdMemIyDR{r:Reg8::A},
 
-    /* 0x78 */    /* 0x79 */    /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */             /* 0x7F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &LdRMemIyD{r:Reg8::A}, &Unsupported,
+    /* 0x78 */          /* 0x79 */        /* 0x7A */         /* 0x7B */         /* 0x7C */                      /* 0x7D */                      /* 0x7E */             /* 0x7F */
+    INSTR_TABLE[0x78], INSTR_TABLE[0x79], INSTR_TABLE[0x7A], INSTR_TABLE[0x7B], &LdRR{rt:Reg8::A,rs:Reg8::IYH}, &LdRR{rt:Reg8::A,rs:Reg8::IYL}, &LdRMemIyD{r:Reg8::A}, INSTR_TABLE[0x7F],
 
     /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */          /* 0x85 */          /* 0x86 */    /* 0x87 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &AddR{r:Reg8::IYH}, &AddR{r:Reg8::IYL}, &AddMemIyD  , &Unsupported,
