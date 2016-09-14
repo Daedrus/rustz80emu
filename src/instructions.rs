@@ -2514,8 +2514,33 @@ impl Instruction for RetCc {
 }
 
 
+struct RlA  ;
 struct RlR  { r: Reg8 }
 struct RlcA ;
+
+impl Instruction for RlA {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF));
+
+        let a = cpu.read_reg8(Reg8::A);
+
+        let mut res = a.rotate_left(1);
+        if cpu.get_flag(CARRY_FLAG) { res |= 0x01; } else { res &= 0xFE; }
+
+        cpu.write_reg8(Reg8::A, res);
+
+        cpu.clear_flag ( HALF_CARRY_FLAG                     );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                   );
+        cpu.cond_flag  ( CARRY_FLAG        , a & 0x80 != 0   );
+        cpu.cond_flag  ( X_FLAG            , res & 0x08 != 0 );
+        cpu.cond_flag  ( Y_FLAG            , res & 0x20 != 0 );
+
+        info!("{:#06x}: RLA", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
 
 impl Instruction for RlR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -3818,7 +3843,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &ExAfAfAlt  , &AddHlSs{r:Reg16::BC}, &LdAMemBc   , &DecSs{r:Reg16::BC}, &IncR{r:Reg8::C}, &DecR{r:Reg8::C}, &LdRN{r:Reg8::C}, &RrcA       ,
 
     /* 0x10 */    /* 0x11 */             /* 0x12 */    /* 0x13 */           /* 0x14 */        /* 0x15 */        /* 0x16 */        /* 0x17 */
-    &Djnz       , &LdDdNn{r:Reg16::DE} , &LdMemDeA   , &IncSs{r:Reg16::DE}, &IncR{r:Reg8::D}, &DecR{r:Reg8::D}, &LdRN{r:Reg8::D}, &Unsupported,
+    &Djnz       , &LdDdNn{r:Reg16::DE} , &LdMemDeA   , &IncSs{r:Reg16::DE}, &IncR{r:Reg8::D}, &DecR{r:Reg8::D}, &LdRN{r:Reg8::D}, &RlA        ,
 
     /* 0x18 */    /* 0x19 */             /* 0x1A */    /* 0x1B */           /* 0x1C */        /* 0x1D */        /* 0x1E */        /* 0x1F */
     &JrE        , &AddHlSs{r:Reg16::DE}, &LdAMemDe   , &DecSs{r:Reg16::DE}, &IncR{r:Reg8::E}, &DecR{r:Reg8::E}, &LdRN{r:Reg8::E}, &RrA        ,
