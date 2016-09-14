@@ -2177,6 +2177,28 @@ impl Instruction for Ldir {
 }
 
 
+struct Neg;
+
+impl Instruction for Neg {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF));
+
+        let a = cpu.read_reg8(Reg8::A);
+
+        let neg = 0u8.wrapping_sub(a);
+
+        cpu.write_reg8(Reg8::A, neg);
+
+        update_flags_sub8(cpu, 0u8, a, neg);
+
+        info!("{:#06x}: NEG", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+
 struct OrR      { r: Reg8 }
 struct OrN      ;
 struct OrMemHl  ;
@@ -3350,7 +3372,7 @@ pub const INSTR_TABLE_ED: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x40 */    /* 0x41 */             /* 0x42 */             /* 0x43 */               /* 0x44 */    /* 0x45 */    /* 0x46 */    /* 0x47 */
-    &Unsupported, &OutPortCR{r:Reg8::B}, &SbcHlSs{r:Reg16::BC}, &LdMemNnDd{r:Reg16::BC}, &Unsupported, &Unsupported, &Im{mode:0} , &Unsupported,
+    &Unsupported, &OutPortCR{r:Reg8::B}, &SbcHlSs{r:Reg16::BC}, &LdMemNnDd{r:Reg16::BC}, &Neg       , &Unsupported, &Im{mode:0} , &Unsupported,
 
     /* 0x48 */    /* 0x49 */             /* 0x4A */             /* 0x4B */               /* 0x4C */    /* 0x4D */    /* 0x4E */    /* 0x4F */
     &Unsupported, &OutPortCR{r:Reg8::C}, &AdcHlSs{r:Reg16::BC}, &LdDdMemNn{r:Reg16::BC}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
