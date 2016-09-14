@@ -2083,6 +2083,11 @@ fn ldd(cpu: &mut Cpu) {
     cpu.clear_flag ( HALF_CARRY_FLAG                                );
     cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , bc.wrapping_sub(1) != 0 );
     cpu.clear_flag ( ADD_SUBTRACT_FLAG                              );
+
+    let a     = cpu.read_reg8(Reg8::A);
+    let xyval = a.wrapping_add(memval);
+    cpu.cond_flag  ( X_FLAG               , xyval & 0x08 != 0       );
+    cpu.cond_flag  ( Y_FLAG               , xyval & 0x02 != 0       );
 }
 
 impl Instruction for Ldd {
@@ -2116,34 +2121,56 @@ impl Instruction for Lddr {
 }
 
 
+struct Ldi;
 struct Ldir;
+
+fn ldi(cpu: &mut Cpu) {
+    let bc     = cpu.read_reg16(Reg16::BC);
+    let de     = cpu.read_reg16(Reg16::DE);
+    let hl     = cpu.read_reg16(Reg16::HL);
+    let memval = cpu.read_word(hl);
+
+    cpu.write_word(de, memval);
+
+    cpu.write_reg16(Reg16::BC, bc.wrapping_sub(1));
+    cpu.write_reg16(Reg16::DE, de.wrapping_add(1));
+    cpu.write_reg16(Reg16::HL, hl.wrapping_add(1));
+
+    cpu.clear_flag ( HALF_CARRY_FLAG                                );
+    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , bc.wrapping_sub(1) != 0 );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                              );
+
+    let a     = cpu.read_reg8(Reg8::A);
+    let xyval = a.wrapping_add(memval);
+    cpu.cond_flag  ( X_FLAG               , xyval & 0x08 != 0       );
+    cpu.cond_flag  ( Y_FLAG               , xyval & 0x02 != 0       );
+}
+
+impl Instruction for Ldi {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
+
+        ldi(cpu);
+
+        info!("{:#06x}: LDI", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
+    }
+}
 
 impl Instruction for Ldir {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
 
-        let mut counter = cpu.read_reg16(Reg16::BC);
-        while counter > 0 {
-            debug!("        Counter is: {}", counter);
-            let de = cpu.read_reg16(Reg16::DE);
-            let hl = cpu.read_reg16(Reg16::HL);
-
-            let memval = cpu.read_word(hl);
-            cpu.write_word(de, memval);
-
-            cpu.write_reg16(Reg16::DE, de.wrapping_add(1));
-            cpu.write_reg16(Reg16::HL, hl.wrapping_add(1));
-
-            counter -= 1;
-            cpu.write_reg16(Reg16::BC, counter);
-        }
-
-        cpu.clear_flag(HALF_CARRY_FLAG);
-        cpu.clear_flag(PARITY_OVERFLOW_FLAG);
-        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        ldi(cpu);
 
         info!("{:#06x}: LDIR", cpu.get_pc() - 1);
-        cpu.inc_pc(1);
+        if cpu.get_flag(PARITY_OVERFLOW_FLAG) {
+            cpu.dec_pc(1);
+        } else {
+            cpu.inc_pc(1);
+        }
 
         debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
     }
@@ -3359,7 +3386,7 @@ pub const INSTR_TABLE_ED: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xA0 */    /* 0xA1 */    /* 0xA2 */    /* 0xA3 */    /* 0xA4 */    /* 0xA5 */    /* 0xA6 */    /* 0xA7 */
-    &Unsupported, &Cpi        , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Ldi        , &Cpi        , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */    /* 0xAD */    /* 0xAE */    /* 0xAF */
     &Ldd        , &Cpd        , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
