@@ -2563,6 +2563,39 @@ impl Instruction for RlcA {
 }
 
 
+struct Rld;
+
+impl Instruction for Rld {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OH|OL));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+        let alow   = a & 0x0F;
+
+        let a = (a & 0xF0) | ((memval >> 4) & 0x0F);
+        let memval = memval << 4 | alow;
+
+        cpu.write_reg8(Reg8::A, a);
+        cpu.write_word(hl, memval);
+
+        cpu.cond_flag  ( SIGN_FLAG            , a & 0x80 != 0           );
+        cpu.cond_flag  ( ZERO_FLAG            , a == 0                  );
+        cpu.clear_flag ( HALF_CARRY_FLAG                                );
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , a.count_ones() % 2 == 0 );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                              );
+        cpu.cond_flag  ( X_FLAG               , a & 0x08 != 0           );
+        cpu.cond_flag  ( Y_FLAG               , a & 0x20 != 0           );
+
+        info!("{:#06x}: RLD", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+
 struct RrA;
 struct RrcA;
 
@@ -2607,6 +2640,39 @@ impl Instruction for RrcA {
         cpu.cond_flag  ( Y_FLAG            , res & 0x20 != 0 );
 
         info!("{:#06x}: RRCA", cpu.get_pc());
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OA|OF));
+    }
+}
+
+
+struct Rrd;
+
+impl Instruction for Rrd {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OA|OF|OH|OL));
+
+        let a      = cpu.read_reg8(Reg8::A);
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+        let alow   = a & 0x0F;
+
+        let a = (a & 0xF0) | (memval & 0x0F);
+        let memval = ((alow << 4) & 0xF0) | ((memval >> 4) & 0x0F);
+
+        cpu.write_reg8(Reg8::A, a);
+        cpu.write_word(hl, memval);
+
+        cpu.cond_flag  ( SIGN_FLAG            , a & 0x80 != 0           );
+        cpu.cond_flag  ( ZERO_FLAG            , a == 0                  );
+        cpu.clear_flag ( HALF_CARRY_FLAG                                );
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , a.count_ones() % 2 == 0 );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                              );
+        cpu.cond_flag  ( X_FLAG               , a & 0x08 != 0           );
+        cpu.cond_flag  ( Y_FLAG               , a & 0x20 != 0           );
+
+        info!("{:#06x}: RRD", cpu.get_pc() - 1);
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OA|OF));
@@ -3372,7 +3438,7 @@ pub const INSTR_TABLE_ED: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x40 */    /* 0x41 */             /* 0x42 */             /* 0x43 */               /* 0x44 */    /* 0x45 */    /* 0x46 */    /* 0x47 */
-    &Unsupported, &OutPortCR{r:Reg8::B}, &SbcHlSs{r:Reg16::BC}, &LdMemNnDd{r:Reg16::BC}, &Neg       , &Unsupported, &Im{mode:0} , &Unsupported,
+    &Unsupported, &OutPortCR{r:Reg8::B}, &SbcHlSs{r:Reg16::BC}, &LdMemNnDd{r:Reg16::BC}, &Neg        , &Unsupported, &Im{mode:0} , &Unsupported,
 
     /* 0x48 */    /* 0x49 */             /* 0x4A */             /* 0x4B */               /* 0x4C */    /* 0x4D */    /* 0x4E */    /* 0x4F */
     &Unsupported, &OutPortCR{r:Reg8::C}, &AdcHlSs{r:Reg16::BC}, &LdDdMemNn{r:Reg16::BC}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
@@ -3381,13 +3447,13 @@ pub const INSTR_TABLE_ED: [&'static Instruction; 256] = [
     &Unsupported, &OutPortCR{r:Reg8::D}, &SbcHlSs{r:Reg16::DE}, &LdMemNnDd{r:Reg16::DE}, &Unsupported, &Unsupported, &Im{mode:1} , &Unsupported,
 
     /* 0x58 */    /* 0x59 */             /* 0x5A */             /* 0x5B */               /* 0x5C */    /* 0x5D */    /* 0x5E */    /* 0x5F */
-    &Unsupported, &OutPortCR{r:Reg8::E}, &AdcHlSs{r:Reg16::DE}, &LdDdMemNn{r:Reg16::DE}, &Unsupported, &Unsupported, &Im{mode:2}, &Unsupported,
+    &Unsupported, &OutPortCR{r:Reg8::E}, &AdcHlSs{r:Reg16::DE}, &LdDdMemNn{r:Reg16::DE}, &Unsupported, &Unsupported, &Im{mode:2} , &Unsupported,
 
     /* 0x60 */    /* 0x61 */             /* 0x62 */             /* 0x63 */               /* 0x64 */    /* 0x65 */    /* 0x66 */    /* 0x67 */
-    &Unsupported, &OutPortCR{r:Reg8::H}, &SbcHlSs{r:Reg16::HL}, &LdMemNnDd{r:Reg16::HL}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &OutPortCR{r:Reg8::H}, &SbcHlSs{r:Reg16::HL}, &LdMemNnDd{r:Reg16::HL}, &Unsupported, &Unsupported, &Unsupported, &Rrd        ,
 
     /* 0x68 */    /* 0x69 */             /* 0x6A */             /* 0x6B */               /* 0x6C */    /* 0x6D */    /* 0x6E */    /* 0x6F */
-    &Unsupported, &OutPortCR{r:Reg8::L}, &AdcHlSs{r:Reg16::HL}, &LdDdMemNn{r:Reg16::HL}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &OutPortCR{r:Reg8::L}, &AdcHlSs{r:Reg16::HL}, &LdDdMemNn{r:Reg16::HL}, &Unsupported, &Unsupported, &Unsupported, &Rld        ,
 
     /* 0x70 */    /* 0x71 */             /* 0x72 */             /* 0x73 */               /* 0x74 */    /* 0x75 */    /* 0x76 */    /* 0x77 */
     &Unsupported, &Unsupported         , &SbcHlSs{r:Reg16::SP}, &LdMemNnDd{r:Reg16::SP}, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
