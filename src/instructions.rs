@@ -2065,33 +2065,51 @@ impl Instruction for LdRMemHl {
 }
 
 
+struct Ldd;
 struct Lddr;
+
+fn ldd(cpu: &mut Cpu) {
+    let bc     = cpu.read_reg16(Reg16::BC);
+    let de     = cpu.read_reg16(Reg16::DE);
+    let hl     = cpu.read_reg16(Reg16::HL);
+    let memval = cpu.read_word(hl);
+
+    cpu.write_word(de, memval);
+
+    cpu.write_reg16(Reg16::BC, bc.wrapping_sub(1));
+    cpu.write_reg16(Reg16::DE, de.wrapping_sub(1));
+    cpu.write_reg16(Reg16::HL, hl.wrapping_sub(1));
+
+    cpu.clear_flag ( HALF_CARRY_FLAG                                );
+    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , bc.wrapping_sub(1) != 0 );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                              );
+}
+
+impl Instruction for Ldd {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
+
+        ldd(cpu);
+
+        info!("{:#06x}: LDD", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
+    }
+}
 
 impl Instruction for Lddr {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
 
-        let mut counter = cpu.read_reg16(Reg16::BC);
-        while counter > 0 {
-            let deval = cpu.read_reg16(Reg16::DE);
-            let hlval = cpu.read_reg16(Reg16::HL);
-
-            let memval = cpu.read_word(hlval);
-            cpu.write_word(deval, memval);
-
-            cpu.write_reg16(Reg16::DE, deval.wrapping_sub(1));
-            cpu.write_reg16(Reg16::HL, hlval.wrapping_sub(1));
-
-            counter -= 1;
-            cpu.write_reg16(Reg16::BC, counter);
-        }
-
-        cpu.clear_flag(HALF_CARRY_FLAG);
-        cpu.clear_flag(PARITY_OVERFLOW_FLAG);
-        cpu.clear_flag(ADD_SUBTRACT_FLAG);
+        ldd(cpu);
 
         info!("{:#06x}: LDDR", cpu.get_pc() - 1);
-        cpu.inc_pc(1);
+        if cpu.get_flag(PARITY_OVERFLOW_FLAG) {
+            cpu.dec_pc(1);
+        } else {
+            cpu.inc_pc(1);
+        }
 
         debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
     }
@@ -3344,7 +3362,7 @@ pub const INSTR_TABLE_ED: [&'static Instruction; 256] = [
     &Unsupported, &Cpi        , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xA8 */    /* 0xA9 */    /* 0xAA */    /* 0xAB */    /* 0xAC */    /* 0xAD */    /* 0xAE */    /* 0xAF */
-    &Unsupported, &Cpd        , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Ldd        , &Cpd        , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xB0 */    /* 0xB1 */    /* 0xB2 */    /* 0xB3 */    /* 0xB4 */    /* 0xB5 */    /* 0xB6 */    /* 0xB7 */
     &Ldir       , &Cpir       , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
