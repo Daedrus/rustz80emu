@@ -2725,9 +2725,11 @@ impl Instruction for RrcA {
 
         cpu.write_reg8(Reg8::A, res);
 
-        update_flags_logical(cpu, res);
-        cpu.clear_flag ( HALF_CARRY_FLAG           );
-        cpu.cond_flag  ( CARRY_FLAG, a & 0x01 != 0 );
+        cpu.clear_flag ( HALF_CARRY_FLAG                     );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                   );
+        cpu.cond_flag  ( CARRY_FLAG        , a & 0x01 != 0   );
+        cpu.cond_flag  ( X_FLAG            , res & 0x08 != 0 );
+        cpu.cond_flag  ( Y_FLAG            , res & 0x20 != 0 );
 
         info!("{:#06x}: RRCA", cpu.get_pc());
         cpu.inc_pc(1);
