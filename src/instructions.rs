@@ -3021,6 +3021,31 @@ impl Instruction for SbcHlSs {
 }
 
 
+struct SlaR { r: Reg8 }
+
+impl Instruction for SlaR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+
+        let r = cpu.read_reg8(self.r);
+
+        let mut res = r << 1;
+
+        cpu.write_reg8(self.r, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                 );
+        cpu.cond_flag  ( CARRY_FLAG      , r & 0x80 != 0 );
+
+        info!("{:#06x}: SLA {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    }
+}
+
+
+
 struct SubR      { r: Reg8 }
 struct SubN      ;
 struct SubMemHl  ;
@@ -3290,8 +3315,8 @@ pub const INSTR_TABLE_CB: [&'static Instruction; 256] = [
     /* 0x18 */    /* 0x19 */    /* 0x1A */    /* 0x1B */    /* 0x1C */    /* 0x1D */    /* 0x1E */    /* 0x1F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
-    /* 0x20 */    /* 0x21 */    /* 0x22 */    /* 0x23 */    /* 0x24 */    /* 0x25 */    /* 0x26 */    /* 0x27 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x20 */        /* 0x21 */        /* 0x22 */        /* 0x23 */        /* 0x24 */        /* 0x25 */        /* 0x26 */    /* 0x27 */
+    &SlaR{r:Reg8::B}, &SlaR{r:Reg8::B}, &SlaR{r:Reg8::B}, &SlaR{r:Reg8::B}, &SlaR{r:Reg8::B}, &SlaR{r:Reg8::B}, &Unsupported, &SlaR{r:Reg8::B},
 
     /* 0x28 */    /* 0x29 */    /* 0x2A */    /* 0x2B */    /* 0x2C */    /* 0x2D */    /* 0x2E */    /* 0x2F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
