@@ -2514,9 +2514,10 @@ impl Instruction for RetCc {
 }
 
 
-struct RlA  ;
-struct RlR  { r: Reg8 }
-struct RlcA ;
+struct RlR        { r: Reg8 }
+struct RlA        ;
+struct RlcR       { r: Reg8 }
+struct RlcA       ;
 
 impl Instruction for RlA {
     fn execute(&self, cpu: &mut Cpu) {
@@ -2561,6 +2562,27 @@ impl Instruction for RlR {
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    }
+}
+
+impl Instruction for RlcR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
+
+        let r = cpu.read_reg8(self.r);
+
+        let res = r.rotate_left(1);
+
+        cpu.write_reg8(self.r, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG           );
+        cpu.cond_flag  ( CARRY_FLAG, r & 0x80 != 0 );
+
+        info!("{:#06x}: RLC {:?}", cpu.get_pc() - 1, self.r);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
     }
 }
 
@@ -3236,14 +3258,14 @@ impl Instruction for XorMemIyD {
 }
 
 pub const INSTR_TABLE_CB: [&'static Instruction; 256] = [
-    /* 0x00 */       /* 0x01 */       /* 0x02 */       /* 0x03 */       /* 0x04 */       /* 0x05 */       /* 0x06 */    /* 0x07 */
-    &Unsupported,    &Unsupported,    &Unsupported,    &Unsupported,    &Unsupported,    &Unsupported,    &Unsupported, &Unsupported,
+    /* 0x00 */        /* 0x01 */        /* 0x02 */        /* 0x03 */        /* 0x04 */        /* 0x05 */        /* 0x06 */    /* 0x07 */
+    &RlcR{r:Reg8::B}, &RlcR{r:Reg8::C}, &RlcR{r:Reg8::D}, &RlcR{r:Reg8::E}, &RlcR{r:Reg8::H}, &RlcR{r:Reg8::L}, &Unsupported, &RlcR{r:Reg8::A},
 
-    /* 0x08 */       /* 0x09 */       /* 0x0A */       /* 0x0B */       /* 0x0C */       /* 0x0D */       /* 0x0E */    /* 0x0F */
-    &Unsupported,    &Unsupported,    &Unsupported,    &Unsupported,    &Unsupported,    &Unsupported,    &Unsupported, &Unsupported,
+    /* 0x08 */        /* 0x09 */        /* 0x0A */        /* 0x0B */        /* 0x0C */        /* 0x0D */        /* 0x0E */    /* 0x0F */
+    &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported, &Unsupported,
 
-    /* 0x10 */       /* 0x11 */       /* 0x12 */       /* 0x13 */       /* 0x14 */       /* 0x15 */       /* 0x16 */    /* 0x17 */
-    &RlR{r:Reg8::B}, &RlR{r:Reg8::C}, &RlR{r:Reg8::D}, &RlR{r:Reg8::E}, &RlR{r:Reg8::H}, &RlR{r:Reg8::L}, &Unsupported, &RlR{r:Reg8::A},
+    /* 0x10 */        /* 0x11 */        /* 0x12 */        /* 0x13 */        /* 0x14 */        /* 0x15 */        /* 0x16 */    /* 0x17 */
+    &RlR{r:Reg8::B} , &RlR{r:Reg8::C} , &RlR{r:Reg8::D} , &RlR{r:Reg8::E} , &RlR{r:Reg8::H} , &RlR{r:Reg8::L} , &Unsupported, &RlR{r:Reg8::A},
 
     /* 0x18 */    /* 0x19 */    /* 0x1A */    /* 0x1B */    /* 0x1C */    /* 0x1D */    /* 0x1E */    /* 0x1F */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
