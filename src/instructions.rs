@@ -2643,8 +2643,9 @@ impl Instruction for Rld {
 }
 
 
-struct RrA;
-struct RrcA;
+struct RrA  ;
+struct RrcR { r: Reg8 }
+struct RrcA ;
 
 impl Instruction for RrA {
     fn execute(&self, cpu: &mut Cpu) {
@@ -2670,6 +2671,27 @@ impl Instruction for RrA {
     }
 }
 
+impl Instruction for RrcR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
+
+        let r = cpu.read_reg8(self.r);
+
+        let res = r.rotate_right(1);
+
+        cpu.write_reg8(self.r, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG           );
+        cpu.cond_flag  ( CARRY_FLAG, r & 0x01 != 0 );
+
+        info!("{:#06x}: RRC {:?}", cpu.get_pc() - 1, self.r);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
+    }
+}
+
 impl Instruction for RrcA {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OA|OF));
@@ -2680,11 +2702,9 @@ impl Instruction for RrcA {
 
         cpu.write_reg8(Reg8::A, res);
 
-        cpu.clear_flag ( HALF_CARRY_FLAG                     );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                   );
-        cpu.cond_flag  ( CARRY_FLAG        , a & 0x01 != 0   );
-        cpu.cond_flag  ( X_FLAG            , res & 0x08 != 0 );
-        cpu.cond_flag  ( Y_FLAG            , res & 0x20 != 0 );
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG           );
+        cpu.cond_flag  ( CARRY_FLAG, a & 0x01 != 0 );
 
         info!("{:#06x}: RRCA", cpu.get_pc());
         cpu.inc_pc(1);
@@ -3262,7 +3282,7 @@ pub const INSTR_TABLE_CB: [&'static Instruction; 256] = [
     &RlcR{r:Reg8::B}, &RlcR{r:Reg8::C}, &RlcR{r:Reg8::D}, &RlcR{r:Reg8::E}, &RlcR{r:Reg8::H}, &RlcR{r:Reg8::L}, &Unsupported, &RlcR{r:Reg8::A},
 
     /* 0x08 */        /* 0x09 */        /* 0x0A */        /* 0x0B */        /* 0x0C */        /* 0x0D */        /* 0x0E */    /* 0x0F */
-    &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported    , &Unsupported, &Unsupported,
+    &RrcR{r:Reg8::B}, &RrcR{r:Reg8::C}, &RrcR{r:Reg8::D}, &RrcR{r:Reg8::E}, &RrcR{r:Reg8::H}, &RrcR{r:Reg8::L}, &Unsupported, &RrcR{r:Reg8::A},
 
     /* 0x10 */        /* 0x11 */        /* 0x12 */        /* 0x13 */        /* 0x14 */        /* 0x15 */        /* 0x16 */    /* 0x17 */
     &RlR{r:Reg8::B} , &RlR{r:Reg8::C} , &RlR{r:Reg8::D} , &RlR{r:Reg8::E} , &RlR{r:Reg8::H} , &RlR{r:Reg8::L} , &Unsupported, &RlR{r:Reg8::A},
