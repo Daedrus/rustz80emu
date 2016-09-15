@@ -3045,6 +3045,29 @@ impl Instruction for SlaR {
 }
 
 
+struct SraR { r: Reg8 }
+
+impl Instruction for SraR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+
+        let r = cpu.read_reg8(self.r);
+
+        let mut res = r >> 1 | (r & 0x80);
+
+        cpu.write_reg8(self.r, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                 );
+        cpu.cond_flag  ( CARRY_FLAG      , r & 0x01 != 0 );
+
+        info!("{:#06x}: SRA {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    }
+}
+
 
 struct SubR      { r: Reg8 }
 struct SubN      ;
@@ -3316,10 +3339,10 @@ pub const INSTR_TABLE_CB: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x20 */        /* 0x21 */        /* 0x22 */        /* 0x23 */        /* 0x24 */        /* 0x25 */        /* 0x26 */    /* 0x27 */
-    &SlaR{r:Reg8::B}, &SlaR{r:Reg8::B}, &SlaR{r:Reg8::B}, &SlaR{r:Reg8::B}, &SlaR{r:Reg8::B}, &SlaR{r:Reg8::B}, &Unsupported, &SlaR{r:Reg8::B},
+    &SlaR{r:Reg8::B}, &SlaR{r:Reg8::C}, &SlaR{r:Reg8::D}, &SlaR{r:Reg8::E}, &SlaR{r:Reg8::H}, &SlaR{r:Reg8::L}, &Unsupported, &SlaR{r:Reg8::A},
 
-    /* 0x28 */    /* 0x29 */    /* 0x2A */    /* 0x2B */    /* 0x2C */    /* 0x2D */    /* 0x2E */    /* 0x2F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x28 */        /* 0x29 */        /* 0x2A */        /* 0x2B */        /* 0x2C */        /* 0x2D */        /* 0x2E */    /* 0x2F */
+    &SraR{r:Reg8::B}, &SraR{r:Reg8::C}, &SraR{r:Reg8::D}, &SraR{r:Reg8::E}, &SraR{r:Reg8::H}, &SraR{r:Reg8::L}, &Unsupported, &SraR{r:Reg8::A},
 
     /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
