@@ -2514,10 +2514,16 @@ impl Instruction for RetCc {
 }
 
 
-struct RlR        { r: Reg8 }
-struct RlA        ;
-struct RlcR       { r: Reg8 }
-struct RlcA       ;
+struct RlR       { r: Reg8 }
+struct RlMemHl   ;
+struct RlMemIxD  ;
+struct RlMemIyD  ;
+struct RlA       ;
+struct RlcR      { r: Reg8 }
+struct RlcMemHl  ;
+struct RlcMemIxD ;
+struct RlcMemIyD ;
+struct RlcA      ;
 
 impl Instruction for RlA {
     fn execute(&self, cpu: &mut Cpu) {
@@ -2565,6 +2571,85 @@ impl Instruction for RlR {
     }
 }
 
+impl Instruction for RlMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OH|OL));
+
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let mut res = memval.rotate_left(1);
+        if cpu.get_flag(CARRY_FLAG) { res |= 0x01; } else { res &= 0xFE; }
+
+        cpu.write_word(hl, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        info!("{:#06x}: RL (HL)", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for RlMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIX));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let mut res = memval.rotate_left(1);
+        if cpu.get_flag(CARRY_FLAG) { res |= 0x01; } else { res &= 0xFE; }
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: RL (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: RL (IX+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIX));
+    }
+}
+
+impl Instruction for RlMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIY));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let mut res = memval.rotate_left(1);
+        if cpu.get_flag(CARRY_FLAG) { res |= 0x01; } else { res &= 0xFE; }
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: RL (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: RL (IY+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIY));
+    }
+}
+
 impl Instruction for RlcR {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
@@ -2583,6 +2668,82 @@ impl Instruction for RlcR {
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
+    }
+}
+
+impl Instruction for RlcMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OH|OL));
+
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let mut res = memval.rotate_left(1);
+
+        cpu.write_word(hl, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        info!("{:#06x}: RLC (HL)", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for RlcMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIX));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let mut res = memval.rotate_left(1);
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: RLC (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: RLC (IX+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIX));
+    }
+}
+
+impl Instruction for RlcMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIY));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let mut res = memval.rotate_left(1);
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: RLC (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: RLC (IY+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIY));
     }
 }
 
@@ -2643,10 +2804,16 @@ impl Instruction for Rld {
 }
 
 
-struct RrR  { r: Reg8 }
-struct RrA  ;
-struct RrcR { r: Reg8 }
-struct RrcA ;
+struct RrR       { r: Reg8 }
+struct RrMemHl   ;
+struct RrMemIxD  ;
+struct RrMemIyD  ;
+struct RrA       ;
+struct RrcR      { r: Reg8 }
+struct RrcMemHl  ;
+struct RrcMemIxD ;
+struct RrcMemIyD ;
+struct RrcA      ;
 
 impl Instruction for RrR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -2667,6 +2834,85 @@ impl Instruction for RrR {
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
+    }
+}
+
+impl Instruction for RrMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OH|OL));
+
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let mut res = memval.rotate_right(1);
+        if cpu.get_flag(CARRY_FLAG) { res |= 0x80; } else { res &= 0x7F; }
+
+        cpu.write_word(hl, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        info!("{:#06x}: RR (HL)", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for RrMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIX));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let mut res = memval.rotate_right(1);
+        if cpu.get_flag(CARRY_FLAG) { res |= 0x80; } else { res &= 0x7F; }
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: RR (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: RR (IX+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIX));
+    }
+}
+
+impl Instruction for RrMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIY));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let mut res = memval.rotate_right(1);
+        if cpu.get_flag(CARRY_FLAG) { res |= 0x80; } else { res &= 0x7F; }
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: RR (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: RR (IY+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIY));
     }
 }
 
@@ -2712,6 +2958,82 @@ impl Instruction for RrcR {
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
+    }
+}
+
+impl Instruction for RrcMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OH|OL));
+
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let mut res = memval.rotate_right(1);
+
+        cpu.write_word(hl, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        info!("{:#06x}: RRC (HL)", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for RrcMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIX));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let mut res = memval.rotate_right(1);
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: RRC (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: RRC (IX+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIX));
+    }
+}
+
+impl Instruction for RrcMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIY));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let mut res = memval.rotate_right(1);
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: RRC (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: RRC (IY+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIY));
     }
 }
 
@@ -3046,7 +3368,10 @@ impl Instruction for SbcHlSs {
 }
 
 
-struct SlaR { r: Reg8 }
+struct SlaR      { r: Reg8 }
+struct SlaMemHl  ;
+struct SlaMemIxD ;
+struct SlaMemIyD ;
 
 impl Instruction for SlaR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -3054,7 +3379,7 @@ impl Instruction for SlaR {
 
         let r = cpu.read_reg8(self.r);
 
-        let mut res = r << 1;
+        let res = r << 1;
 
         cpu.write_reg8(self.r, res);
 
@@ -3069,8 +3394,190 @@ impl Instruction for SlaR {
     }
 }
 
+impl Instruction for SlaMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OH|OL));
 
-struct SraR { r: Reg8 }
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let res = memval << 1;
+
+        cpu.write_word(hl, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        info!("{:#06x}: SLA (HL)", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for SlaMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIX));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval << 1;
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: SLA (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SLA (IX+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIX));
+    }
+}
+
+impl Instruction for SlaMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIY));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval << 1;
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: SLA (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SLA (IY+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIY));
+    }
+}
+
+
+struct SllR      { r: Reg8 }
+struct SllMemHl  ;
+struct SllMemIxD ;
+struct SllMemIyD ;
+
+impl Instruction for SllR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+
+        let r = cpu.read_reg8(self.r);
+
+        let res = r << 1 | 0x1;
+
+        cpu.write_reg8(self.r, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                 );
+        cpu.cond_flag  ( CARRY_FLAG      , r & 0x80 != 0 );
+
+        info!("{:#06x}: SLL {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    }
+}
+
+impl Instruction for SllMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OH|OL));
+
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let res = memval << 1 | 0x1;
+
+        cpu.write_word(hl, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        info!("{:#06x}: SLL (HL)", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for SllMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIX));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval << 1 | 0x1;
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: SLL (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SLL (IX+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIX));
+    }
+}
+
+impl Instruction for SllMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIY));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval << 1 | 0x1;
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: SLL (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SLL (IY+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIY));
+    }
+}
+
+
+struct SraR      { r: Reg8 }
+struct SraMemHl  ;
+struct SraMemIxD ;
+struct SraMemIyD ;
 
 impl Instruction for SraR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -3078,7 +3585,7 @@ impl Instruction for SraR {
 
         let r = cpu.read_reg8(self.r);
 
-        let mut res = r >> 1 | (r & 0x80);
+        let res = r >> 1 | (r & 0x80);
 
         cpu.write_reg8(self.r, res);
 
@@ -3090,6 +3597,185 @@ impl Instruction for SraR {
         cpu.inc_pc(1);
 
         debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    }
+}
+
+impl Instruction for SraMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OH|OL));
+
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let res = memval >> 1 | (memval & 0x80);
+
+        cpu.write_word(hl, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        info!("{:#06x}: SRA (HL)", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for SraMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIX));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval >> 1 | (memval & 0x80);
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: SRA (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SRA (IX+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIX));
+    }
+}
+
+impl Instruction for SraMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIY));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval >> 1 | (memval & 0x80);
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: SRA (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SRA (IY+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIY));
+    }
+}
+
+
+struct SrlR { r: Reg8 }
+struct SrlMemHl  ;
+struct SrlMemIxD ;
+struct SrlMemIyD ;
+
+impl Instruction for SrlR {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+
+        let r = cpu.read_reg8(self.r);
+
+        let res = r >> 1;
+
+        cpu.write_reg8(self.r, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                 );
+        cpu.cond_flag  ( CARRY_FLAG      , r & 0x01 != 0 );
+
+        info!("{:#06x}: SRL {:?}", cpu.get_pc(), self.r);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    }
+}
+
+impl Instruction for SrlMemHl {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIX));
+
+        let hl     = cpu.read_reg16(Reg16::HL);
+        let memval = cpu.read_word(hl);
+
+        let res = memval >> 1;
+
+        cpu.write_word(hl, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        info!("{:#06x}: SRL (HL)", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for SrlMemIxD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OH|OL));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval >> 1;
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: SRL (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SRL (IX+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF));
+    }
+}
+
+impl Instruction for SrlMemIyD {
+    fn execute(&self, cpu: &mut Cpu) {
+        debug!("{}", cpu.output(OF|OIY));
+
+        let d      = cpu.read_word(cpu.get_pc()) as i8;
+        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        let res = memval >> 1;
+
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        if d < 0 {
+            info!("{:#06x}: SRL (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
+        } else {
+            info!("{:#06x}: SRL (IY+{:#04X})", cpu.get_pc() - 2, d);
+        }
+        cpu.inc_pc(2);
+
+        debug!("{}", cpu.output(OF|OIY));
     }
 }
 
@@ -3352,28 +4038,28 @@ impl Instruction for XorMemIyD {
 
 pub const INSTR_TABLE_CB: [&'static Instruction; 256] = [
     /* 0x00 */        /* 0x01 */        /* 0x02 */        /* 0x03 */        /* 0x04 */        /* 0x05 */        /* 0x06 */    /* 0x07 */
-    &RlcR{r:Reg8::B}, &RlcR{r:Reg8::C}, &RlcR{r:Reg8::D}, &RlcR{r:Reg8::E}, &RlcR{r:Reg8::H}, &RlcR{r:Reg8::L}, &Unsupported, &RlcR{r:Reg8::A},
+    &RlcR{r:Reg8::B}, &RlcR{r:Reg8::C}, &RlcR{r:Reg8::D}, &RlcR{r:Reg8::E}, &RlcR{r:Reg8::H}, &RlcR{r:Reg8::L}, &RlcMemHl   , &RlcR{r:Reg8::A},
 
     /* 0x08 */        /* 0x09 */        /* 0x0A */        /* 0x0B */        /* 0x0C */        /* 0x0D */        /* 0x0E */    /* 0x0F */
-    &RrcR{r:Reg8::B}, &RrcR{r:Reg8::C}, &RrcR{r:Reg8::D}, &RrcR{r:Reg8::E}, &RrcR{r:Reg8::H}, &RrcR{r:Reg8::L}, &Unsupported, &RrcR{r:Reg8::A},
+    &RrcR{r:Reg8::B}, &RrcR{r:Reg8::C}, &RrcR{r:Reg8::D}, &RrcR{r:Reg8::E}, &RrcR{r:Reg8::H}, &RrcR{r:Reg8::L}, &RrcMemHl   , &RrcR{r:Reg8::A},
 
     /* 0x10 */        /* 0x11 */        /* 0x12 */        /* 0x13 */        /* 0x14 */        /* 0x15 */        /* 0x16 */    /* 0x17 */
-    &RlR{r:Reg8::B} , &RlR{r:Reg8::C} , &RlR{r:Reg8::D} , &RlR{r:Reg8::E} , &RlR{r:Reg8::H} , &RlR{r:Reg8::L} , &Unsupported, &RlR{r:Reg8::A},
+    &RlR{r:Reg8::B} , &RlR{r:Reg8::C} , &RlR{r:Reg8::D} , &RlR{r:Reg8::E} , &RlR{r:Reg8::H} , &RlR{r:Reg8::L} , &RlMemHl    , &RlR{r:Reg8::A} ,
 
     /* 0x18 */        /* 0x19 */        /* 0x1A */        /* 0x1B */        /* 0x1C */        /* 0x1D */        /* 0x1E */    /* 0x1F */
-    &RrR{r:Reg8::B} , &RrR{r:Reg8::C} , &RrR{r:Reg8::D} , &RrR{r:Reg8::E} , &RrR{r:Reg8::H} , &RrR{r:Reg8::L} , &Unsupported, &RrR{r:Reg8::A},
+    &RrR{r:Reg8::B} , &RrR{r:Reg8::C} , &RrR{r:Reg8::D} , &RrR{r:Reg8::E} , &RrR{r:Reg8::H} , &RrR{r:Reg8::L} , &RrMemHl    , &RrR{r:Reg8::A} ,
 
     /* 0x20 */        /* 0x21 */        /* 0x22 */        /* 0x23 */        /* 0x24 */        /* 0x25 */        /* 0x26 */    /* 0x27 */
-    &SlaR{r:Reg8::B}, &SlaR{r:Reg8::C}, &SlaR{r:Reg8::D}, &SlaR{r:Reg8::E}, &SlaR{r:Reg8::H}, &SlaR{r:Reg8::L}, &Unsupported, &SlaR{r:Reg8::A},
+    &SlaR{r:Reg8::B}, &SlaR{r:Reg8::C}, &SlaR{r:Reg8::D}, &SlaR{r:Reg8::E}, &SlaR{r:Reg8::H}, &SlaR{r:Reg8::L}, &SlaMemHl   , &SlaR{r:Reg8::A},
 
     /* 0x28 */        /* 0x29 */        /* 0x2A */        /* 0x2B */        /* 0x2C */        /* 0x2D */        /* 0x2E */    /* 0x2F */
-    &SraR{r:Reg8::B}, &SraR{r:Reg8::C}, &SraR{r:Reg8::D}, &SraR{r:Reg8::E}, &SraR{r:Reg8::H}, &SraR{r:Reg8::L}, &Unsupported, &SraR{r:Reg8::A},
+    &SraR{r:Reg8::B}, &SraR{r:Reg8::C}, &SraR{r:Reg8::D}, &SraR{r:Reg8::E}, &SraR{r:Reg8::H}, &SraR{r:Reg8::L}, &SraMemHl   , &SraR{r:Reg8::A},
 
-    /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x30 */        /* 0x31 */        /* 0x32 */        /* 0x33 */        /* 0x34 */        /* 0x35 */        /* 0x36 */    /* 0x37 */
+    &SllR{r:Reg8::B}, &SllR{r:Reg8::C}, &SllR{r:Reg8::D}, &SllR{r:Reg8::E}, &SllR{r:Reg8::H}, &SllR{r:Reg8::L}, &SllMemHl   , &SllR{r:Reg8::A},
 
-    /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    /* 0x38 */        /* 0x39 */        /* 0x3A */        /* 0x3B */        /* 0x3C */        /* 0x3D */        /* 0x3E */    /* 0x3F */
+    &SrlR{r:Reg8::B}, &SrlR{r:Reg8::C}, &SrlR{r:Reg8::D}, &SrlR{r:Reg8::E}, &SrlR{r:Reg8::H}, &SrlR{r:Reg8::L}, &SrlMemHl   , &SrlR{r:Reg8::A},
 
     /* 0x40 */             /* 0x41 */             /* 0x42 */             /* 0x43 */             /* 0x44 */             /* 0x45 */             /* 0x46 */       /* 0x47 */
     &BitBR{b:0,r:Reg8::B}, &BitBR{b:0,r:Reg8::C}, &BitBR{b:0,r:Reg8::D}, &BitBR{b:0,r:Reg8::E}, &BitBR{b:0,r:Reg8::H}, &BitBR{b:0,r:Reg8::L}, &BitBMemHl{b:0}, &BitBR{b:0,r:Reg8::A},
@@ -3756,28 +4442,28 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
 
 pub const INSTR_TABLE_DDCB: [&'static Instruction; 256] = [
     /* 0x00 */    /* 0x01 */    /* 0x02 */    /* 0x03 */    /* 0x04 */    /* 0x05 */    /* 0x06 */    /* 0x07 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RlcMemIxD  , &Unsupported,
 
     /* 0x08 */    /* 0x09 */    /* 0x0A */    /* 0x0B */    /* 0x0C */    /* 0x0D */    /* 0x0E */    /* 0x0F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RrcMemIxD  , &Unsupported,
 
     /* 0x10 */    /* 0x11 */    /* 0x12 */    /* 0x13 */    /* 0x14 */    /* 0x15 */    /* 0x16 */    /* 0x17 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RlMemIxD   , &Unsupported,
 
     /* 0x18 */    /* 0x19 */    /* 0x1A */    /* 0x1B */    /* 0x1C */    /* 0x1D */    /* 0x1E */    /* 0x1F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RrMemIxD   , &Unsupported,
 
     /* 0x20 */    /* 0x21 */    /* 0x22 */    /* 0x23 */    /* 0x24 */    /* 0x25 */    /* 0x26 */    /* 0x27 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SlaMemIxD  , &Unsupported,
 
     /* 0x28 */    /* 0x29 */    /* 0x2A */    /* 0x2B */    /* 0x2C */    /* 0x2D */    /* 0x2E */    /* 0x2F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SraMemIxD  , &Unsupported,
 
     /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SllMemIxD  , &Unsupported,
 
     /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SrlMemIxD  , &Unsupported,
 
     /* 0x40 */    /* 0x41 */    /* 0x42 */    /* 0x43 */    /* 0x44 */    /* 0x45 */    /* 0x46 */        /* 0x47 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:0}, &Unsupported,
@@ -3854,28 +4540,28 @@ pub const INSTR_TABLE_DDCB: [&'static Instruction; 256] = [
 
 pub const INSTR_TABLE_FDCB: [&'static Instruction; 256] = [
     /* 0x00 */    /* 0x01 */    /* 0x02 */    /* 0x03 */    /* 0x04 */    /* 0x05 */    /* 0x06 */    /* 0x07 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RlcMemIyD  , &Unsupported,
 
     /* 0x08 */    /* 0x09 */    /* 0x0A */    /* 0x0B */    /* 0x0C */    /* 0x0D */    /* 0x0E */    /* 0x0F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RrcMemIyD  , &Unsupported,
 
     /* 0x10 */    /* 0x11 */    /* 0x12 */    /* 0x13 */    /* 0x14 */    /* 0x15 */    /* 0x16 */    /* 0x17 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RlMemIyD   , &Unsupported,
 
     /* 0x18 */    /* 0x19 */    /* 0x1A */    /* 0x1B */    /* 0x1C */    /* 0x1D */    /* 0x1E */    /* 0x1F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RrMemIyD   , &Unsupported,
 
     /* 0x20 */    /* 0x21 */    /* 0x22 */    /* 0x23 */    /* 0x24 */    /* 0x25 */    /* 0x26 */    /* 0x27 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SlaMemIyD  , &Unsupported,
 
     /* 0x28 */    /* 0x29 */    /* 0x2A */    /* 0x2B */    /* 0x2C */    /* 0x2D */    /* 0x2E */    /* 0x2F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SraMemIyD  , &Unsupported,
 
     /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SllMemIyD  , &Unsupported,
 
     /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SrlMemIyD  , &Unsupported,
 
     /* 0x40 */    /* 0x41 */    /* 0x42 */    /* 0x43 */    /* 0x44 */    /* 0x45 */    /* 0x46 */        /* 0x47 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIyD{b:0}, &Unsupported,
