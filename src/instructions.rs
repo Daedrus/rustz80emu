@@ -3254,7 +3254,7 @@ fn update_flags_sbc8(cpu: &mut Cpu, op1: u8, op2: u8, c: u8, res: u8) {
 fn update_flags_sbc16(cpu: &mut Cpu, op1: u16, op2: u16, c: u16, res: u16) {
     cpu.cond_flag ( SIGN_FLAG            , res & 0x8000 != 0                                                );
     cpu.cond_flag ( ZERO_FLAG            , res == 0                                                         );
-    cpu.cond_flag ( HALF_CARRY_FLAG      , (op1 & 0x00FF) < (op2 & 0x00FF) + c                              );
+    cpu.cond_flag ( HALF_CARRY_FLAG      , (op1 & 0x0FFF) < (op2 & 0x0FFF) + c                              );
     cpu.cond_flag ( PARITY_OVERFLOW_FLAG , (op1 & 0x8000 != op2 & 0x8000) && (op1 & 0x8000 != res & 0x8000) );
     cpu.set_flag  ( ADD_SUBTRACT_FLAG                                                                       );
     cpu.cond_flag ( CARRY_FLAG           , (op1 as u32) < ((op2 as u32) + (c as u32))                       );
