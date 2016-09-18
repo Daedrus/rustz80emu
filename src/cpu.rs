@@ -19,7 +19,8 @@ pub enum Reg16 {
 
     SP = 8,
     IX = 9,
-    IY = 10
+    IY = 10,
+    WZ = 11
 }
 }
 
@@ -110,6 +111,7 @@ bitflags! {
         const OIY = 0x00020000,
         const OSP = 0x00040000,
         const OPC = 0x00080000,
+        const OWZ = 0x00100000,
 
         const OALL = 0xFFFFFFFF,
     }
@@ -128,7 +130,8 @@ impl From<Reg16> for OutputRegisters {
             Reg16::HL_ALT => OH_ALT | OL_ALT,
             Reg16::SP => OSP,
             Reg16::IX => OIX,
-            Reg16::IY => OIY
+            Reg16::IY => OIY,
+            Reg16::WZ => OWZ
         }
     }
 }
@@ -181,6 +184,9 @@ pub struct Cpu {
     // program counter
     pc: u16,
 
+    // temporary register (MEMPTR)
+    wz: u16,
+
     // interrupt flip-flops
     iff1: bool,
     iff2: bool,
@@ -214,6 +220,7 @@ impl Cpu {
             iy: 0,
             sp: 0,
             pc: 0,
+            wz: 0,
             iff1: false,
             iff2: false,
             im: 0,
@@ -348,6 +355,7 @@ impl Cpu {
             Reg16::IX => self.ix,
             Reg16::IY => self.iy,
             Reg16::SP => self.sp,
+            Reg16::WZ => self.wz,
             _ => {
                 let (high, low) = match reg {
                     Reg16::AF => (self.a, self.f.bits() as u8),
@@ -382,6 +390,7 @@ impl Cpu {
             Reg16::SP => { self.sp = val }
             Reg16::IX => { self.ix = val }
             Reg16::IY => { self.iy = val }
+            Reg16::WZ => { self.wz = val }
         }
 
         debug!("                Write value {:#06X} to register {:?}", val, reg);
