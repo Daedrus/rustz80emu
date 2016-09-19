@@ -722,6 +722,12 @@ impl Instruction for Ccf {
         cpu.clear_flag ( ADD_SUBTRACT_FLAG      );
         cpu.cond_flag  ( CARRY_FLAG        , !c );
 
+        let a = cpu.read_reg8(Reg8::A);
+        let x = cpu.get_flag(X_FLAG);
+        let y = cpu.get_flag(Y_FLAG);
+        cpu.cond_flag  ( X_FLAG            , x || (a & 0x08 != 0) );
+        cpu.cond_flag  ( Y_FLAG            , y || (a & 0x20 != 0) );
+
         info!("{:#06x}: CCF", cpu.get_pc());
         cpu.inc_pc(1);
 
@@ -3210,6 +3216,12 @@ impl Instruction for Scf {
         cpu.set_flag   ( CARRY_FLAG        );
         cpu.clear_flag ( HALF_CARRY_FLAG   );
         cpu.clear_flag ( ADD_SUBTRACT_FLAG );
+
+        let a = cpu.read_reg8(Reg8::A);
+        let x = cpu.get_flag(X_FLAG);
+        let y = cpu.get_flag(Y_FLAG);
+        cpu.cond_flag ( X_FLAG , x || (a & 0x08 != 0) );
+        cpu.cond_flag ( Y_FLAG , y || (a & 0x20 != 0) );
 
         info!("{:#06x}: SCF", cpu.get_pc());
         cpu.inc_pc(1);
