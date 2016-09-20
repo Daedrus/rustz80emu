@@ -13,9 +13,11 @@ mod test_zex {
     use log::{LogRecord};
     use env_logger::LogBuilder;
     use std::env;
+    use std::io::{stdout, Write};
 
 
     static ZEXDOC: &'static [u8] = include_bytes!("zexdoc.com");
+    static ZEXALL: &'static [u8] = include_bytes!("zexall.com");
 
     // TODO: Reuse the function from main.rs
     fn setup_logging() {
@@ -47,22 +49,20 @@ mod test_zex {
             _ => unreachable!()
         }
 
+        stdout().flush().unwrap();
+
         // Manually call RET
         &instructions::INSTR_TABLE[0xC9].execute(cpu);
     }
 
-    #[test]
-    #[ignore]
-    fn test_zexdoc() {
-        setup_logging();
-
+    fn test_rom(rom: &[u8]) {
         let mut dummyrom0: Vec<u8> = vec![0; 16 * 1024];
         let dummyrom1: Vec<u8> = vec![0; 16 * 1024];
 
-        for (i, byte) in ZEXDOC.iter().enumerate() {
+        for (i, byte) in rom.iter().enumerate() {
             dummyrom0[i + 0x100] = *byte;
         }
-        // The ZEXDOC test seems to get its SP from address 0x0006
+        // The ZEX tests seems to get their SP from address 0x0006
         dummyrom0[0x0006] = 0x00;
         dummyrom0[0x0007] = 0xF0;
 
@@ -83,5 +83,13 @@ mod test_zex {
                 _      => { }
             }
         }
+    }
+
+    #[test]
+    fn test_zex() {
+        setup_logging();
+
+        test_rom(&ZEXDOC);
+        test_rom(&ZEXALL);
     }
 }
