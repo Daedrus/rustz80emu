@@ -122,11 +122,7 @@ impl Instruction for AdcMemIxD {
 
         update_flags_adc8(cpu, a, memval, c, res);
 
-        if d < 0 {
-            info!("{:#06x}: ADC A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: ADC A, (IX+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: ADC A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -150,11 +146,7 @@ impl Instruction for AdcMemIyD {
 
         update_flags_adc8(cpu, a, memval, c, res);
 
-        if d < 0 {
-            info!("{:#06x}: ADC A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: ADC A, (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: ADC A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -273,11 +265,7 @@ impl Instruction for AddMemIxD {
 
         update_flags_add8(cpu, a, memval, res);
 
-        if d < 0 {
-            info!("{:#06x}: ADD A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: ADD A, (IX+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: ADD A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -300,11 +288,7 @@ impl Instruction for AddMemIyD {
 
         update_flags_add8(cpu, a, memval, res);
 
-        if d < 0 {
-            info!("{:#06x}: ADD A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: ADD A, (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: ADD A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -511,11 +495,7 @@ impl Instruction for AndMemIxD {
         update_flags_logical(cpu, res);
         cpu.set_flag(HALF_CARRY_FLAG);
 
-        if d < 0 {
-            info!("{:#06x}: AND A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: AND A, (IX+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: AND A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -539,11 +519,7 @@ impl Instruction for AndMemIyD {
         update_flags_logical(cpu, res);
         cpu.set_flag(HALF_CARRY_FLAG);
 
-        if d < 0 {
-            info!("{:#06x}: AND A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: AND A, (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: AND A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -595,7 +571,6 @@ impl Instruction for BitBMemHl {
     fn execute(&self, cpu: &mut Cpu) {
         debug!("{}", cpu.output(OF|OH|OL));
 
-        let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -622,11 +597,7 @@ impl Instruction for BitBMemIxD {
         update_flags_bit(cpu, self.b, memval & (1 << self.b) != 0);
         update_xyflags_bit(cpu);
 
-        if d < 0 {
-            info!("{:#06x}: BIT {}, (IX-{:#04X})", cpu.get_pc() - 2, self.b, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: BIT {}, (IX+{:#04X})", cpu.get_pc() - 2, self.b, d);
-        }
+        info!("{:#06x}: BIT {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF));
@@ -645,11 +616,7 @@ impl Instruction for BitBMemIyD {
         update_flags_bit(cpu, self.b, memval & (1 << self.b) != 0);
         update_xyflags_bit(cpu);
 
-        if d < 0 {
-            info!("{:#06x}: BIT {}, (IY-{:#04X})", cpu.get_pc() - 2, self.b, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: BIT {}, (IY+{:#04X})", cpu.get_pc() - 2, self.b, d);
-        }
+        info!("{:#06x}: BIT {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF));
@@ -823,11 +790,7 @@ impl Instruction for CpMemIxD {
 
         update_flags_cp8(cpu, a, memval, res);
 
-        if d < 0 {
-            info!("{:#06x}: CP (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: CP (IX+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: CP (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OWZ));
@@ -848,11 +811,7 @@ impl Instruction for CpMemIyD {
 
         update_flags_cp8(cpu, a, memval, res);
 
-        if d < 0 {
-            info!("{:#06x}: CP (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: CP (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: CP (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OWZ));
@@ -956,7 +915,7 @@ fn cpi(cpu: &mut Cpu) {
     cpu.write_reg16(Reg16::BC, bc.wrapping_sub(1));
     cpu.write_reg16(Reg16::HL, hl.wrapping_add(1));
 
-    update_flags_cpd(cpu, a, memval, bc.wrapping_sub(1), res);
+    update_flags_cpi(cpu, a, memval, bc.wrapping_sub(1), res);
 }
 
 impl Instruction for Cpi {
@@ -1157,11 +1116,7 @@ impl Instruction for DecMemIxD {
 
         update_flags_dec8(cpu, memval, res);
 
-        if d < 0 {
-            info!("{:#06x}: DEC (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: DEC (IX+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: DEC (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OWZ));
@@ -1183,11 +1138,7 @@ impl Instruction for DecMemIyD {
 
         update_flags_dec8(cpu, memval, res);
 
-        if d < 0 {
-            info!("{:#06x}: DEC (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: DEC (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: DEC (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OWZ));
@@ -1469,11 +1420,7 @@ impl Instruction for IncMemIxD {
 
         update_flags_inc8(cpu, memval, res);
 
-        if d < 0 {
-            info!("{:#06x}: INC (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: INC (IX+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: INC (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OWZ));
@@ -1495,11 +1442,7 @@ impl Instruction for IncMemIyD {
 
         update_flags_inc8(cpu, memval, res);
 
-        if d < 0 {
-            info!("{:#06x}: INC (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: INC (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: INC (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OWZ));
@@ -1775,11 +1718,7 @@ impl Instruction for LdMemIxDN {
         cpu.write_word(addr, n);
         cpu.write_reg16(Reg16::WZ, addr);
 
-        if d < 0 {
-            info!("{:#06x}: LD (IX-{:#04X}), {:#04X}", cpu.get_pc() - 1, (d ^ 0xFF) + 1, n);
-        } else {
-            info!("{:#06x}: LD (IX+{:#04X}), {:#04X}", cpu.get_pc() - 1, d, n);
-        }
+        info!("{:#06x}: LD (IX{:+#04X}), {:#04X}", cpu.get_pc() - 1, d, n);
         cpu.inc_pc(3);
 
         debug!("{}", cpu.output(OWZ));
@@ -1797,11 +1736,7 @@ impl Instruction for LdMemIxDR {
         cpu.write_word(addr, r);
         cpu.write_reg16(Reg16::WZ, addr);
 
-        if d < 0 {
-            info!("{:#06x}: LD (IX-{:#04X}), {:?}", cpu.get_pc() - 1, (d ^ 0xFF) + 1, self.r);
-        } else {
-            info!("{:#06x}: LD (IX+{:#04X}), {:?}", cpu.get_pc() - 1, d, self.r);
-        }
+        info!("{:#06x}: LD (IX{:+#04X}), {:?}", cpu.get_pc() - 1, d, self.r);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OWZ));
@@ -1819,11 +1754,7 @@ impl Instruction for LdMemIyDN {
         cpu.write_word(addr, n);
         cpu.write_reg16(Reg16::WZ, addr);
 
-        if d < 0 {
-            info!("{:#06x}: LD (IY-{:#04X}), {:#04X}", cpu.get_pc() - 1, (d ^ 0xFF) + 1, n);
-        } else {
-            info!("{:#06x}: LD (IY+{:#04X}), {:#04X}", cpu.get_pc() - 1, d, n);
-        }
+        info!("{:#06x}: LD (IY{:+#04X}), {:#04X}", cpu.get_pc() - 1, d, n);
         cpu.inc_pc(3);
 
         debug!("{}", cpu.output(OWZ));
@@ -1841,11 +1772,7 @@ impl Instruction for LdMemIyDR {
         cpu.write_word(addr, r);
         cpu.write_reg16(Reg16::WZ, addr);
 
-        if d < 0 {
-            info!("{:#06x}: LD (IY-{:#04X}), {:?}", cpu.get_pc() - 1, (d ^ 0xFF) + 1, self.r);
-        } else {
-            info!("{:#06x}: LD (IY+{:#04X}), {:?}", cpu.get_pc() - 1, d, self.r);
-        }
+        info!("{:#06x}: LD (IY{:+#04X}), {:?}", cpu.get_pc() - 1, d, self.r);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OWZ));
@@ -2042,11 +1969,7 @@ impl Instruction for LdRMemIxD {
         cpu.write_reg8(self.r, memval);
         cpu.write_reg16(Reg16::WZ, addr);
 
-        if d < 0 {
-            info!("{:#06x}: LD {:?}, (IX-{:#04X})", cpu.get_pc() - 1, self.r, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: LD {:?}, (IX+{:#04X})", cpu.get_pc() - 1, self.r, d);
-        }
+        info!("{:#06x}: LD {:?}, (IX{:+#04X})", cpu.get_pc() - 1, self.r, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OWZ|OutputRegisters::from(self.r)));
@@ -2064,11 +1987,7 @@ impl Instruction for LdRMemIyD {
         cpu.write_reg8(self.r, memval);
         cpu.write_reg16(Reg16::WZ, addr);
 
-        if d < 0 {
-            info!("{:#06x}: LD {:?}, (IY-{:#04X})", cpu.get_pc() - 1, self.r, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: LD {:?}, (IY+{:#04X})", cpu.get_pc() - 1, self.r, d);
-        }
+        info!("{:#06x}: LD {:?}, (IY{:+#04X})", cpu.get_pc() - 1, self.r, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OWZ|OutputRegisters::from(self.r)));
@@ -2346,11 +2265,7 @@ impl Instruction for OrMemIxD {
         update_flags_logical(cpu, res);
         cpu.clear_flag(HALF_CARRY_FLAG);
 
-        if d < 0 {
-            info!("{:#06x}: OR A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: OR A, (IX+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: OR A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -2374,11 +2289,7 @@ impl Instruction for OrMemIyD {
         update_flags_logical(cpu, res);
         cpu.clear_flag(HALF_CARRY_FLAG);
 
-        if d < 0 {
-            info!("{:#06x}: OR A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: OR A, (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: OR A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -2499,11 +2410,7 @@ impl Instruction for ResBMemIxD {
         cpu.write_word(addr, memval & !(1 << self.b));
         cpu.write_reg16(Reg16::WZ, addr);
 
-        if d < 0 {
-            info!("{:#06x}: RES {}, (IX-{:#04X})", cpu.get_pc() - 2, self.b, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: RES {}, (IX+{:#04X})", cpu.get_pc() - 2, self.b, d);
-        }
+        info!("{:#06x}: RES {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OWZ));
@@ -2521,11 +2428,7 @@ impl Instruction for ResBMemIyD {
         cpu.write_word(addr, memval & !(1 << self.b));
         cpu.write_reg16(Reg16::WZ, addr);
 
-        if d < 0 {
-            info!("{:#06x}: RES {}, (IY-{:#04X})", cpu.get_pc() - 2, self.b, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: RES {}, (IY+{:#04X})", cpu.get_pc() - 2, self.b, d);
-        }
+        info!("{:#06x}: RES {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OWZ));
@@ -2693,11 +2596,7 @@ impl Instruction for RlMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: RL (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: RL (IX+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: RL (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIX|OWZ));
@@ -2722,11 +2621,7 @@ impl Instruction for RlMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: RL (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: RL (IY+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: RL (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIY|OWZ));
@@ -2761,7 +2656,7 @@ impl Instruction for RlcMemHl {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
-        let mut res = memval.rotate_left(1);
+        let res = memval.rotate_left(1);
 
         cpu.write_word(hl, res);
 
@@ -2784,7 +2679,7 @@ impl Instruction for RlcMemIxD {
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
-        let mut res = memval.rotate_left(1);
+        let res = memval.rotate_left(1);
 
         cpu.write_word(addr, res);
         cpu.write_reg16(Reg16::WZ, addr);
@@ -2793,11 +2688,7 @@ impl Instruction for RlcMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: RLC (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: RLC (IX+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: RLC (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIX|OWZ));
@@ -2812,7 +2703,7 @@ impl Instruction for RlcMemIyD {
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
-        let mut res = memval.rotate_left(1);
+        let res = memval.rotate_left(1);
 
         cpu.write_word(addr, res);
         cpu.write_reg16(Reg16::WZ, addr);
@@ -2821,11 +2712,7 @@ impl Instruction for RlcMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: RLC (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: RLC (IY+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: RLC (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIY|OWZ));
@@ -2964,11 +2851,7 @@ impl Instruction for RrMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: RR (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: RR (IX+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: RR (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIX|OWZ));
@@ -2993,11 +2876,7 @@ impl Instruction for RrMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: RR (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: RR (IY+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: RR (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIY|OWZ));
@@ -3056,7 +2935,7 @@ impl Instruction for RrcMemHl {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
-        let mut res = memval.rotate_right(1);
+        let res = memval.rotate_right(1);
 
         cpu.write_word(hl, res);
 
@@ -3079,7 +2958,7 @@ impl Instruction for RrcMemIxD {
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
-        let mut res = memval.rotate_right(1);
+        let res = memval.rotate_right(1);
 
         cpu.write_word(addr, res);
         cpu.write_reg16(Reg16::WZ, addr);
@@ -3088,11 +2967,7 @@ impl Instruction for RrcMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: RRC (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: RRC (IX+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: RRC (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIX|OWZ));
@@ -3107,7 +2982,7 @@ impl Instruction for RrcMemIyD {
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
-        let mut res = memval.rotate_right(1);
+        let res = memval.rotate_right(1);
 
         cpu.write_word(addr, res);
         cpu.write_reg16(Reg16::WZ, addr);
@@ -3116,11 +2991,7 @@ impl Instruction for RrcMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: RRC (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: RRC (IY+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: RRC (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIY|OWZ));
@@ -3263,11 +3134,7 @@ impl Instruction for SetBMemIxD {
         cpu.write_word(addr, memval | (1 << self.b));
         cpu.write_reg16(Reg16::WZ, addr);
 
-        if d < 0 {
-            info!("{:#06x}: SET {}, (IX-{:#04X})", cpu.get_pc() - 2, self.b, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SET {}, (IX+{:#04X})", cpu.get_pc() - 2, self.b, d);
-        }
+        info!("{:#06x}: SET {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OWZ));
@@ -3285,11 +3152,7 @@ impl Instruction for SetBMemIyD {
         cpu.write_word(addr, memval | (1 << self.b));
         cpu.write_reg16(Reg16::WZ, addr);
 
-        if d < 0 {
-            info!("{:#06x}: SET {}, (IY-{:#04X})", cpu.get_pc() - 2, self.b, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SET {}, (IY+{:#04X})", cpu.get_pc() - 2, self.b, d);
-        }
+        info!("{:#06x}: SET {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OWZ));
@@ -3425,11 +3288,7 @@ impl Instruction for SbcMemIxD {
 
         update_flags_sbc8(cpu, a, memval, c, res);
 
-        if d < 0 {
-            info!("{:#06x}: SBC A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SBC A, (IX+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: SBC A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -3453,11 +3312,7 @@ impl Instruction for SbcMemIyD {
 
         update_flags_sbc8(cpu, a, memval, c, res);
 
-        if d < 0 {
-            info!("{:#06x}: SBC A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SBC A, (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: SBC A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -3552,11 +3407,7 @@ impl Instruction for SlaMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: SLA (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SLA (IX+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: SLA (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIX|OWZ));
@@ -3580,11 +3431,7 @@ impl Instruction for SlaMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: SLA (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SLA (IY+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: SLA (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIY|OWZ));
@@ -3657,11 +3504,7 @@ impl Instruction for SllMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: SLL (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SLL (IX+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: SLL (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIX|OWZ));
@@ -3685,11 +3528,7 @@ impl Instruction for SllMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: SLL (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SLL (IY+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: SLL (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIY|OWZ));
@@ -3762,11 +3601,7 @@ impl Instruction for SraMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: SRA (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SRA (IX+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: SRA (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIX|OWZ));
@@ -3790,11 +3625,7 @@ impl Instruction for SraMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: SRA (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SRA (IY+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: SRA (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIY|OWZ));
@@ -3867,11 +3698,7 @@ impl Instruction for SrlMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: SRL (IX-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SRL (IX+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: SRL (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OWZ));
@@ -3895,11 +3722,7 @@ impl Instruction for SrlMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        if d < 0 {
-            info!("{:#06x}: SRL (IY-{:#04X})", cpu.get_pc() - 2, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SRL (IY+{:#04X})", cpu.get_pc() - 2, d);
-        }
+        info!("{:#06x}: SRL (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OF|OIY|OWZ));
@@ -4002,11 +3825,7 @@ impl Instruction for SubMemIxD {
 
         update_flags_sub8(cpu, a, memval, res);
 
-        if d < 0 {
-            info!("{:#06x}: SUB A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SUB A, (IX+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: SUB A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -4029,11 +3848,7 @@ impl Instruction for SubMemIyD {
 
         update_flags_sub8(cpu, a, memval, res);
 
-        if d < 0 {
-            info!("{:#06x}: SUB A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: SUB A, (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: SUB A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -4128,11 +3943,7 @@ impl Instruction for XorMemIxD {
         update_flags_logical(cpu, res);
         cpu.clear_flag(HALF_CARRY_FLAG);
 
-        if d < 0 {
-            info!("{:#06x}: XOR A, (IX-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: XOR A, (IX+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: XOR A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
@@ -4156,11 +3967,7 @@ impl Instruction for XorMemIyD {
         update_flags_logical(cpu, res);
         cpu.clear_flag(HALF_CARRY_FLAG);
 
-        if d < 0 {
-            info!("{:#06x}: XOR A, (IY-{:#04X})", cpu.get_pc() - 1, (d ^ 0xFF) + 1);
-        } else {
-            info!("{:#06x}: XOR A, (IY+{:#04X})", cpu.get_pc() - 1, d);
-        }
+        info!("{:#06x}: XOR A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
 
         debug!("{}", cpu.output(OA|OF|OWZ));
