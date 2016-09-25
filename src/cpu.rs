@@ -4,8 +4,10 @@ use std::io::{stdin, stdout};
 use std::io::Write;
 use super::instructions;
 
+
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
 pub enum Reg16 {
     AF = 0,
     BC = 1,
@@ -44,6 +46,7 @@ pub enum Reg8 {
 
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy, RustcEncodable, RustcDecodable)]
+#[allow(non_camel_case_types)]
 pub enum Port {
     MEMORY = 0x7ffd,
     AY38912_REG14 = 0xfffd,
