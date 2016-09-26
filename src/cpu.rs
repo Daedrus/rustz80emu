@@ -88,7 +88,6 @@ bitflags! {
 }
 
 bitflags! {
-#[derive(RustcEncodable, RustcDecodable)]
     pub flags OutputRegisters: u32 {
         const ONONE = 0x00000000,
 
