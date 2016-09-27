@@ -1,3 +1,4 @@
+use super::debugger::*;
 use super::memory;
 use std::fmt;
 use std::io::{stdin, stdout};
@@ -297,20 +298,25 @@ impl Cpu {
                 stdin().read_line(&mut input).unwrap();
                 let input: String = input.trim().into();
 
-                let cmd: Vec<&str> = input.split(" ").collect();
+                match input.parse() {
+                    Ok(Command::Exit) =>
+                        break,
 
-                match cmd[0].as_ref() {
-                    "step" => self.run_instruction(),
-                    "regs" => println!("{:?}", self),
-                    "run"  => debug_on = false,
-                    "exit" => break,
-                    "mem"  => println!("{:#04X}", self.read_word(u16::from_str_radix(cmd[1], 16).unwrap())),
-                    _ => println!("Unknown command")
+                    Ok(Command::Cont) =>
+                        debug_on = false,
+
+                    Ok(Command::Step(count)) if count > 0 =>
+                        for _ in 0..count { self.run_instruction() },
+
+                    Ok(Command::Mem(addr)) =>
+                        println!("{:#04X}", self.read_word(addr)),
+
+                    _ =>
+                        println!("Unknown command"),
                 };
+
             } else {
                 self.run_instruction();
-                // Poor man's breakpoint:
-                // if self.get_pc() == ???? { debug_on = true };
             }
         }
     }

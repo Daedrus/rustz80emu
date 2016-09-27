@@ -11,3 +11,7 @@ pub mod cpu;
 pub mod memory;
 pub mod instructions;
 pub mod utils;
+
+#[macro_use] extern crate nom;
+
+pub mod debugger;

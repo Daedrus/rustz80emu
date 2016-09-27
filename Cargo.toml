@@ -12,6 +12,7 @@ log = "0.3.6"
 env_logger = "0.3.4"
 bincode = "*"
 rustc-serialize = "*"
+nom = "*"
 
 [lib]
 name = "z80emulib"
