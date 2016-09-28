@@ -1,3 +1,7 @@
+use super::cpu::{Cpu};
+use std::io::{stdin, stdout};
+use std::io::Write;
+
 use std::borrow::Cow;
 use std::str::{self, FromStr};
 
@@ -74,3 +78,44 @@ named!(u16_hex_parser<u16>,
             hex_digit,
             str::from_utf8),
     || u16::from_str_radix(number, 16).unwrap()));
+
+
+pub struct Debugger {
+    cpu: Cpu
+}
+
+impl Debugger {
+    pub fn new(cpu: Cpu) -> Debugger {
+        Debugger {
+            cpu: cpu
+        }
+    }
+
+    pub fn run(&mut self) {
+        loop {
+            print!("z80> ");
+            stdout().flush().unwrap();
+
+            let mut input = String::new();
+            stdin().read_line(&mut input).unwrap();
+            let input: String = input.trim().into();
+
+            match input.parse() {
+                Ok(Command::Exit) =>
+                    break,
+
+                Ok(Command::Cont) =>
+                    self.cpu.run(),
+
+                Ok(Command::Step(count)) if count > 0 =>
+                    for _ in 0..count { self.cpu.run_instruction() },
+
+                Ok(Command::Mem(addr)) =>
+                    println!("{:#04X}", self.cpu.read_word(addr)),
+
+                _ =>
+                    println!("Unknown command"),
+            };
+        }
+    }
+}

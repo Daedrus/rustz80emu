@@ -1,9 +1,6 @@
-use super::debugger::*;
 use super::memory;
-use std::fmt;
-use std::io::{stdin, stdout};
-use std::io::Write;
 use super::instructions;
+use std::fmt;
 
 
 enum_from_primitive! {
@@ -287,37 +284,8 @@ impl Cpu {
     }
 
     pub fn run(&mut self) {
-        let mut debug_on = true;
-
         loop {
-            if debug_on {
-                print!("z80> ");
-                stdout().flush().unwrap();
-
-                let mut input = String::new();
-                stdin().read_line(&mut input).unwrap();
-                let input: String = input.trim().into();
-
-                match input.parse() {
-                    Ok(Command::Exit) =>
-                        break,
-
-                    Ok(Command::Cont) =>
-                        debug_on = false,
-
-                    Ok(Command::Step(count)) if count > 0 =>
-                        for _ in 0..count { self.run_instruction() },
-
-                    Ok(Command::Mem(addr)) =>
-                        println!("{:#04X}", self.read_word(addr)),
-
-                    _ =>
-                        println!("Unknown command"),
-                };
-
-            } else {
-                self.run_instruction();
-            }
+            self.run_instruction();
         }
     }
 

@@ -7,6 +7,7 @@ use env_logger::LogBuilder;
 
 use z80emulib::memory::*;
 use z80emulib::cpu::*;
+use z80emulib::debugger::*;
 
 use std::env;
 use std::fs;
@@ -34,8 +35,6 @@ fn setup_logging() {
 }
 
 fn main() {
-    setup_logging();
-
     let rom0_file_name = env::args().nth(1).unwrap();
     let rom1_file_name = env::args().nth(2).unwrap();
 
@@ -49,5 +48,12 @@ fn main() {
 
     let mut cpu = Cpu::new(memory);
 
-    cpu.run();
+    if env::var("RUST_LOG").is_ok() {
+        setup_logging();
+
+        let mut debugger = Debugger::new(cpu);
+        debugger.run();
+    } else {
+        cpu.run();
+    }
 }
