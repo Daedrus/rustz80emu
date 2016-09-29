@@ -1,6 +1,5 @@
 use super::memory;
 use super::instructions;
-use std::fmt;
 
 
 enum_from_primitive! {
@@ -85,123 +84,52 @@ bitflags! {
     }
 }
 
-bitflags! {
-    pub flags OutputRegisters: u32 {
-        const ONONE = 0x00000000,
-
-        const OA = 0x00000001,
-        const OF = 0x00000002,
-        const OB = 0x00000004,
-        const OC = 0x00000008,
-        const OD = 0x00000010,
-        const OE = 0x00000020,
-        const OH = 0x00000040,
-        const OL = 0x00000080,
-
-        const OA_ALT = 0x00000100,
-        const OF_ALT = 0x00000200,
-        const OB_ALT = 0x00000400,
-        const OC_ALT = 0x00000800,
-        const OD_ALT = 0x00001000,
-        const OE_ALT = 0x00002000,
-        const OH_ALT = 0x00004000,
-        const OL_ALT = 0x00008000,
-
-        const OIX = 0x00010000,
-        const OIY = 0x00020000,
-        const OSP = 0x00040000,
-        const OPC = 0x00080000,
-        const OWZ = 0x00100000,
-
-        const OALL = 0xFFFFFFFF,
-    }
-}
-
-impl From<Reg16> for OutputRegisters {
-    fn from(r: Reg16) -> OutputRegisters {
-        match r {
-            Reg16::AF => OA | OF,
-            Reg16::BC => OB | OC,
-            Reg16::DE => OD | OE,
-            Reg16::HL => OH | OL,
-            Reg16::AF_ALT => OA_ALT | OF_ALT,
-            Reg16::BC_ALT => OB_ALT | OC_ALT,
-            Reg16::DE_ALT => OD_ALT | OE_ALT,
-            Reg16::HL_ALT => OH_ALT | OL_ALT,
-            Reg16::SP => OSP,
-            Reg16::IX => OIX,
-            Reg16::IY => OIY,
-            Reg16::WZ => OWZ
-        }
-    }
-}
-
-impl From<Reg8> for OutputRegisters {
-    fn from(r: Reg8) -> OutputRegisters {
-        match r {
-            Reg8::A => OA,
-            Reg8::B => OB,
-            Reg8::C => OC,
-            Reg8::D => OD,
-            Reg8::E => OE,
-            Reg8::H => OH,
-            Reg8::L => OL,
-            Reg8::IXL | Reg8::IXH => OIX,
-            Reg8::IYL | Reg8::IYH => OIY
-        }
-    }
-}
-
+//TODO: Remove pub qualifier after reworking debugger output function
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct Cpu {
     // main register set
-    a: u8, f: StatusIndicatorFlags,
-    b: u8, c: u8,
-    d: u8, e: u8,
-    h: u8, l: u8,
+    pub a: u8, pub f: StatusIndicatorFlags,
+    pub b: u8, pub c: u8,
+    pub d: u8, pub e: u8,
+    pub h: u8, pub l: u8,
 
     // alternate register set
-    a_alt: u8, f_alt: StatusIndicatorFlags,
-    b_alt: u8, c_alt: u8,
-    d_alt: u8, e_alt: u8,
-    h_alt: u8, l_alt: u8,
+    pub a_alt: u8, pub f_alt: StatusIndicatorFlags,
+    pub b_alt: u8, pub c_alt: u8,
+    pub d_alt: u8, pub e_alt: u8,
+    pub h_alt: u8, pub l_alt: u8,
 
     // interrupt vector
-    i: u8,
+    pub i: u8,
 
     // memory refresh
-    r: u8,
+    pub r: u8,
 
     // index register X
-    ix: u16,
+    pub ix: u16,
 
     // index register Y
-    iy: u16,
+    pub iy: u16,
 
     // stack pointer
-    sp: u16,
+    pub sp: u16,
 
     // program counter
-    pc: u16,
+    pub pc: u16,
 
     // temporary register (MEMPTR)
-    wz: u16,
+    pub wz: u16,
 
     // interrupt flip-flops
-    iff1: bool,
-    iff2: bool,
+    pub iff1: bool,
+    pub iff2: bool,
 
     // interrupt mode
-    im: u8,
+    pub im: u8,
 
     memory: memory::Memory
 }
 
-impl fmt::Debug for Cpu {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "{}", self.output(OALL))
-    }
-}
 
 impl Cpu {
     pub fn new(memory: memory::Memory) -> Cpu {
@@ -227,60 +155,6 @@ impl Cpu {
 
             memory: memory
         }
-    }
-
-    pub fn output(&self, regs: OutputRegisters) -> String {
-        let mut outstr = String::new();
-
-        let astr = if regs.contains(OA) { format!(" {:02X} ", self.a) } else { String::from("    ") };
-        let fstr = if regs.contains(OF) { format!(" {:02X} ", self.f.bits() as u8) } else { String::from("    ") };
-        let fbinstr = if regs.contains(OF) { format!(" {:08b} ", self.f.bits()) } else { String::from("          ") };
-        let aaltstr = if regs.contains(OA_ALT) { format!(" {:02X} ", self.a_alt) } else { String::from("    ") };
-        let faltstr = if regs.contains(OF_ALT) { format!(" {:02X} ", self.f_alt.bits() as u8) } else { String::from("    ") };
-        let bstr = if regs.contains(OB) { format!(" {:02X} ", self.b) } else { String::from("    ") };
-        let cstr = if regs.contains(OC) { format!(" {:02X} ", self.c) } else { String::from("    ") };
-        let baltstr = if regs.contains(OB_ALT) { format!(" {:02X} ", self.b_alt) } else { String::from("    ") };
-        let caltstr = if regs.contains(OC_ALT) { format!(" {:02X} ", self.c_alt) } else { String::from("    ") };
-        let dstr = if regs.contains(OD) { format!(" {:02X} ", self.d) } else { String::from("    ") };
-        let estr = if regs.contains(OE) { format!(" {:02X} ", self.e) } else { String::from("    ") };
-        let daltstr = if regs.contains(OD_ALT) { format!(" {:02X} ", self.d_alt) } else { String::from("    ") };
-        let ealtstr = if regs.contains(OE_ALT) { format!(" {:02X} ", self.e_alt) } else { String::from("    ") };
-        let hstr = if regs.contains(OH) { format!(" {:02X} ", self.h) } else { String::from("    ") };
-        let lstr = if regs.contains(OL) { format!(" {:02X} ", self.l) } else { String::from("    ") };
-        let haltstr = if regs.contains(OH_ALT) { format!(" {:02X} ", self.h_alt) } else { String::from("    ") };
-        let laltstr = if regs.contains(OL_ALT) { format!(" {:02X} ", self.l_alt) } else { String::from("    ") };
-        let ixstr = if regs.contains(OIX) { format!(" {:04X} ", self.ix) } else { String::from("      ") };
-        let iystr = if regs.contains(OIY) { format!(" {:04X} ", self.iy) } else { String::from("      ") };
-        let spstr = if regs.contains(OSP) { format!(" {:04X} ", self.sp) } else { String::from("      ") };
-        let pcstr = format!(" {:04X} ", self.pc);
-
-        outstr.push_str("                    -----------           -----------\n");
-        outstr.push_str("                af: |"); outstr.push_str(&astr); outstr.push_str("|"); outstr.push_str(&fstr);
-        outstr.push_str("|   af_alt: |"); outstr.push_str(&aaltstr); outstr.push_str("|"); outstr.push_str(&faltstr);
-        outstr.push_str("|\n");
-        outstr.push_str("                bc: |"); outstr.push_str(&bstr); outstr.push_str("|"); outstr.push_str(&cstr);
-        outstr.push_str("|   bc_alt: |"); outstr.push_str(&baltstr); outstr.push_str("|"); outstr.push_str(&caltstr);
-        outstr.push_str("|\n");
-        outstr.push_str("                de: |"); outstr.push_str(&dstr); outstr.push_str("|"); outstr.push_str(&estr);
-        outstr.push_str("|   de_alt: |"); outstr.push_str(&daltstr); outstr.push_str("|"); outstr.push_str(&ealtstr);
-        outstr.push_str("|\n");
-        outstr.push_str("                hl: |"); outstr.push_str(&hstr); outstr.push_str("|"); outstr.push_str(&lstr);
-        outstr.push_str("|   hl_alt: |"); outstr.push_str(&haltstr); outstr.push_str("|"); outstr.push_str(&laltstr);
-        outstr.push_str("|\n");
-        outstr.push_str("                    -----------           -----------\n");
-        outstr.push_str("                    ----------            ------------\n");
-        outstr.push_str("                ix: | "); outstr.push_str(&ixstr);
-        outstr.push_str(" |            | SZ_H_PNC |\n");
-        outstr.push_str("                iy: | "); outstr.push_str(&iystr);
-        outstr.push_str(" |         f: |"); outstr.push_str(&fbinstr);
-        outstr.push_str("|\n");
-        outstr.push_str("                sp: | "); outstr.push_str(&spstr);
-        outstr.push_str(" |            ------------\n");
-        outstr.push_str("                pc: | "); outstr.push_str(&pcstr);
-        outstr.push_str(" |\n");
-        outstr.push_str("                    ----------\n");
-
-        outstr
     }
 
     pub fn run(&mut self) {
@@ -393,6 +267,7 @@ impl Cpu {
     pub fn set_flag(&mut self, flag: StatusIndicatorFlags) { self.f.insert(flag); }
     pub fn clear_flag(&mut self, flag: StatusIndicatorFlags) { self.f.remove(flag); }
     pub fn get_flag(&self, flag: StatusIndicatorFlags) -> bool { self.f.contains(flag) }
+    pub fn get_flags(&self) -> StatusIndicatorFlags { self.f }
     pub fn cond_flag(&mut self, flag: StatusIndicatorFlags, cond: bool) {
         if cond { self.f.insert(flag); } else { self.f.remove(flag); }
     }
@@ -411,9 +286,23 @@ impl Cpu {
         }
     }
 
-    pub fn run_instruction(&mut self) {
-        debug!("*****************************************************\n");
+    pub fn decode_instruction(&self) -> &instructions::Instruction {
+        let i0 = self.read_word(self.pc);
+        let i1 = self.read_word(self.pc + 1);
+        let i3 = self.read_word(self.pc + 3);
 
+        match (i0, i1) {
+            (0xDD, 0xCB) => instructions::INSTR_TABLE_DDCB [i3 as usize],
+            (0xDD, _   ) => instructions::INSTR_TABLE_DD   [i1 as usize],
+            (0xFD, 0xCB) => instructions::INSTR_TABLE_FDCB [i3 as usize],
+            (0xFD, _   ) => instructions::INSTR_TABLE_FD   [i1 as usize],
+            (0xCB, _   ) => instructions::INSTR_TABLE_CB   [i1 as usize],
+            (0xED, _   ) => instructions::INSTR_TABLE_ED   [i1 as usize],
+            (_   , _   ) => instructions::INSTR_TABLE      [i0 as usize]
+        }
+    }
+
+    pub fn run_instruction(&mut self) {
         let i0 = self.read_word(self.pc);
         let i1 = self.read_word(self.pc + 1);
         let i3 = self.read_word(self.pc + 3);
@@ -447,8 +336,6 @@ impl Cpu {
                 &instructions::INSTR_TABLE      [i0 as usize].execute(self);
             }
         }
-
-        debug!("*****************************************************\n");
     }
 
     pub fn read_word(&self, addr: u16) -> u8 {

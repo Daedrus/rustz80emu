@@ -1,9 +1,11 @@
 use super::cpu::*;
+use super::debugger::*;
 use num::FromPrimitive;
 
 
 pub trait Instruction {
     fn execute(&self, &mut Cpu);
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters);
 }
 
 
@@ -11,9 +13,11 @@ struct Unsupported;
 
 impl Instruction for Unsupported {
     fn execute(&self, cpu: &mut Cpu) {
-        info!("{:?}", cpu);
-
         panic!("Unsupported instruction {:#x} at address {:#06x}", cpu.read_word(cpu.get_pc()), cpu.get_pc());
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (ONONE, ONONE)
     }
 }
 
@@ -22,12 +26,12 @@ struct Nop;
 
 impl Instruction for Nop {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(ONONE));
-
         info!("{:#06x}: NOP", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (ONONE, ONONE)
     }
 }
 
@@ -65,8 +69,6 @@ fn update_flags_adc16(cpu: &mut Cpu, op1: u16, op2: u16, c: u16, res: u16) {
 
 impl Instruction for AdcR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
-
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
         let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
@@ -79,15 +81,15 @@ impl Instruction for AdcR {
 
         info!("{:#06x}: ADC A, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OutputRegisters::from(self.r), OA|OF)
     }
 }
 
 impl Instruction for AdcN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
         let n = cpu.read_word(cpu.get_pc() + 1);
         let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
@@ -100,15 +102,15 @@ impl Instruction for AdcN {
 
         info!("{:#06x}: ADC A, {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for AdcMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIX|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
@@ -124,15 +126,15 @@ impl Instruction for AdcMemIxD {
 
         info!("{:#06x}: ADC A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIX|OWZ, OA|OF|OWZ)
     }
 }
 
 impl Instruction for AdcMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIY|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
@@ -148,15 +150,15 @@ impl Instruction for AdcMemIyD {
 
         info!("{:#06x}: ADC A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIY|OWZ, OA|OF|OWZ)
     }
 }
 
 impl Instruction for AdcMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OH|OL));
-
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -170,15 +172,15 @@ impl Instruction for AdcMemHl {
 
         info!("{:#06x}: ADC A, (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OH|OL, OA|OF)
     }
 }
 
 impl Instruction for AdcHlSs {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL|OF|OWZ|OutputRegisters::from(self.r)));
-
         let hl = cpu.read_reg16(Reg16::HL);
         let ss = cpu.read_reg16(self.r);
         let c  = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
@@ -192,8 +194,10 @@ impl Instruction for AdcHlSs {
 
         info!("{:#06x}: ADC HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OH|OL|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL|OF|OWZ|OutputRegisters::from(self.r), OH|OL|OF|OWZ)
     }
 }
 
@@ -230,8 +234,6 @@ fn update_flags_add16(cpu: &mut Cpu, op1: u16, op2: u16, res: u16) {
 
 impl Instruction for AddMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -244,15 +246,15 @@ impl Instruction for AddMemHl {
 
         info!("{:#06x}: ADD A, (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for AddMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIX|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
@@ -267,15 +269,15 @@ impl Instruction for AddMemIxD {
 
         info!("{:#06x}: ADD A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIX|OWZ, OA|OF|OWZ)
     }
 }
 
 impl Instruction for AddMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIY|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
@@ -290,15 +292,15 @@ impl Instruction for AddMemIyD {
 
         info!("{:#06x}: ADD A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIY|OWZ, OA|OF|OWZ)
     }
 }
 
 impl Instruction for AddN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
         let n = cpu.read_word(cpu.get_pc() + 1);
 
@@ -310,15 +312,15 @@ impl Instruction for AddN {
 
         info!("{:#06x}: ADD A, {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for AddR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
-
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -330,15 +332,15 @@ impl Instruction for AddR {
 
         info!("{:#06x}: ADD A, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OutputRegisters::from(self.r), OA|OF)
     }
 }
 
 impl Instruction for AddHlSs {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL|OF|OWZ|OutputRegisters::from(self.r)));
-
         let hl = cpu.read_reg16(Reg16::HL);
         let ss = cpu.read_reg16(self.r);
 
@@ -351,15 +353,15 @@ impl Instruction for AddHlSs {
 
         info!("{:#06x}: ADD HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OH|OL|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL|OF|OWZ|OutputRegisters::from(self.r), OH|OL|OF|OWZ)
     }
 }
 
 impl Instruction for AddIxPp {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL|OIX));
-
         let ix = cpu.get_ix();
         let ss = cpu.read_reg16(self.r);
 
@@ -371,15 +373,15 @@ impl Instruction for AddIxPp {
 
         info!("{:#06x}: ADD IX, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OH|OL|OF|OIX));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL|OIX, OH|OL|OF|OIX)
     }
 }
 
 impl Instruction for AddIyRr {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL|OIY));
-
         let iy = cpu.get_iy();
         let ss = cpu.read_reg16(self.r);
 
@@ -391,8 +393,10 @@ impl Instruction for AddIyRr {
 
         info!("{:#06x}: ADD IY, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OH|OL|OF|OIY));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL|OIY, OH|OL|OF|OIY)
     }
 }
 
@@ -416,8 +420,6 @@ fn update_flags_logical(cpu: &mut Cpu, res: u8) {
 
 impl Instruction for AndR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
-
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -430,15 +432,15 @@ impl Instruction for AndR {
 
         info!("{:#06x}: AND {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OutputRegisters::from(self.r), OA|OF)
     }
 }
 
 impl Instruction for AndN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
         let n = cpu.read_word(cpu.get_pc() + 1);
 
@@ -451,15 +453,15 @@ impl Instruction for AndN {
 
         info!("{:#06x}: AND {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for AndMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -473,15 +475,15 @@ impl Instruction for AndMemHl {
 
         info!("{:#06x}: AND A, (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for AndMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIX|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
@@ -497,15 +499,15 @@ impl Instruction for AndMemIxD {
 
         info!("{:#06x}: AND A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIX|OWZ, OA|OF|OWZ)
     }
 }
 
 impl Instruction for AndMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIY|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
@@ -521,8 +523,10 @@ impl Instruction for AndMemIyD {
 
         info!("{:#06x}: AND A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIY|OWZ, OA|OF|OWZ)
     }
 }
 
@@ -551,8 +555,6 @@ fn update_xyflags_bit(cpu: &mut Cpu) {
 
 impl Instruction for BitBR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-
         let val = cpu.read_reg8(self.r);
 
         update_flags_bit(cpu, self.b, val & (1 << self.b) != 0);
@@ -562,15 +564,15 @@ impl Instruction for BitBR {
         info!("{:#06x}: BIT {}, {:?}", cpu.get_pc() - 1, self.b, self.r);
 
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF)
     }
 }
 
 impl Instruction for BitBMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -580,15 +582,15 @@ impl Instruction for BitBMemHl {
         info!("{:#06x}: BIT {}, (HL)", cpu.get_pc() - 1, self.b);
 
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OH|OL, OF)
     }
 }
 
 impl Instruction for BitBMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIX));
-
         let d    = cpu.read_word(cpu.get_pc()) as i8;
         let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
 
@@ -599,15 +601,15 @@ impl Instruction for BitBMemIxD {
 
         info!("{:#06x}: BIT {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX, OF)
     }
 }
 
 impl Instruction for BitBMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY));
-
         let d    = cpu.read_word(cpu.get_pc()) as i8;
         let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
 
@@ -618,8 +620,10 @@ impl Instruction for BitBMemIyD {
 
         info!("{:#06x}: BIT {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIY, OF)
     }
 }
 
@@ -629,8 +633,6 @@ struct CallCcNn { cond: FlagCond }
 
 impl Instruction for CallNn {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OSP|OWZ));
-
         let curr_pc = cpu.get_pc();
         let nn      =  (cpu.read_word(curr_pc + 1) as u16) |
                       ((cpu.read_word(curr_pc + 2) as u16) << 8);
@@ -644,15 +646,15 @@ impl Instruction for CallNn {
 
         info!("{:#06x}: CALL {:#06X}", curr_pc, nn);
         cpu.set_pc(nn);
+    }
 
-        debug!("{}", cpu.output(OSP|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OSP|OWZ, OSP|OWZ)
     }
 }
 
 impl Instruction for CallCcNn {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OSP|OF|OWZ));
-
         let curr_pc = cpu.get_pc();
         let nn      =  (cpu.read_word(curr_pc + 1) as u16) |
                       ((cpu.read_word(curr_pc + 2) as u16) << 8);
@@ -671,8 +673,10 @@ impl Instruction for CallCcNn {
             cpu.inc_pc(3);
         }
         cpu.write_reg16(Reg16::WZ, nn);
+    }
 
-        debug!("{}", cpu.output(OSP|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OSP|OF|OWZ, OSP|OWZ)
     }
 }
 
@@ -681,8 +685,6 @@ struct Ccf;
 
 impl Instruction for Ccf {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF));
-
         let c = cpu.get_flag(CARRY_FLAG);
 
         cpu.cond_flag  ( HALF_CARRY_FLAG   , c  );
@@ -697,8 +699,10 @@ impl Instruction for Ccf {
 
         info!("{:#06x}: CCF", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF, OF)
     }
 }
 
@@ -723,8 +727,6 @@ fn update_flags_cp8(cpu: &mut Cpu, op1: u8, op2: u8, res: u8) {
 
 impl Instruction for CpR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OA|OutputRegisters::from(self.r)));
-
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -734,15 +736,15 @@ impl Instruction for CpR {
 
         info!("{:#06x}: CP {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OutputRegisters::from(self.r), OF)
     }
 }
 
 impl Instruction for CpN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
         let n = cpu.read_word(cpu.get_pc() + 1);
 
@@ -752,15 +754,15 @@ impl Instruction for CpN {
 
         info!("{:#06x}: CP {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OF)
     }
 }
 
 impl Instruction for CpMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OH|OL));
-
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -771,15 +773,15 @@ impl Instruction for CpMemHl {
 
         info!("{:#06x}: CP (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OH|OL, OF)
     }
 }
 
 impl Instruction for CpMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIX|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
@@ -792,15 +794,15 @@ impl Instruction for CpMemIxD {
 
         info!("{:#06x}: CP (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIX|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for CpMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIY|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
@@ -813,8 +815,10 @@ impl Instruction for CpMemIyD {
 
         info!("{:#06x}: CP (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIY|OWZ, OF|OWZ)
     }
 }
 
@@ -853,23 +857,22 @@ fn cpd(cpu: &mut Cpu) {
 
 impl Instruction for Cpd {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OB|OC|OH|OL|OF|OWZ));
-
         cpd(cpu);
+
         let wz = cpu.read_reg16(Reg16::WZ);
         cpu.write_reg16(Reg16::WZ, wz - 1);
 
         info!("{:#06x}: CPD", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OB|OC|OH|OL|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OB|OC|OH|OL|OF|OWZ, OB|OC|OH|OL|OF|OWZ)
     }
 }
 
 impl Instruction for Cpdr {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OB|OC|OH|OL|OF|OWZ));
-
         cpd(cpu);
 
         info!("{:#06x}: CPDR", cpu.get_pc() - 1);
@@ -880,8 +883,10 @@ impl Instruction for Cpdr {
         } else {
             cpu.inc_pc(1);
         }
+    }
 
-        debug!("{}", cpu.output(OB|OC|OH|OL|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OB|OC|OH|OL|OF|OWZ, OB|OC|OH|OL|OF|OWZ)
     }
 }
 
@@ -920,23 +925,22 @@ fn cpi(cpu: &mut Cpu) {
 
 impl Instruction for Cpi {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OB|OC|OH|OL|OF|OWZ));
-
         cpi(cpu);
+
         let wz = cpu.read_reg16(Reg16::WZ);
         cpu.write_reg16(Reg16::WZ, wz + 1);
 
         info!("{:#06x}: CPI", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OB|OC|OH|OL|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OB|OC|OH|OL|OF|OWZ, OB|OC|OH|OL|OF|OWZ)
     }
 }
 
 impl Instruction for Cpir {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OB|OC|OH|OL|OF|OWZ));
-
         cpi(cpu);
 
         info!("{:#06x}: CPIR", cpu.get_pc() - 1);
@@ -947,8 +951,10 @@ impl Instruction for Cpir {
         } else {
             cpu.inc_pc(1);
         }
+    }
 
-        debug!("{}", cpu.output(OB|OC|OH|OL|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OB|OC|OH|OL|OF|OWZ, OB|OC|OH|OL|OF|OWZ)
     }
 }
 
@@ -957,8 +963,6 @@ struct Cpl;
 
 impl Instruction for Cpl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
 
         let res = a ^ 0xFF;
@@ -972,8 +976,10 @@ impl Instruction for Cpl {
 
         info!("{:#06x}: CPL", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
@@ -982,8 +988,6 @@ struct Daa;
 
 impl Instruction for Daa {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
 
         let diff = match (cpu.get_flag(CARRY_FLAG),
@@ -1041,8 +1045,10 @@ impl Instruction for Daa {
 
         info!("{:#06x}: DAA", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
@@ -1065,8 +1071,6 @@ fn update_flags_dec8(cpu: &mut Cpu, op: u8, res: u8) {
 
 impl Instruction for DecR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-
         let r   = cpu.read_reg8(self.r);
         let res = r.wrapping_sub(1);
 
@@ -1076,15 +1080,15 @@ impl Instruction for DecR {
 
         info!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for DecMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -1096,15 +1100,15 @@ impl Instruction for DecMemHl {
 
         info!("{:#06x}: DEC (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OH|OL, OF)
     }
 }
 
 impl Instruction for DecMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIX|OWZ));
-
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -1118,15 +1122,15 @@ impl Instruction for DecMemIxD {
 
         info!("{:#06x}: DEC (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for DecMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY|OWZ));
-
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -1140,15 +1144,15 @@ impl Instruction for DecMemIyD {
 
         info!("{:#06x}: DEC (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIY|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for DecSs {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
-
         let r   = cpu.read_reg16(self.r);
         let res = r.wrapping_sub(1);
 
@@ -1156,8 +1160,10 @@ impl Instruction for DecSs {
 
         info!("{:#06x}: DEC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OutputRegisters::from(self.r), OutputRegisters::from(self.r))
     }
 }
 
@@ -1165,15 +1171,15 @@ struct Di;
 
 impl Instruction for Di {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(ONONE));
-
         cpu.clear_iff1();
         cpu.clear_iff2();
 
         info!("{:#06x}: DI", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (ONONE, ONONE)
     }
 }
 
@@ -1182,8 +1188,6 @@ struct Djnz;
 
 impl Instruction for Djnz {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OB));
-
         let b = cpu.read_reg8(Reg8::B);
         cpu.write_reg8(Reg8::B, b.wrapping_sub(1));
 
@@ -1196,8 +1200,10 @@ impl Instruction for Djnz {
         } else {
             cpu.inc_pc(2);
         }
+    }
 
-        debug!("{}", cpu.output(OB));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OB, OB)
     }
 }
 
@@ -1206,15 +1212,15 @@ struct Ei;
 
 impl Instruction for Ei {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(ONONE));
-
         cpu.set_iff1();
         cpu.set_iff2();
 
         info!("{:#06x}: EI", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (ONONE, ONONE)
     }
 }
 
@@ -1225,8 +1231,6 @@ struct ExDeHl;
 
 impl Instruction for ExAfAfAlt {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OA_ALT|OF_ALT));
-
         let af    = cpu.read_reg16(Reg16::AF);
         let afalt = cpu.read_reg16(Reg16::AF_ALT);
 
@@ -1235,15 +1239,15 @@ impl Instruction for ExAfAfAlt {
 
         info!("{:#06x}: EX AF, AF'", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OA_ALT|OF_ALT));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OA_ALT|OF_ALT, OA|OF|OA_ALT|OF_ALT)
     }
 }
 
 impl Instruction for ExMemSpHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OSP|OH|OL|OWZ));
-
         let sp = cpu.read_reg16(Reg16::SP);
         let hl = cpu.read_reg16(Reg16::HL);
 
@@ -1260,15 +1264,15 @@ impl Instruction for ExMemSpHl {
 
         info!("{:#06x}: EX (SP), HL", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OH|OL|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OSP|OH|OL|OWZ, OH|OL|OWZ)
     }
 }
 
 impl Instruction for ExDeHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OD|OE|OH|OL));
-
         let de = cpu.read_reg16(Reg16::DE);
         let hl = cpu.read_reg16(Reg16::HL);
 
@@ -1277,8 +1281,10 @@ impl Instruction for ExDeHl {
 
         info!("{:#06x}: EX DE, HL", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OD|OE|OH|OL));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OD|OE|OH|OL, OD|OE|OH|OL)
     }
 }
 
@@ -1287,8 +1293,6 @@ struct Exx;
 
 impl Instruction for Exx {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OB_ALT|OC_ALT|OD_ALT|OE_ALT|OH_ALT|OL_ALT));
-
         let bc = cpu.read_reg16(Reg16::BC);
         let de = cpu.read_reg16(Reg16::DE);
         let hl = cpu.read_reg16(Reg16::HL);
@@ -1307,8 +1311,11 @@ impl Instruction for Exx {
 
         info!("{:#06x}: EXX", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OB_ALT|OC_ALT|OD_ALT|OE_ALT|OH_ALT|OL_ALT));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OB|OC|OD|OE|OH|OL|OB_ALT|OC_ALT|OD_ALT|OE_ALT|OH_ALT|OL_ALT,
+         OB|OC|OD|OE|OH|OL|OB_ALT|OC_ALT|OD_ALT|OE_ALT|OH_ALT|OL_ALT)
     }
 }
 
@@ -1317,14 +1324,14 @@ struct Im { mode: u8 }
 
 impl Instruction for Im {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(ONONE));
-
         cpu.set_im(self.mode);
 
         info!("{:#06x}: IM {}", cpu.get_pc() - 1, self.mode);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (ONONE, ONONE)
     }
 }
 
@@ -1333,8 +1340,6 @@ struct InAPortN;
 
 impl Instruction for InAPortN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA));
-
         let n = cpu.read_word(cpu.get_pc() + 1);
 
         let port = Port::from_u8(n).unwrap();
@@ -1344,8 +1349,10 @@ impl Instruction for InAPortN {
 
         info!("{:#06x}: IN A, ({:#04X})", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA, OA)
     }
 }
 
@@ -1369,8 +1376,6 @@ fn update_flags_inc8(cpu: &mut Cpu, op: u8, res: u8) {
 
 impl Instruction for IncR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-
         let r   = cpu.read_reg8(self.r);
         let res = r.wrapping_add(1);
 
@@ -1380,15 +1385,15 @@ impl Instruction for IncR {
 
         info!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for IncMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL|OF));
-
         let hl  = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -1400,15 +1405,15 @@ impl Instruction for IncMemHl {
 
         info!("{:#06x}: INC (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF, OF)
     }
 }
 
 impl Instruction for IncMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIX|OWZ));
-
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -1422,15 +1427,15 @@ impl Instruction for IncMemIxD {
 
         info!("{:#06x}: INC (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for IncMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY|OWZ));
-
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -1444,15 +1449,15 @@ impl Instruction for IncMemIyD {
 
         info!("{:#06x}: INC (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIY|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for IncSs {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
-
         let r   = cpu.read_reg16(self.r);
         let res = r.wrapping_add(1);
 
@@ -1460,8 +1465,10 @@ impl Instruction for IncSs {
 
         info!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OutputRegisters::from(self.r), OutputRegisters::from(self.r))
     }
 }
 
@@ -1472,36 +1479,34 @@ struct JpCcNn { cond: FlagCond }
 
 impl Instruction for JpMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL));
-
         let hl = cpu.read_reg16(Reg16::HL);
 
         info!("{:#06x}: JP (HL)", cpu.get_pc());
         cpu.set_pc(hl);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL, ONONE)
     }
 }
 
 impl Instruction for JpNn {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OWZ));
-
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
 
         info!("{:#06x}: JP {:#06X}", cpu.get_pc(), nn);
         cpu.set_pc(nn);
         cpu.write_reg16(Reg16::WZ, nn);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OWZ, OWZ)
     }
 }
 
 impl Instruction for JpCcNn {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OWZ));
-
         let cc = cpu.check_cond(self.cond);
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
@@ -1513,8 +1518,10 @@ impl Instruction for JpCcNn {
             cpu.inc_pc(3);
         }
         cpu.write_reg16(Reg16::WZ, nn);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OWZ, OWZ)
     }
 }
 
@@ -1527,8 +1534,6 @@ struct JrE ;
 
 impl Instruction for JrZ {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OWZ));
-
         let offset = cpu.read_word(cpu.get_pc() + 1) as i8 + 2;
         let target = (cpu.get_pc() as i16 + offset as i16) as u16;
 
@@ -1539,15 +1544,15 @@ impl Instruction for JrZ {
         } else {
             cpu.inc_pc(2);
         }
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OWZ, OWZ)
     }
 }
 
 impl Instruction for JrNz {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OWZ));
-
         let offset = cpu.read_word(cpu.get_pc() + 1) as i8 + 2;
         let target = (cpu.get_pc() as i16 + offset as i16) as u16;
 
@@ -1558,15 +1563,15 @@ impl Instruction for JrNz {
             cpu.set_pc(target);
             cpu.write_reg16(Reg16::WZ, target);
         }
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OWZ, OWZ)
     }
 }
 
 impl Instruction for JrNcE {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OWZ));
-
         let offset = cpu.read_word(cpu.get_pc() + 1) as i8 + 2;
         let target = (cpu.get_pc() as i16 + offset as i16) as u16;
 
@@ -1577,15 +1582,15 @@ impl Instruction for JrNcE {
             cpu.set_pc(target);
             cpu.write_reg16(Reg16::WZ, target);
         }
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OWZ, OWZ)
     }
 }
 
 impl Instruction for JrCE {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OWZ));
-
         let offset = cpu.read_word(cpu.get_pc() + 1) as i8 + 2;
         let target = (cpu.get_pc() as i16 + offset as i16) as u16;
 
@@ -1596,23 +1601,25 @@ impl Instruction for JrCE {
         } else {
             cpu.inc_pc(2);
         }
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OWZ, OWZ)
     }
 }
 
 impl Instruction for JrE {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OWZ));
-
         let offset = cpu.read_word(cpu.get_pc() + 1) as i8 + 2;
         let target = (cpu.get_pc() as i16 + offset as i16) as u16;
 
         info!("{:#06x}: JR {:#06X}", cpu.get_pc(), target);
         cpu.set_pc(target);
         cpu.write_reg16(Reg16::WZ, target);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OWZ, OWZ)
     }
 }
 
@@ -1643,8 +1650,6 @@ struct LdRMemHl  { r: Reg8  }
 
 impl Instruction for LdMemBcA {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OB|OC|OWZ));
-
         let bc = cpu.read_reg16(Reg16::BC);
         let a  = cpu.read_reg8(Reg8::A);
 
@@ -1653,15 +1658,15 @@ impl Instruction for LdMemBcA {
 
         info!("{:#06x}: LD (BC), A", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OB|OC|OWZ, OWZ)
     }
 }
 
 impl Instruction for LdMemDeA {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OD|OE|OWZ));
-
         let de = cpu.read_reg16(Reg16::DE);
         let a  = cpu.read_reg8(Reg8::A);
 
@@ -1670,15 +1675,15 @@ impl Instruction for LdMemDeA {
 
         info!("{:#06x}: LD (DE), A", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OD|OE|OWZ, OWZ)
     }
 }
 
 impl Instruction for LdMemHlN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL));
-
         let hl = cpu.read_reg16(Reg16::HL);
         let n  = cpu.read_word(cpu.get_pc() + 1);
 
@@ -1686,15 +1691,15 @@ impl Instruction for LdMemHlN {
 
         info!("{:#06x}: LD (HL), {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL, ONONE)
     }
 }
 
 impl Instruction for LdMemHlR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL|OutputRegisters::from(self.r)));
-
         let hl = cpu.read_reg16(Reg16::HL);
         let r  = cpu.read_reg8(self.r);
 
@@ -1702,15 +1707,15 @@ impl Instruction for LdMemHlR {
 
         info!("{:#06x}: LD (HL), {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL|OutputRegisters::from(self.r), ONONE)
     }
 }
 
 impl Instruction for LdMemIxDN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIX|OWZ));
-
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let n    = cpu.read_word(cpu.get_pc() + 2);
         let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
@@ -1720,15 +1725,15 @@ impl Instruction for LdMemIxDN {
 
         info!("{:#06x}: LD (IX{:+#04X}), {:#04X}", cpu.get_pc() - 1, d, n);
         cpu.inc_pc(3);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OIX|OWZ, OWZ)
     }
 }
 
 impl Instruction for LdMemIxDR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIX|OWZ));
-
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let r    = cpu.read_reg8(self.r);
         let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
@@ -1738,15 +1743,15 @@ impl Instruction for LdMemIxDR {
 
         info!("{:#06x}: LD (IX{:+#04X}), {:?}", cpu.get_pc() - 1, d, self.r);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OIX|OWZ, OWZ)
     }
 }
 
 impl Instruction for LdMemIyDN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIY|OWZ));
-
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let n    = cpu.read_word(cpu.get_pc() + 2);
         let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
@@ -1756,15 +1761,15 @@ impl Instruction for LdMemIyDN {
 
         info!("{:#06x}: LD (IY{:+#04X}), {:#04X}", cpu.get_pc() - 1, d, n);
         cpu.inc_pc(3);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OIY|OWZ, OWZ)
     }
 }
 
 impl Instruction for LdMemIyDR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIY|OWZ));
-
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let r    = cpu.read_reg8(self.r);
         let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
@@ -1774,15 +1779,15 @@ impl Instruction for LdMemIyDR {
 
         info!("{:#06x}: LD (IY{:+#04X}), {:?}", cpu.get_pc() - 1, d, self.r);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OIY|OWZ, OWZ)
     }
 }
 
 impl Instruction for LdMemNnA {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OWZ));
-
         let a  = cpu.read_reg8(Reg8::A);
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
@@ -1792,15 +1797,15 @@ impl Instruction for LdMemNnA {
 
         info!("{:#06x}: LD ({:#06X}), A", cpu.get_pc(), nn);
         cpu.inc_pc(3);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OWZ, OWZ)
     }
 }
 
 impl Instruction for LdMemNnDd {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OWZ));
-
         let r = cpu.read_reg16(self.r);
         let (rhigh, rlow) = (((r & 0xFF00) >> 8) as u8,
                              ((r & 0x00FF)       as u8));
@@ -1813,15 +1818,15 @@ impl Instruction for LdMemNnDd {
 
         info!("{:#06x}: LD ({:#06X}), {:?}", cpu.get_pc() - 1, nn, self.r);
         cpu.inc_pc(3);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OutputRegisters::from(self.r)|OWZ, OWZ)
     }
 }
 
 impl Instruction for LdMemNnHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL));
-
         let hl = cpu.read_reg16(Reg16::HL);
         let (hlhigh, hllow) = (((hl & 0xFF00) >> 8) as u8,
                                ((hl & 0x00FF)       as u8));
@@ -1833,15 +1838,15 @@ impl Instruction for LdMemNnHl {
 
         info!("{:#06x}: LD ({:#06X}), HL", cpu.get_pc(), nn);
         cpu.inc_pc(3);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL, ONONE)
     }
 }
 
 impl Instruction for LdAMemBc {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OB|OC|OWZ));
-
         let bc     = cpu.read_reg16(Reg16::BC);
         let memval = cpu.read_word(bc);
 
@@ -1850,15 +1855,15 @@ impl Instruction for LdAMemBc {
 
         info!("{:#06x}: LD A, (BC)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OB|OC|OWZ, OA|OWZ)
     }
 }
 
 impl Instruction for LdAMemDe {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OD|OE|OWZ));
-
         let de     = cpu.read_reg16(Reg16::DE);
         let memval = cpu.read_word(de);
 
@@ -1867,15 +1872,15 @@ impl Instruction for LdAMemDe {
 
         info!("{:#06x}: LD A, (DE)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OD|OE|OWZ, OA|OWZ)
     }
 }
 
 impl Instruction for LdAMemNn {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OWZ));
-
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
         let memval = cpu.read_word(nn);
@@ -1885,15 +1890,15 @@ impl Instruction for LdAMemNn {
 
         info!("{:#06x}: LD A, ({:#06X})", cpu.get_pc(), nn);
         cpu.inc_pc(3);
+    }
 
-        debug!("{}", cpu.output(OA|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OWZ, OA|OWZ)
     }
 }
 
 impl Instruction for LdDdMemNn {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OWZ));
-
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
         let nnmemval = (cpu.read_word(nn    ) as u16) |
@@ -1904,15 +1909,15 @@ impl Instruction for LdDdMemNn {
 
         info!("{:#06x}: LD {:?}, ({:#06X})", cpu.get_pc(), self.r, nn);
         cpu.inc_pc(3);
+    }
 
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OutputRegisters::from(self.r)|OWZ, OutputRegisters::from(self.r)|OWZ)
     }
 }
 
 impl Instruction for LdDdNn {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
-
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
 
@@ -1920,30 +1925,30 @@ impl Instruction for LdDdNn {
 
         info!("{:#06x}: LD {:?}, {:#06X}", cpu.get_pc(), self.r, nn);
         cpu.inc_pc(3);
+    }
 
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OutputRegisters::from(self.r), OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for LdRN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
-
         let n = cpu.read_word(cpu.get_pc() + 1);
 
         cpu.write_reg8(self.r, n);
 
         info!("{:#06x}: LD {:?}, {:#04X}", cpu.get_pc(), self.r, n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OutputRegisters::from(self.r), OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for LdHlMemNn {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL));
-
         let nn =  (cpu.read_word(cpu.get_pc() + 1) as u16) |
                  ((cpu.read_word(cpu.get_pc() + 2) as u16) << 8);
         let nnmemval = (cpu.read_word(nn    ) as u16) |
@@ -1953,15 +1958,15 @@ impl Instruction for LdHlMemNn {
 
         info!("{:#06x}: LD HL, ({:#06X})", cpu.get_pc(), nn);
         cpu.inc_pc(3);
+    }
 
-        debug!("{}", cpu.output(OH|OL));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL, OH|OL)
     }
 }
 
 impl Instruction for LdRMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIX|OWZ|OutputRegisters::from(self.r)));
-
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -1971,15 +1976,15 @@ impl Instruction for LdRMemIxD {
 
         info!("{:#06x}: LD {:?}, (IX{:+#04X})", cpu.get_pc() - 1, self.r, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OWZ|OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OIX|OWZ|OutputRegisters::from(self.r), OWZ|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for LdRMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIY|OWZ|OutputRegisters::from(self.r)));
-
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -1989,44 +1994,45 @@ impl Instruction for LdRMemIyD {
 
         info!("{:#06x}: LD {:?}, (IY{:+#04X})", cpu.get_pc() - 1, self.r, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OWZ|OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OIY|OWZ|OutputRegisters::from(self.r), OWZ|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for LdSpHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OSP|OH|OL));
-
         let hl = cpu.read_reg16(Reg16::HL);
         cpu.write_reg16(Reg16::SP, hl);
 
         info!("{:#06x}: LD SP, HL", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OSP));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OSP|OH|OL, OSP)
     }
 }
 
 impl Instruction for LdRR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.rt) | OutputRegisters::from(self.rs)));
-
         let rs = cpu.read_reg8(self.rs);
 
         cpu.write_reg8(self.rt, rs);
 
         info!("{:#06x}: LD {:?}, {:?}", cpu.get_pc(), self.rt, self.rs);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OutputRegisters::from(self.rt) | OutputRegisters::from(self.rs)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OutputRegisters::from(self.rt) | OutputRegisters::from(self.rs),
+         OutputRegisters::from(self.rt) | OutputRegisters::from(self.rt))
     }
 }
 
 impl Instruction for LdRMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -2034,8 +2040,10 @@ impl Instruction for LdRMemHl {
 
         info!("{:#06x}: LD {:?}, (HL)", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL|OutputRegisters::from(self.r), OutputRegisters::from(self.r))
     }
 }
 
@@ -2067,21 +2075,19 @@ fn ldd(cpu: &mut Cpu) {
 
 impl Instruction for Ldd {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
-
         ldd(cpu);
 
         info!("{:#06x}: LDD", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OB|OC|OD|OE|OH|OL|OF, OB|OC|OD|OE|OH|OL|OF)
     }
 }
 
 impl Instruction for Lddr {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF|OWZ));
-
         ldd(cpu);
 
         info!("{:#06x}: LDDR", cpu.get_pc() - 1);
@@ -2092,8 +2098,10 @@ impl Instruction for Lddr {
         } else {
             cpu.inc_pc(1);
         }
+    }
 
-        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OB|OC|OD|OE|OH|OL|OF|OWZ, OB|OC|OD|OE|OH|OL|OF|OWZ)
     }
 }
 
@@ -2125,21 +2133,19 @@ fn ldi(cpu: &mut Cpu) {
 
 impl Instruction for Ldi {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
-
         ldi(cpu);
 
         info!("{:#06x}: LDI", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OB|OC|OD|OE|OH|OL|OF, OB|OC|OD|OE|OH|OL|OF)
     }
 }
 
 impl Instruction for Ldir {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF|OWZ));
-
         ldi(cpu);
 
         info!("{:#06x}: LDIR", cpu.get_pc() - 1);
@@ -2150,8 +2156,10 @@ impl Instruction for Ldir {
         } else {
             cpu.inc_pc(1);
         }
+    }
 
-        debug!("{}", cpu.output(OB|OC|OD|OE|OH|OL|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OB|OC|OD|OE|OH|OL|OF|OWZ, OB|OC|OD|OE|OH|OL|OF|OWZ)
     }
 }
 
@@ -2160,8 +2168,6 @@ struct Neg;
 
 impl Instruction for Neg {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
 
         let neg = 0u8.wrapping_sub(a);
@@ -2172,8 +2178,10 @@ impl Instruction for Neg {
 
         info!("{:#06x}: NEG", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
@@ -2186,8 +2194,6 @@ struct OrMemIyD ;
 
 impl Instruction for OrR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
-
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -2200,15 +2206,15 @@ impl Instruction for OrR {
 
         info!("{:#06x}: OR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OutputRegisters::from(self.r), OA|OF)
     }
 }
 
 impl Instruction for OrN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
         let n = cpu.read_word(cpu.get_pc() + 1);
 
@@ -2221,15 +2227,15 @@ impl Instruction for OrN {
 
         info!("{:#06x}: OR {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for OrMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OH|OL));
-
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -2243,15 +2249,15 @@ impl Instruction for OrMemHl {
 
         info!("{:#06x}: OR (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OH|OL, OA|OF)
     }
 }
 
 impl Instruction for OrMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIX|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
@@ -2267,15 +2273,15 @@ impl Instruction for OrMemIxD {
 
         info!("{:#06x}: OR A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIX|OWZ, OA|OF|OWZ)
     }
 }
 
 impl Instruction for OrMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIY|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
@@ -2291,8 +2297,10 @@ impl Instruction for OrMemIyD {
 
         info!("{:#06x}: OR A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIY|OWZ, OA|OF|OWZ)
     }
 }
 
@@ -2302,8 +2310,6 @@ struct OutPortNA ;
 
 impl Instruction for OutPortCR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OB|OC|OutputRegisters::from(self.r)));
-
         let r    = cpu.read_reg8(self.r);
         let bc   = cpu.read_reg16(Reg16::BC);
         let port = Port::from_u16(bc).unwrap();
@@ -2312,15 +2318,15 @@ impl Instruction for OutPortCR {
 
         info!("{:#06x}: OUT (C), {:?}", cpu.get_pc() - 1, self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OB|OC|OutputRegisters::from(self.r), ONONE)
     }
 }
 
 impl Instruction for OutPortNA {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA));
-
         let a    = cpu.read_reg8(Reg8::A);
         let n    = cpu.read_word(cpu.get_pc() + 1);
         let port = Port::from_u8(n).unwrap();
@@ -2329,8 +2335,10 @@ impl Instruction for OutPortNA {
 
         info!("{:#06x}: OUT ({:#04X}), A", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA, ONONE)
     }
 }
 
@@ -2339,8 +2347,6 @@ struct PopQq { r: Reg16 }
 
 impl Instruction for PopQq {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OSP|OutputRegisters::from(self.r)));
-
         let curr_sp = cpu.read_reg16(Reg16::SP);
 
         let low  = cpu.read_word(curr_sp);
@@ -2351,8 +2357,10 @@ impl Instruction for PopQq {
 
         info!("{:#06x}: POP {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OSP|OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OSP|OutputRegisters::from(self.r), OSP|OutputRegisters::from(self.r))
     }
 }
 
@@ -2361,8 +2369,6 @@ struct PushQq { r: Reg16 }
 
 impl Instruction for PushQq {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OSP));
-
         let curr_sp = cpu.read_reg16(Reg16::SP);
         let r = cpu.read_reg16(self.r);
 
@@ -2372,8 +2378,10 @@ impl Instruction for PushQq {
 
         info!("{:#06x}: PUSH {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OSP));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OSP|OutputRegisters::from(self.r), OSP)
     }
 }
 
@@ -2385,8 +2393,6 @@ struct ResBMemHl  { b: u8 }
 
 impl Instruction for ResBR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-
         let val = cpu.read_reg8(self.r);
 
         cpu.write_reg8(self.r, val & !(1 << self.b));
@@ -2394,15 +2400,15 @@ impl Instruction for ResBR {
         info!("{:#06x}: RES {}, {:?}", cpu.get_pc() - 1, self.b, self.r);
 
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF)
     }
 }
 
 impl Instruction for ResBMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIX|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -2412,15 +2418,15 @@ impl Instruction for ResBMemIxD {
 
         info!("{:#06x}: RES {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OIX|OWZ, OWZ)
     }
 }
 
 impl Instruction for ResBMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIY|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -2430,15 +2436,15 @@ impl Instruction for ResBMemIyD {
 
         info!("{:#06x}: RES {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OIY|OWZ, OWZ)
     }
 }
 
 impl Instruction for ResBMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -2446,8 +2452,10 @@ impl Instruction for ResBMemHl {
 
         info!("{:#06x}: RES {}, (HL)", cpu.get_pc() - 1, self.b);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL, ONONE)
     }
 }
 
@@ -2457,8 +2465,6 @@ struct RetCc { cond: FlagCond }
 
 impl Instruction for Ret {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OSP));
-
         let curr_sp = cpu.read_reg16(Reg16::SP);
 
         let low  = cpu.read_word(curr_sp);
@@ -2468,15 +2474,15 @@ impl Instruction for Ret {
 
         info!("{:#06x}: RET", cpu.get_pc());
         cpu.set_pc(((high as u16) << 8 ) | low as u16);
+    }
 
-        debug!("{}", cpu.output(OSP));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OSP, OSP)
     }
 }
 
 impl Instruction for RetCc {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OSP|OF));
-
         let cc = cpu.check_cond(self.cond);
 
         info!("{:#06x}: RET {:?}", cpu.get_pc(), self.cond);
@@ -2492,8 +2498,10 @@ impl Instruction for RetCc {
         } else {
             cpu.inc_pc(1);
         }
+    }
 
-        debug!("{}", cpu.output(OSP));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OSP, OSP)
     }
 }
 
@@ -2511,8 +2519,6 @@ struct RlcA      ;
 
 impl Instruction for RlA {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
 
         let mut res = a.rotate_left(1);
@@ -2528,15 +2534,15 @@ impl Instruction for RlA {
 
         info!("{:#06x}: RLA", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for RlR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-
         let r = cpu.read_reg8(self.r);
 
         let mut res = r.rotate_left(1);
@@ -2550,15 +2556,15 @@ impl Instruction for RlR {
 
         info!("{:#06x}: RL {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for RlMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -2573,15 +2579,15 @@ impl Instruction for RlMemHl {
 
         info!("{:#06x}: RL (HL)", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OH|OL, OF)
     }
 }
 
 impl Instruction for RlMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIX|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -2598,15 +2604,15 @@ impl Instruction for RlMemIxD {
 
         info!("{:#06x}: RL (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIX|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for RlMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -2623,15 +2629,15 @@ impl Instruction for RlMemIyD {
 
         info!("{:#06x}: RL (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIY|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIY|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for RlcR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
-
         let r = cpu.read_reg8(self.r);
 
         let res = r.rotate_left(1);
@@ -2644,15 +2650,15 @@ impl Instruction for RlcR {
 
         info!("{:#06x}: RLC {:?}", cpu.get_pc() - 1, self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for RlcMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -2666,15 +2672,15 @@ impl Instruction for RlcMemHl {
 
         info!("{:#06x}: RLC (HL)", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OH|OL, OF)
     }
 }
 
 impl Instruction for RlcMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIX|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -2690,15 +2696,15 @@ impl Instruction for RlcMemIxD {
 
         info!("{:#06x}: RLC (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIX|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for RlcMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -2714,15 +2720,15 @@ impl Instruction for RlcMemIyD {
 
         info!("{:#06x}: RLC (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIY|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIY|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for RlcA {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
 
         let res = a.rotate_left(1);
@@ -2737,8 +2743,10 @@ impl Instruction for RlcA {
 
         info!("{:#06x}: RLCA", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
@@ -2747,8 +2755,6 @@ struct Rld;
 
 impl Instruction for Rld {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OH|OL|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -2771,8 +2777,10 @@ impl Instruction for Rld {
 
         info!("{:#06x}: RLD", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OH|OL|OWZ, OA|OF|OWZ)
     }
 }
 
@@ -2790,8 +2798,6 @@ struct RrcA      ;
 
 impl Instruction for RrR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
-
         let r = cpu.read_reg8(self.r);
 
         let mut res = r.rotate_right(1);
@@ -2805,15 +2811,15 @@ impl Instruction for RrR {
 
         info!("{:#06x}: RR {:?}", cpu.get_pc() - 1, self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for RrMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -2828,15 +2834,15 @@ impl Instruction for RrMemHl {
 
         info!("{:#06x}: RR (HL)", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OH|OL, OF)
     }
 }
 
 impl Instruction for RrMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIX|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -2853,15 +2859,15 @@ impl Instruction for RrMemIxD {
 
         info!("{:#06x}: RR (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIX|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for RrMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -2878,15 +2884,15 @@ impl Instruction for RrMemIyD {
 
         info!("{:#06x}: RR (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIY|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIY|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for RrA {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
 
         let mut res = a.rotate_right(1);
@@ -2902,15 +2908,15 @@ impl Instruction for RrA {
 
         info!("{:#06x}: RRA", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for RrcR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
-
         let r = cpu.read_reg8(self.r);
 
         let res = r.rotate_right(1);
@@ -2923,15 +2929,15 @@ impl Instruction for RrcR {
 
         info!("{:#06x}: RRC {:?}", cpu.get_pc() - 1, self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OutputRegisters::from(self.r)|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for RrcMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -2945,15 +2951,15 @@ impl Instruction for RrcMemHl {
 
         info!("{:#06x}: RRC (HL)", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OH|OL, OF)
     }
 }
 
 impl Instruction for RrcMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIX|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -2969,15 +2975,15 @@ impl Instruction for RrcMemIxD {
 
         info!("{:#06x}: RRC (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIX|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for RrcMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -2993,15 +2999,15 @@ impl Instruction for RrcMemIyD {
 
         info!("{:#06x}: RRC (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIY|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIY|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for RrcA {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
 
         let res = a.rotate_right(1);
@@ -3016,8 +3022,10 @@ impl Instruction for RrcA {
 
         info!("{:#06x}: RRCA", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
@@ -3026,8 +3034,6 @@ struct Rrd;
 
 impl Instruction for Rrd {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OH|OL|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -3050,8 +3056,10 @@ impl Instruction for Rrd {
 
         info!("{:#06x}: RRD", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OH|OL|OWZ, OA|OF|OWZ)
     }
 }
 
@@ -3060,8 +3068,6 @@ struct Rst { addr: u8 }
 
 impl Instruction for Rst {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OSP));
-
         let next_pc = cpu.get_pc() + 1;
         let curr_sp = cpu.read_reg16(Reg16::SP);
 
@@ -3072,8 +3078,10 @@ impl Instruction for Rst {
 
         info!("{:#06x}: RST {:#04X}", cpu.get_pc(), self.addr);
         cpu.set_pc(self.addr as u16);
+    }
 
-        debug!("{}", cpu.output(OSP));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OSP, OSP)
     }
 }
 
@@ -3082,8 +3090,6 @@ struct Scf;
 
 impl Instruction for Scf {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF));
-
         cpu.set_flag   ( CARRY_FLAG        );
         cpu.clear_flag ( HALF_CARRY_FLAG   );
         cpu.clear_flag ( ADD_SUBTRACT_FLAG );
@@ -3096,8 +3102,10 @@ impl Instruction for Scf {
 
         info!("{:#06x}: SCF", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF, OF)
     }
 }
 
@@ -3109,8 +3117,6 @@ struct SetBMemHl  { b: u8 }
 
 impl Instruction for SetBR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-
         let val = cpu.read_reg8(self.r);
 
         cpu.write_reg8(self.r, val | (1 << self.b));
@@ -3118,15 +3124,15 @@ impl Instruction for SetBR {
         info!("{:#06x}: SET {}, {:?}", cpu.get_pc() - 1, self.b, self.r);
 
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF)
     }
 }
 
 impl Instruction for SetBMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIX|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -3136,15 +3142,15 @@ impl Instruction for SetBMemIxD {
 
         info!("{:#06x}: SET {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OIX|OWZ, OWZ)
     }
 }
 
 impl Instruction for SetBMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OIY|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -3154,15 +3160,15 @@ impl Instruction for SetBMemIyD {
 
         info!("{:#06x}: SET {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OIY|OWZ, OWZ)
     }
 }
 
 impl Instruction for SetBMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -3170,8 +3176,10 @@ impl Instruction for SetBMemHl {
 
         info!("{:#06x}: SET {}, (HL)", cpu.get_pc() - 1, self.b);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(ONONE));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL, ONONE)
     }
 }
 
@@ -3209,8 +3217,6 @@ fn update_flags_sbc16(cpu: &mut Cpu, op1: u16, op2: u16, c: u16, res: u16) {
 
 impl Instruction for SbcR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
-
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
         let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
@@ -3223,15 +3229,15 @@ impl Instruction for SbcR {
 
         info!("{:#06x}: SBC A, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OutputRegisters::from(self.r), OA|OF)
     }
 }
 
 impl Instruction for SbcN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
         let n = cpu.read_word(cpu.get_pc() + 1);
         let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
@@ -3244,15 +3250,15 @@ impl Instruction for SbcN {
 
         info!("{:#06x}: SBC A, {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for SbcMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OH|OL));
-
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -3266,15 +3272,15 @@ impl Instruction for SbcMemHl {
 
         info!("{:#06x}: SBC A, (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OH|OL, OA|OF)
     }
 }
 
 impl Instruction for SbcMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIX|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
@@ -3290,15 +3296,15 @@ impl Instruction for SbcMemIxD {
 
         info!("{:#06x}: SBC A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIX|OWZ, OA|OF|OWZ)
     }
 }
 
 impl Instruction for SbcMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIY|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
@@ -3314,15 +3320,15 @@ impl Instruction for SbcMemIyD {
 
         info!("{:#06x}: SBC A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIX|OWZ, OA|OF|OWZ)
     }
 }
 
 impl Instruction for SbcHlSs {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OH|OL|OF|OWZ|OutputRegisters::from(self.r)));
-
         let hl = cpu.read_reg16(Reg16::HL);
         let r  = cpu.read_reg16(self.r);
         let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
@@ -3336,8 +3342,10 @@ impl Instruction for SbcHlSs {
 
         info!("{:#06x}: SBC HL, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OH|OL|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OH|OL|OF|OWZ|OutputRegisters::from(self.r), OH|OL|OF|OWZ)
     }
 }
 
@@ -3349,8 +3357,6 @@ struct SlaMemIyD ;
 
 impl Instruction for SlaR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-
         let r = cpu.read_reg8(self.r);
 
         let res = r << 1;
@@ -3363,15 +3369,15 @@ impl Instruction for SlaR {
 
         info!("{:#06x}: SLA {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for SlaMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -3385,15 +3391,15 @@ impl Instruction for SlaMemHl {
 
         info!("{:#06x}: SLA (HL)", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OH|OL, OF)
     }
 }
 
 impl Instruction for SlaMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIX|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -3409,15 +3415,15 @@ impl Instruction for SlaMemIxD {
 
         info!("{:#06x}: SLA (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIX|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIX|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for SlaMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -3433,8 +3439,10 @@ impl Instruction for SlaMemIyD {
 
         info!("{:#06x}: SLA (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIY|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIY|OWZ, OF|OWZ)
     }
 }
 
@@ -3446,8 +3454,6 @@ struct SllMemIyD ;
 
 impl Instruction for SllR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-
         let r = cpu.read_reg8(self.r);
 
         let res = r << 1 | 0x1;
@@ -3460,15 +3466,15 @@ impl Instruction for SllR {
 
         info!("{:#06x}: SLL {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for SllMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -3482,15 +3488,15 @@ impl Instruction for SllMemHl {
 
         info!("{:#06x}: SLL (HL)", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OH|OL, OF)
     }
 }
 
 impl Instruction for SllMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIX|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -3506,15 +3512,15 @@ impl Instruction for SllMemIxD {
 
         info!("{:#06x}: SLL (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIX|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for SllMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -3530,8 +3536,10 @@ impl Instruction for SllMemIyD {
 
         info!("{:#06x}: SLL (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIY|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIY|OWZ, OF|OWZ)
     }
 }
 
@@ -3543,8 +3551,6 @@ struct SraMemIyD ;
 
 impl Instruction for SraR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-
         let r = cpu.read_reg8(self.r);
 
         let res = r >> 1 | (r & 0x80);
@@ -3557,15 +3563,15 @@ impl Instruction for SraR {
 
         info!("{:#06x}: SRA {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for SraMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OH|OL));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -3579,15 +3585,15 @@ impl Instruction for SraMemHl {
 
         info!("{:#06x}: SRA (HL)", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OH|OL, OF)
     }
 }
 
 impl Instruction for SraMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIX|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -3603,15 +3609,15 @@ impl Instruction for SraMemIxD {
 
         info!("{:#06x}: SRA (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIX|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for SraMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -3627,8 +3633,10 @@ impl Instruction for SraMemIyD {
 
         info!("{:#06x}: SRA (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIY|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIY|OWZ, OF|OWZ)
     }
 }
 
@@ -3640,8 +3648,6 @@ struct SrlMemIyD ;
 
 impl Instruction for SrlR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
-
         let r = cpu.read_reg8(self.r);
 
         let res = r >> 1;
@@ -3654,15 +3660,15 @@ impl Instruction for SrlR {
 
         info!("{:#06x}: SRL {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF|OutputRegisters::from(self.r)));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
 impl Instruction for SrlMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIX));
-
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -3676,15 +3682,15 @@ impl Instruction for SrlMemHl {
 
         info!("{:#06x}: SRL (HL)", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OH|OL, OF)
     }
 }
 
 impl Instruction for SrlMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OH|OL|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -3700,15 +3706,15 @@ impl Instruction for SrlMemIxD {
 
         info!("{:#06x}: SRL (IX{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OWZ, OF|OWZ)
     }
 }
 
 impl Instruction for SrlMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OF|OIY|OWZ));
-
         let d      = cpu.read_word(cpu.get_pc()) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
@@ -3724,8 +3730,10 @@ impl Instruction for SrlMemIyD {
 
         info!("{:#06x}: SRL (IY{:+#04X})", cpu.get_pc() - 2, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OF|OIY|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIY|OWZ, OF|OWZ)
     }
 }
 
@@ -3750,8 +3758,6 @@ fn update_flags_sub8(cpu: &mut Cpu, op1: u8, op2: u8, res: u8) {
 
 impl Instruction for SubR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
-
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -3763,15 +3769,15 @@ impl Instruction for SubR {
 
         info!("{:#06x}: SUB {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OutputRegisters::from(self.r), OA|OF)
     }
 }
 
 impl Instruction for SubN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
         let n = cpu.read_word(cpu.get_pc() + 1);
 
@@ -3783,15 +3789,15 @@ impl Instruction for SubN {
 
         info!("{:#06x}: SUB {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for SubMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -3804,15 +3810,15 @@ impl Instruction for SubMemHl {
 
         info!("{:#06x}: SUB A, (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for SubMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIX|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
@@ -3827,15 +3833,15 @@ impl Instruction for SubMemIxD {
 
         info!("{:#06x}: SUB A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIX|OWZ, OA|OF|OWZ)
     }
 }
 
 impl Instruction for SubMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIY|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
@@ -3850,8 +3856,10 @@ impl Instruction for SubMemIyD {
 
         info!("{:#06x}: SUB A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIY|OWZ, OA|OF|OWZ)
     }
 }
 
@@ -3864,8 +3872,6 @@ struct XorMemIyD ;
 
 impl Instruction for XorR {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OutputRegisters::from(self.r)));
-
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -3878,15 +3884,15 @@ impl Instruction for XorR {
 
         info!("{:#06x}: XOR {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OutputRegisters::from(self.r), OA|OF)
     }
 }
 
 impl Instruction for XorN {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a = cpu.read_reg8(Reg8::A);
         let n = cpu.read_word(cpu.get_pc() + 1);
 
@@ -3899,15 +3905,15 @@ impl Instruction for XorN {
 
         info!("{:#06x}: XOR {:#04X}", cpu.get_pc(), n);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for XorMemHl {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF));
-
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -3921,15 +3927,15 @@ impl Instruction for XorMemHl {
 
         info!("{:#06x}: XOR (HL)", cpu.get_pc());
         cpu.inc_pc(1);
+    }
 
-        debug!("{}", cpu.output(OA|OF));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF, OA|OF)
     }
 }
 
 impl Instruction for XorMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIX|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
@@ -3945,15 +3951,15 @@ impl Instruction for XorMemIxD {
 
         info!("{:#06x}: XOR A, (IX{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIX|OWZ, OA|OF|OWZ)
     }
 }
 
 impl Instruction for XorMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
-        debug!("{}", cpu.output(OA|OF|OIY|OWZ));
-
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
         let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
@@ -3969,8 +3975,10 @@ impl Instruction for XorMemIyD {
 
         info!("{:#06x}: XOR A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
+    }
 
-        debug!("{}", cpu.output(OA|OF|OWZ));
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIY|OWZ, OA|OF|OWZ)
     }
 }
 
