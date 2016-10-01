@@ -166,6 +166,29 @@ impl Cpu {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.a = 0; self.f = StatusIndicatorFlags::empty();
+        self.b = 0; self.c = 0;
+        self.d = 0; self.e = 0;
+        self.h = 0; self.l = 0;
+        self.a_alt = 0; self.f_alt = StatusIndicatorFlags::empty();
+        self.b_alt = 0; self.c_alt = 0;
+        self.d_alt = 0; self.e_alt = 0;
+        self.h_alt = 0; self.l_alt = 0;
+        self.i = 0;
+        self.r = 0;
+        self.ix = 0;
+        self.iy = 0;
+        self.sp = 0;
+        self.pc = 0;
+        self.wz = 0;
+        self.iff1 = false;
+        self.iff2 = false;
+        self.im = 0;
+
+        self.memory.clear();
+    }
+
     pub fn read_reg8(&self, reg: Reg8) -> u8 {
         let val = match reg {
             Reg8::A   => self.a,

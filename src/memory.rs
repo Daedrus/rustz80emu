@@ -66,6 +66,14 @@ impl Memory {
     pub fn change_rom_bank(&mut self, val: u8) {
         self.rom = val;
     }
+
+    pub fn clear(&mut self) {
+        for bank in self.bank.iter_mut() {
+            for x in bank.iter_mut() {
+                *x = 0;
+            }
+        }
+    }
 }
 
 impl fmt::Debug for Memory {
