@@ -329,36 +329,54 @@ impl Cpu {
 
     pub fn run_instruction(&mut self) {
         let i0 = self.read_word(self.pc);
-        let i1 = self.read_word(self.pc + 1);
-        let i3 = self.read_word(self.pc + 3);
 
-        match (i0, i1) {
-            (0xDD, 0xCB) => {
-                self.pc += 2;
-                &instructions::INSTR_TABLE_DDCB [i3 as usize].execute(self);
-            },
-            (0xDD, _   ) => {
+        // TODO: Handle sequences of DD and FD
+        match i0 {
+            0xCB => {
                 self.pc += 1;
-                &instructions::INSTR_TABLE_DD   [i1 as usize].execute(self);
+                let i1 = self.read_word(self.pc);
+                self.r = (self.r + 2) & 0b01111111;
+                &instructions::INSTR_TABLE_CB[i1 as usize].execute(self);
             },
-            (0xFD, 0xCB) => {
-                self.pc += 2;
-                &instructions::INSTR_TABLE_FDCB [i3 as usize].execute(self);
-            },
-            (0xFD, _   ) => {
+            0xDD => {
                 self.pc += 1;
-                &instructions::INSTR_TABLE_FD   [i1 as usize].execute(self);
+                let i1 = self.read_word(self.pc);
+                self.r = (self.r + 2) & 0b01111111;
+                match i1 {
+                    0xCB => {
+                        self.pc += 1;
+                        let i3 = self.read_word(self.pc + 1);
+                        &instructions::INSTR_TABLE_DDCB[i3 as usize].execute(self);
+                    },
+                    _    => {
+                        &instructions::INSTR_TABLE_DD[i1 as usize].execute(self);
+                    }
+                };
             },
-            (0xCB, _   ) => {
+            0xED => {
                 self.pc += 1;
-                &instructions::INSTR_TABLE_CB   [i1 as usize].execute(self);
+                let i1 = self.read_word(self.pc);
+                self.r = (self.r + 2) & 0b01111111;
+                &instructions::INSTR_TABLE_ED[i1 as usize].execute(self);
             },
-            (0xED, _   ) => {
+            0xFD => {
                 self.pc += 1;
-                &instructions::INSTR_TABLE_ED   [i1 as usize].execute(self);
-            },
-            (_   , _   ) => {
-                &instructions::INSTR_TABLE      [i0 as usize].execute(self);
+                let i1 = self.read_word(self.pc);
+                self.r = (self.r + 2) & 0b01111111;
+                match i1 {
+                    0xCB => {
+                        self.pc += 1;
+                        let i3 = self.read_word(self.pc + 1);
+                        &instructions::INSTR_TABLE_FDCB[i3 as usize].execute(self);
+                    },
+                    _    => {
+                        &instructions::INSTR_TABLE_FD[i1 as usize].execute(self);
+                    }
+                };
+            }
+            _    => {
+                self.r = (self.r + 1) & 0b01111111;
+                &instructions::INSTR_TABLE[i0 as usize].execute(self);
             }
         }
     }
