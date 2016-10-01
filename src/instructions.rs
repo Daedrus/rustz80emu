@@ -113,7 +113,7 @@ impl Instruction for AdcMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
         let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
@@ -137,7 +137,7 @@ impl Instruction for AdcMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
         let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
@@ -257,7 +257,7 @@ impl Instruction for AddMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_add(memval);
@@ -280,7 +280,7 @@ impl Instruction for AddMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_add(memval);
@@ -362,12 +362,12 @@ impl Instruction for AddHlSs {
 
 impl Instruction for AddIxPp {
     fn execute(&self, cpu: &mut Cpu) {
-        let ix = cpu.get_ix();
+        let ix = cpu.read_reg16(Reg16::IX);
         let ss = cpu.read_reg16(self.r);
 
         let res = ix.wrapping_add(ss);
 
-        cpu.set_ix(res);
+        cpu.write_reg16(Reg16::IX, res);
 
         update_flags_add16(cpu, ix, ss, res);
 
@@ -382,12 +382,12 @@ impl Instruction for AddIxPp {
 
 impl Instruction for AddIyRr {
     fn execute(&self, cpu: &mut Cpu) {
-        let iy = cpu.get_iy();
+        let iy = cpu.read_reg16(Reg16::IY);
         let ss = cpu.read_reg16(self.r);
 
         let res = iy.wrapping_add(ss);
 
-        cpu.set_iy(res);
+        cpu.write_reg16(Reg16::IY, res);
 
         update_flags_add16(cpu, iy, ss, res);
 
@@ -486,7 +486,7 @@ impl Instruction for AndMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a & memval;
@@ -510,7 +510,7 @@ impl Instruction for AndMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a & memval;
@@ -592,7 +592,7 @@ impl Instruction for BitBMemHl {
 impl Instruction for BitBMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d    = cpu.read_word(cpu.get_pc()) as i8;
-        let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
 
         let memval = cpu.read_word(addr);
 
@@ -611,7 +611,7 @@ impl Instruction for BitBMemIxD {
 impl Instruction for BitBMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d    = cpu.read_word(cpu.get_pc()) as i8;
-        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
 
         let memval = cpu.read_word(addr);
 
@@ -784,7 +784,7 @@ impl Instruction for CpMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_sub(memval);
@@ -805,7 +805,7 @@ impl Instruction for CpMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_sub(memval);
@@ -1110,7 +1110,7 @@ impl Instruction for DecMemHl {
 impl Instruction for DecMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval.wrapping_sub(1);
@@ -1132,7 +1132,7 @@ impl Instruction for DecMemIxD {
 impl Instruction for DecMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval.wrapping_sub(1);
@@ -1415,7 +1415,7 @@ impl Instruction for IncMemHl {
 impl Instruction for IncMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval.wrapping_add(1);
@@ -1437,7 +1437,7 @@ impl Instruction for IncMemIxD {
 impl Instruction for IncMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval.wrapping_add(1);
@@ -1718,7 +1718,7 @@ impl Instruction for LdMemIxDN {
     fn execute(&self, cpu: &mut Cpu) {
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let n    = cpu.read_word(cpu.get_pc() + 2);
-        let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
 
         cpu.write_word(addr, n);
         cpu.write_reg16(Reg16::WZ, addr);
@@ -1736,7 +1736,7 @@ impl Instruction for LdMemIxDR {
     fn execute(&self, cpu: &mut Cpu) {
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let r    = cpu.read_reg8(self.r);
-        let addr = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
 
         cpu.write_word(addr, r);
         cpu.write_reg16(Reg16::WZ, addr);
@@ -1754,7 +1754,7 @@ impl Instruction for LdMemIyDN {
     fn execute(&self, cpu: &mut Cpu) {
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let n    = cpu.read_word(cpu.get_pc() + 2);
-        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
 
         cpu.write_word(addr, n);
         cpu.write_reg16(Reg16::WZ, addr);
@@ -1772,7 +1772,7 @@ impl Instruction for LdMemIyDR {
     fn execute(&self, cpu: &mut Cpu) {
         let d    = cpu.read_word(cpu.get_pc() + 1) as i8;
         let r    = cpu.read_reg8(self.r);
-        let addr = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
 
         cpu.write_word(addr, r);
         cpu.write_reg16(Reg16::WZ, addr);
@@ -1968,7 +1968,7 @@ impl Instruction for LdHlMemNn {
 impl Instruction for LdRMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         cpu.write_reg8(self.r, memval);
@@ -1986,7 +1986,7 @@ impl Instruction for LdRMemIxD {
 impl Instruction for LdRMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         cpu.write_reg8(self.r, memval);
@@ -2260,7 +2260,7 @@ impl Instruction for OrMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a | memval;
@@ -2284,7 +2284,7 @@ impl Instruction for OrMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a | memval;
@@ -2410,7 +2410,7 @@ impl Instruction for ResBR {
 impl Instruction for ResBMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         cpu.write_word(addr, memval & !(1 << self.b));
@@ -2428,7 +2428,7 @@ impl Instruction for ResBMemIxD {
 impl Instruction for ResBMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         cpu.write_word(addr, memval & !(1 << self.b));
@@ -2589,7 +2589,7 @@ impl Instruction for RlMemHl {
 impl Instruction for RlMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let mut res = memval.rotate_left(1);
@@ -2614,7 +2614,7 @@ impl Instruction for RlMemIxD {
 impl Instruction for RlMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let mut res = memval.rotate_left(1);
@@ -2682,7 +2682,7 @@ impl Instruction for RlcMemHl {
 impl Instruction for RlcMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval.rotate_left(1);
@@ -2706,7 +2706,7 @@ impl Instruction for RlcMemIxD {
 impl Instruction for RlcMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval.rotate_left(1);
@@ -2844,7 +2844,7 @@ impl Instruction for RrMemHl {
 impl Instruction for RrMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let mut res = memval.rotate_right(1);
@@ -2869,7 +2869,7 @@ impl Instruction for RrMemIxD {
 impl Instruction for RrMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let mut res = memval.rotate_right(1);
@@ -2961,7 +2961,7 @@ impl Instruction for RrcMemHl {
 impl Instruction for RrcMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval.rotate_right(1);
@@ -2985,7 +2985,7 @@ impl Instruction for RrcMemIxD {
 impl Instruction for RrcMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval.rotate_right(1);
@@ -3134,7 +3134,7 @@ impl Instruction for SetBR {
 impl Instruction for SetBMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         cpu.write_word(addr, memval | (1 << self.b));
@@ -3152,7 +3152,7 @@ impl Instruction for SetBMemIxD {
 impl Instruction for SetBMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         cpu.write_word(addr, memval | (1 << self.b));
@@ -3283,7 +3283,7 @@ impl Instruction for SbcMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
         let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
@@ -3307,7 +3307,7 @@ impl Instruction for SbcMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
         let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
@@ -3401,7 +3401,7 @@ impl Instruction for SlaMemHl {
 impl Instruction for SlaMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval << 1;
@@ -3425,7 +3425,7 @@ impl Instruction for SlaMemIxD {
 impl Instruction for SlaMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval << 1;
@@ -3498,7 +3498,7 @@ impl Instruction for SllMemHl {
 impl Instruction for SllMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval << 1 | 0x1;
@@ -3522,7 +3522,7 @@ impl Instruction for SllMemIxD {
 impl Instruction for SllMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval << 1 | 0x1;
@@ -3595,7 +3595,7 @@ impl Instruction for SraMemHl {
 impl Instruction for SraMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval >> 1 | (memval & 0x80);
@@ -3619,7 +3619,7 @@ impl Instruction for SraMemIxD {
 impl Instruction for SraMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval >> 1 | (memval & 0x80);
@@ -3692,7 +3692,7 @@ impl Instruction for SrlMemHl {
 impl Instruction for SrlMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval >> 1;
@@ -3716,7 +3716,7 @@ impl Instruction for SrlMemIxD {
 impl Instruction for SrlMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let d      = cpu.read_word(cpu.get_pc()) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = memval >> 1;
@@ -3821,7 +3821,7 @@ impl Instruction for SubMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_sub(memval);
@@ -3844,7 +3844,7 @@ impl Instruction for SubMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_sub(memval);
@@ -3938,7 +3938,7 @@ impl Instruction for XorMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_ix() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a ^ memval;
@@ -3962,7 +3962,7 @@ impl Instruction for XorMemIyD {
     fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(cpu.get_pc() + 1) as i8;
-        let addr   = ((cpu.get_iy() as i16) + d as i16) as u16;
+        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
         let res = a ^ memval;

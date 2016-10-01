@@ -251,11 +251,6 @@ impl Cpu {
     pub fn set_pc(&mut self, val: u16) { self.pc = val; }
     pub fn get_pc(&self) -> u16 { self.pc }
 
-    pub fn set_ix(&mut self, val: u16) { self.ix = val; }
-    pub fn get_ix(&self) -> u16 { self.ix }
-    pub fn set_iy(&mut self, val: u16) { self.iy = val; }
-    pub fn get_iy(&self) -> u16 { self.iy }
-
     pub fn set_iff1(&mut self)   { self.iff1 = true;  }
     pub fn clear_iff1(&mut self) { self.iff1 = false; }
     pub fn set_iff2(&mut self)   { self.iff2 = true;  }
