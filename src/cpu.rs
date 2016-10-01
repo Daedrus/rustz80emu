@@ -37,7 +37,10 @@ pub enum Reg8 {
     IXL = 0b1000,
     IXH = 0b1001,
     IYL = 0b1010,
-    IYH = 0b1011
+    IYH = 0b1011,
+
+    I = 0b1100,
+    R = 0b1101
 }
 }
 
@@ -172,6 +175,8 @@ impl Cpu {
             Reg8::E   => self.e,
             Reg8::H   => self.h,
             Reg8::L   => self.l,
+            Reg8::I   => self.i,
+            Reg8::R   => self.r,
             Reg8::IXL =>  (self.ix & 0x00FF)       as u8,
             Reg8::IXH => ((self.ix & 0xFF00) >> 8) as u8,
             Reg8::IYL =>  (self.iy & 0x00FF)       as u8,
@@ -191,6 +196,8 @@ impl Cpu {
             Reg8::E => self.e = val,
             Reg8::H => self.h = val,
             Reg8::L => self.l = val,
+            Reg8::I => self.i = val,
+            Reg8::R => self.r = val,
             Reg8::IXL => self.ix = (self.ix & 0xFF00) | val as u16,
             Reg8::IXH => self.ix = (self.ix & 0x00FF) | ((val as u16) << 8),
             Reg8::IYL => self.iy = (self.iy & 0xFF00) | val as u16,

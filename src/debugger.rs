@@ -108,6 +108,9 @@ bitflags! {
         const OPC = 0x00080000,
         const OWZ = 0x00100000,
 
+        const OI = 0x00200000,
+        const OR = 0x00400080,
+
         const OALL = 0xFFFFFFFF,
     }
 }
@@ -141,6 +144,8 @@ impl From<Reg8> for OutputRegisters {
             Reg8::E => OE,
             Reg8::H => OH,
             Reg8::L => OL,
+            Reg8::I => OI,
+            Reg8::R => OR,
             Reg8::IXL | Reg8::IXH => OIX,
             Reg8::IYL | Reg8::IYH => OIY
         }
