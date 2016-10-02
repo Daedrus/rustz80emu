@@ -146,12 +146,29 @@ impl From<Reg8> for OutputRegisters {
             Reg8::L => OL,
             Reg8::I => OI,
             Reg8::R => OR,
+            Reg8::A_ALT => OA_ALT,
+            Reg8::B_ALT => OB_ALT,
+            Reg8::C_ALT => OC_ALT,
+            Reg8::D_ALT => OD_ALT,
+            Reg8::E_ALT => OE_ALT,
+            Reg8::H_ALT => OH_ALT,
+            Reg8::L_ALT => OL_ALT,
+            Reg8::F_ALT => OF_ALT,
             Reg8::IXL | Reg8::IXH => OIX,
             Reg8::IYL | Reg8::IYH => OIY
         }
     }
 }
 
+macro_rules! reg_str {
+    ($regs: ident, $outreg: ident, $fmtstr: expr, $reg: expr, $nostr: expr) => {{
+        if $regs.contains($outreg) {
+            format!($fmtstr, $reg)
+        } else {
+            String::from($nostr)
+        }
+    }}
+}
 
 pub struct Debugger {
     cpu: Cpu
@@ -168,27 +185,27 @@ impl Debugger {
     pub fn output(&self, regs: OutputRegisters) -> String {
         let mut outstr = String::new();
 
-        let astr = if regs.contains(OA) { format!(" {:02X} ", self.cpu.a) } else { String::from("    ") };
-        let fstr = if regs.contains(OF) { format!(" {:02X} ", self.cpu.f.bits() as u8) } else { String::from("    ") };
-        let fbinstr = if regs.contains(OF) { format!(" {:08b} ", self.cpu.f.bits()) } else { String::from("          ") };
-        let aaltstr = if regs.contains(OA_ALT) { format!(" {:02X} ", self.cpu.a_alt) } else { String::from("    ") };
-        let faltstr = if regs.contains(OF_ALT) { format!(" {:02X} ", self.cpu.f_alt.bits() as u8) } else { String::from("    ") };
-        let bstr = if regs.contains(OB) { format!(" {:02X} ", self.cpu.b) } else { String::from("    ") };
-        let cstr = if regs.contains(OC) { format!(" {:02X} ", self.cpu.c) } else { String::from("    ") };
-        let baltstr = if regs.contains(OB_ALT) { format!(" {:02X} ", self.cpu.b_alt) } else { String::from("    ") };
-        let caltstr = if regs.contains(OC_ALT) { format!(" {:02X} ", self.cpu.c_alt) } else { String::from("    ") };
-        let dstr = if regs.contains(OD) { format!(" {:02X} ", self.cpu.d) } else { String::from("    ") };
-        let estr = if regs.contains(OE) { format!(" {:02X} ", self.cpu.e) } else { String::from("    ") };
-        let daltstr = if regs.contains(OD_ALT) { format!(" {:02X} ", self.cpu.d_alt) } else { String::from("    ") };
-        let ealtstr = if regs.contains(OE_ALT) { format!(" {:02X} ", self.cpu.e_alt) } else { String::from("    ") };
-        let hstr = if regs.contains(OH) { format!(" {:02X} ", self.cpu.h) } else { String::from("    ") };
-        let lstr = if regs.contains(OL) { format!(" {:02X} ", self.cpu.l) } else { String::from("    ") };
-        let haltstr = if regs.contains(OH_ALT) { format!(" {:02X} ", self.cpu.h_alt) } else { String::from("    ") };
-        let laltstr = if regs.contains(OL_ALT) { format!(" {:02X} ", self.cpu.l_alt) } else { String::from("    ") };
-        let ixstr = if regs.contains(OIX) { format!(" {:04X} ", self.cpu.ix) } else { String::from("      ") };
-        let iystr = if regs.contains(OIY) { format!(" {:04X} ", self.cpu.iy) } else { String::from("      ") };
-        let spstr = if regs.contains(OSP) { format!(" {:04X} ", self.cpu.sp) } else { String::from("      ") };
-        let pcstr = format!(" {:04X} ", self.cpu.pc);
+        let astr    = reg_str!(regs, OA    , " {:02X} ", self.cpu.read_reg8(Reg8::A)       , "    "      );
+        let aaltstr = reg_str!(regs, OA_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::A_ALT)   , "    "      );
+        let fstr    = reg_str!(regs, OF    , " {:02X} ", self.cpu.get_flags().bits() as u8 , "    "      );
+        let fbinstr = reg_str!(regs, OF    , " {:08b} ", self.cpu.get_flags().bits()       , "          ");
+        let faltstr = reg_str!(regs, OF_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::F_ALT)   , "    "      );
+        let bstr    = reg_str!(regs, OB    , " {:02X} ", self.cpu.read_reg8(Reg8::B)       , "    "      );
+        let baltstr = reg_str!(regs, OB_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::B_ALT)   , "    "      );
+        let cstr    = reg_str!(regs, OC    , " {:02X} ", self.cpu.read_reg8(Reg8::C)       , "    "      );
+        let caltstr = reg_str!(regs, OC_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::C_ALT)   , "    "      );
+        let dstr    = reg_str!(regs, OD    , " {:02X} ", self.cpu.read_reg8(Reg8::D)       , "    "      );
+        let daltstr = reg_str!(regs, OD_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::D_ALT)   , "    "      );
+        let estr    = reg_str!(regs, OE    , " {:02X} ", self.cpu.read_reg8(Reg8::E)       , "    "      );
+        let ealtstr = reg_str!(regs, OE_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::E_ALT)   , "    "      );
+        let hstr    = reg_str!(regs, OH    , " {:02X} ", self.cpu.read_reg8(Reg8::H)       , "    "      );
+        let haltstr = reg_str!(regs, OH_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::H_ALT)   , "    "      );
+        let lstr    = reg_str!(regs, OL    , " {:02X} ", self.cpu.read_reg8(Reg8::L)       , "    "      );
+        let laltstr = reg_str!(regs, OL_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::L_ALT)   , "    "      );
+        let ixstr   = reg_str!(regs, OIX   , " {:04X} ", self.cpu.read_reg16(Reg16::IX)    , "      "    );
+        let iystr   = reg_str!(regs, OIY   , " {:04X} ", self.cpu.read_reg16(Reg16::IY)    , "      "    );
+        let spstr   = reg_str!(regs, OSP   , " {:04X} ", self.cpu.read_reg16(Reg16::SP)    , "      "    );
+        let pcstr   = format!(" {:04X} ", self.cpu.get_pc());
 
         outstr.push_str("                    -----------           -----------\n");
         outstr.push_str("                af: |"); outstr.push_str(&astr); outstr.push_str("|"); outstr.push_str(&fstr);

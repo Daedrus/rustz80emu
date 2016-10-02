@@ -25,6 +25,7 @@ pub enum Reg16 {
 
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy, RustcEncodable, RustcDecodable)]
+#[allow(non_camel_case_types)]
 pub enum Reg8 {
     A = 0b111,
     B = 0b000,
@@ -40,7 +41,16 @@ pub enum Reg8 {
     IYH = 0b1011,
 
     I = 0b1100,
-    R = 0b1101
+    R = 0b1101,
+
+    A_ALT = 0b10111,
+    B_ALT = 0b10000,
+    C_ALT = 0b10001,
+    D_ALT = 0b10010,
+    E_ALT = 0b10011,
+    H_ALT = 0b10100,
+    L_ALT = 0b10101,
+    F_ALT = 0b11000,
 }
 }
 
@@ -87,48 +97,47 @@ bitflags! {
     }
 }
 
-//TODO: Remove pub qualifier after reworking debugger output function
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct Cpu {
     // main register set
-    pub a: u8, pub f: StatusIndicatorFlags,
-    pub b: u8, pub c: u8,
-    pub d: u8, pub e: u8,
-    pub h: u8, pub l: u8,
+    a: u8, f: StatusIndicatorFlags,
+    b: u8, c: u8,
+    d: u8, e: u8,
+    h: u8, l: u8,
 
     // alternate register set
-    pub a_alt: u8, pub f_alt: StatusIndicatorFlags,
-    pub b_alt: u8, pub c_alt: u8,
-    pub d_alt: u8, pub e_alt: u8,
-    pub h_alt: u8, pub l_alt: u8,
+    a_alt: u8, f_alt: StatusIndicatorFlags,
+    b_alt: u8, c_alt: u8,
+    d_alt: u8, e_alt: u8,
+    h_alt: u8, l_alt: u8,
 
     // interrupt vector
-    pub i: u8,
+    i: u8,
 
     // memory refresh
-    pub r: u8,
+    r: u8,
 
     // index register X
-    pub ix: u16,
+    ix: u16,
 
     // index register Y
-    pub iy: u16,
+    iy: u16,
 
     // stack pointer
-    pub sp: u16,
+    sp: u16,
 
     // program counter
-    pub pc: u16,
+    pc: u16,
 
     // temporary register (MEMPTR)
-    pub wz: u16,
+    wz: u16,
 
     // interrupt flip-flops
-    pub iff1: bool,
-    pub iff2: bool,
+    iff1: bool,
+    iff2: bool,
 
     // interrupt mode
-    pub im: u8,
+    im: u8,
 
     // T Cycle counter
     pub tcycles: u64,
@@ -198,19 +207,27 @@ impl Cpu {
 
     pub fn read_reg8(&self, reg: Reg8) -> u8 {
         let val = match reg {
-            Reg8::A   => self.a,
-            Reg8::B   => self.b,
-            Reg8::C   => self.c,
-            Reg8::D   => self.d,
-            Reg8::E   => self.e,
-            Reg8::H   => self.h,
-            Reg8::L   => self.l,
-            Reg8::I   => self.i,
-            Reg8::R   => self.r,
-            Reg8::IXL =>  (self.ix & 0x00FF)       as u8,
-            Reg8::IXH => ((self.ix & 0xFF00) >> 8) as u8,
-            Reg8::IYL =>  (self.iy & 0x00FF)       as u8,
-            Reg8::IYH => ((self.iy & 0xFF00) >> 8) as u8
+            Reg8::A     => self.a,
+            Reg8::B     => self.b,
+            Reg8::C     => self.c,
+            Reg8::D     => self.d,
+            Reg8::E     => self.e,
+            Reg8::H     => self.h,
+            Reg8::L     => self.l,
+            Reg8::I     => self.i,
+            Reg8::R     => self.r,
+            Reg8::A_ALT => self.a_alt,
+            Reg8::B_ALT => self.b_alt,
+            Reg8::C_ALT => self.c_alt,
+            Reg8::D_ALT => self.d_alt,
+            Reg8::E_ALT => self.e_alt,
+            Reg8::H_ALT => self.h_alt,
+            Reg8::L_ALT => self.l_alt,
+            Reg8::F_ALT => self.f_alt.bits() as u8,
+            Reg8::IXL   =>  (self.ix & 0x00FF)       as u8,
+            Reg8::IXH   => ((self.ix & 0xFF00) >> 8) as u8,
+            Reg8::IYL   =>  (self.iy & 0x00FF)       as u8,
+            Reg8::IYH   => ((self.iy & 0xFF00) >> 8) as u8
         };
 
         debug!("                Read value {:#04X} from register {:?}", val, reg);
@@ -219,19 +236,27 @@ impl Cpu {
 
     pub fn write_reg8(&mut self, reg: Reg8, val: u8) {
         match reg {
-            Reg8::A => self.a = val,
-            Reg8::B => self.b = val,
-            Reg8::C => self.c = val,
-            Reg8::D => self.d = val,
-            Reg8::E => self.e = val,
-            Reg8::H => self.h = val,
-            Reg8::L => self.l = val,
-            Reg8::I => self.i = val,
-            Reg8::R => self.r = val,
-            Reg8::IXL => self.ix = (self.ix & 0xFF00) | val as u16,
-            Reg8::IXH => self.ix = (self.ix & 0x00FF) | ((val as u16) << 8),
-            Reg8::IYL => self.iy = (self.iy & 0xFF00) | val as u16,
-            Reg8::IYH => self.iy = (self.iy & 0x00FF) | ((val as u16) << 8),
+            Reg8::A     => self.a = val,
+            Reg8::B     => self.b = val,
+            Reg8::C     => self.c = val,
+            Reg8::D     => self.d = val,
+            Reg8::E     => self.e = val,
+            Reg8::H     => self.h = val,
+            Reg8::L     => self.l = val,
+            Reg8::I     => self.i = val,
+            Reg8::R     => self.r = val,
+            Reg8::A_ALT => self.a_alt = val,
+            Reg8::B_ALT => self.b_alt = val,
+            Reg8::C_ALT => self.c_alt = val,
+            Reg8::D_ALT => self.d_alt = val,
+            Reg8::E_ALT => self.e_alt = val,
+            Reg8::H_ALT => self.h_alt = val,
+            Reg8::L_ALT => self.l_alt = val,
+            Reg8::F_ALT => self.f_alt = StatusIndicatorFlags::from_bits_truncate(val),
+            Reg8::IXL   => self.ix = (self.ix & 0xFF00) | val as u16,
+            Reg8::IXH   => self.ix = (self.ix & 0x00FF) | ((val as u16) << 8),
+            Reg8::IYL   => self.iy = (self.iy & 0xFF00) | val as u16,
+            Reg8::IYH   => self.iy = (self.iy & 0x00FF) | ((val as u16) << 8),
         }
 
         debug!("                Write value {:#04X} to register {:?}", val, reg);
