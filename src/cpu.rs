@@ -317,11 +317,14 @@ impl Cpu {
 
     pub fn set_iff1(&mut self)   { self.iff1 = true;  }
     pub fn clear_iff1(&mut self) { self.iff1 = false; }
+    pub fn get_iff1(&self) -> bool { self.iff1 }
     pub fn set_iff2(&mut self)   { self.iff2 = true;  }
     pub fn clear_iff2(&mut self) { self.iff2 = false; }
+    pub fn get_iff2(&self) -> bool { self.iff2 }
 
     // TODO: Properly model interrupt modes
     pub fn set_im(&mut self, val: u8) { self.im = val; }
+    pub fn get_im(&self) -> u8 { self.im }
 
     pub fn set_flag(&mut self, flag: StatusIndicatorFlags) { self.f.insert(flag); }
     pub fn clear_flag(&mut self, flag: StatusIndicatorFlags) { self.f.remove(flag); }
@@ -417,26 +420,32 @@ impl Cpu {
     }
 
     pub fn fetch_op(&mut self, addr: u16) -> u8 {
-        //println!("{} MC {:04X}", self.tcycles, addr);
+        println!("{} MC {:04X}", self.tcycles, addr);
         self.tcycles += 4;
         let val = self.memory.read_word(addr);
-        //println!("{} MR {:04X} {:02X}", self.tcycles, addr, val);
+        println!("{} MR {:04X} {:02X}", self.tcycles, addr, val);
         val
     }
 
     pub fn read_word(&mut self, addr: u16) -> u8 {
-        //println!("{} MC {:04X}", self.tcycles, addr);
+        println!("{} MC {:04X}", self.tcycles, addr);
         self.tcycles += 3;
         let val = self.memory.read_word(addr);
-        //println!("{} MR {:04X} {:02X}", self.tcycles, addr, val);
+        println!("{} MR {:04X} {:02X}", self.tcycles, addr, val);
         val
     }
 
     pub fn write_word(&mut self, addr: u16, val: u8) {
-        //println!("{} MC {:04X}", self.tcycles, addr);
+        println!("{} MC {:04X}", self.tcycles, addr);
         self.tcycles += 3;
         self.memory.write_word(addr, val);
-        //println!("{} MW {:04X} {:02X}", self.tcycles, addr, val);
+        println!("{} MW {:04X} {:02X}", self.tcycles, addr, val);
+    }
+
+    // Helper function to be able to write to memory without increasing the tcycles
+    // Used for setting up the memory in the fuse tests
+    pub fn zero_cycle_write_word(&mut self, addr: u16, val: u8) {
+        self.memory.write_word(addr, val);
     }
 
     pub fn read_port(&self, port: Port) -> u8 {

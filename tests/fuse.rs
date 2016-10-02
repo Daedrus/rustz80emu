@@ -47,8 +47,8 @@ mod test_fuse {
 
         cpu.write_reg8(Reg8::I, read_u8_hex!(file));
         cpu.write_reg8(Reg8::R, read_u8_hex!(file));
-        if read_u8_hex!(file) == 0 { cpu.set_iff1(); } else { cpu.clear_iff1(); }
-        if read_u8_hex!(file) == 0 { cpu.set_iff2(); } else { cpu.clear_iff2(); }
+        if read_u8_hex!(file) == 0 { cpu.clear_iff1(); } else { cpu.set_iff1(); }
+        if read_u8_hex!(file) == 0 { cpu.clear_iff2(); } else { cpu.set_iff2(); }
         cpu.set_im(read_u8_hex!(file));
 
         let halted = read_u8_hex!(file);
@@ -75,7 +75,7 @@ mod test_fuse {
 
                 let memval = u8::from_str_radix(&memval, 16).unwrap();
 
-                cpu.write_word(addr + idx, memval);
+                cpu.zero_cycle_write_word(addr + idx, memval);
 
                 idx = idx + 1;
             }
@@ -84,7 +84,7 @@ mod test_fuse {
         let emptyline: String = read!("{}", file);
     }
 
-    #[test]
+    //#[test]
     fn test_fuse() {
         let file = File::open("tests/tests.in").unwrap();
 
@@ -100,11 +100,44 @@ mod test_fuse {
         let mut cpu = Cpu::new(memory);
 
         loop {
+            let mut tcycle_lim: u64 = 0;
+
             match regs_setup(&file, &mut cpu) {
-                None => break,
-                _ => ()
+                Some((testname, _, tcycles)) => {
+                    println!("{}", testname);
+                    tcycle_lim = tcycles;
+                },
+
+                None => {
+                    break
+                }
             }
             memory_setup(&file, &mut cpu);
+
+            loop {
+                cpu.run_instruction();
+                if cpu.tcycles > tcycle_lim { break }
+            }
+
+            print!("{:04X} {:04X} {:04X} {:04X} ",
+                   cpu.read_reg16(Reg16::AF), cpu.read_reg16(Reg16::BC),
+                   cpu.read_reg16(Reg16::DE), cpu.read_reg16(Reg16::HL));
+            print!("{:04X} {:04X} {:04X} {:04X} ",
+                   cpu.read_reg16(Reg16::AF_ALT), cpu.read_reg16(Reg16::BC_ALT),
+                   cpu.read_reg16(Reg16::DE_ALT), cpu.read_reg16(Reg16::HL_ALT));
+            println!("{:04X} {:04X} {:04X} {:04X} ",
+                   cpu.read_reg16(Reg16::IX), cpu.read_reg16(Reg16::IY),
+                   cpu.read_reg16(Reg16::SP), cpu.get_pc());
+            print!("{:02X} {:02X} {} {} ",
+                   cpu.read_reg8(Reg8::I), cpu.read_reg8(Reg8::R),
+                   if cpu.get_iff1() { 1 } else { 0 },
+                   if cpu.get_iff2() { 1 } else { 0 });
+            println!("{} 0 {}",
+                   cpu.get_im(), cpu.tcycles);
+
+            let mut input = String::new();
+            stdin().read_line(&mut input).unwrap();
+            let input: String = input.trim().into();
 
             cpu.reset();
         }
