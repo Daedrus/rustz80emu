@@ -119,16 +119,16 @@ mod test_fuse {
                 if cpu.tcycles > tcycle_lim { break }
             }
 
-            print!("{:04X} {:04X} {:04X} {:04X} ",
+            print!("{:04x} {:04x} {:04x} {:04x} ",
                    cpu.read_reg16(Reg16::AF), cpu.read_reg16(Reg16::BC),
                    cpu.read_reg16(Reg16::DE), cpu.read_reg16(Reg16::HL));
-            print!("{:04X} {:04X} {:04X} {:04X} ",
+            print!("{:04x} {:04x} {:04x} {:04x} ",
                    cpu.read_reg16(Reg16::AF_ALT), cpu.read_reg16(Reg16::BC_ALT),
                    cpu.read_reg16(Reg16::DE_ALT), cpu.read_reg16(Reg16::HL_ALT));
-            println!("{:04X} {:04X} {:04X} {:04X} ",
+            println!("{:04x} {:04x} {:04x} {:04x} ",
                    cpu.read_reg16(Reg16::IX), cpu.read_reg16(Reg16::IY),
                    cpu.read_reg16(Reg16::SP), cpu.get_pc());
-            print!("{:02X} {:02X} {} {} ",
+            print!("{:02x} {:02x} {} {} ",
                    cpu.read_reg8(Reg8::I), cpu.read_reg8(Reg8::R),
                    if cpu.get_iff1() { 1 } else { 0 },
                    if cpu.get_iff2() { 1 } else { 0 });

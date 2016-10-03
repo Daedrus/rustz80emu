@@ -1502,6 +1502,10 @@ impl Instruction for IncSs {
         let r   = cpu.read_reg16(self.r);
         let res = r.wrapping_add(1);
 
+        let pc = cpu.get_pc() + 1;
+        cpu.contend_read_no_mreq(pc);
+        cpu.contend_read_no_mreq(pc);
+
         cpu.write_reg16(self.r, res);
 
         info!("{:#06x}: INC {:?}", cpu.get_pc(), self.r);
