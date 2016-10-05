@@ -359,6 +359,15 @@ impl Instruction for AddHlSs {
 
         let res = hl.wrapping_add(ss);
 
+        let pc = cpu.get_pc() + 1;
+        cpu.contend_read_no_mreq(pc);
+        cpu.contend_read_no_mreq(pc);
+        cpu.contend_read_no_mreq(pc);
+        cpu.contend_read_no_mreq(pc);
+        cpu.contend_read_no_mreq(pc);
+        cpu.contend_read_no_mreq(pc);
+        cpu.contend_read_no_mreq(pc);
+
         cpu.write_reg16(Reg16::HL, res);
         cpu.write_reg16(Reg16::WZ, hl);
 
