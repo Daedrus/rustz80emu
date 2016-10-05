@@ -125,14 +125,14 @@ mod test_fuse {
             print!("{:04x} {:04x} {:04x} {:04x} ",
                    cpu.read_reg16(Reg16::AF_ALT), cpu.read_reg16(Reg16::BC_ALT),
                    cpu.read_reg16(Reg16::DE_ALT), cpu.read_reg16(Reg16::HL_ALT));
-            println!("{:04x} {:04x} {:04x} {:04x} ",
+            println!("{:04x} {:04x} {:04x} {:04x}",
                    cpu.read_reg16(Reg16::IX), cpu.read_reg16(Reg16::IY),
                    cpu.read_reg16(Reg16::SP), cpu.get_pc());
             print!("{:02x} {:02x} {} {} ",
                    cpu.read_reg8(Reg8::I), cpu.read_reg8(Reg8::R),
                    if cpu.get_iff1() { 1 } else { 0 },
                    if cpu.get_iff2() { 1 } else { 0 });
-            println!("{} 0 {}",
+            println!("{} 0 {}\n",
                    cpu.get_im(), cpu.tcycles);
 
             let mut input = String::new();
