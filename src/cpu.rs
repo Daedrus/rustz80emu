@@ -419,36 +419,37 @@ impl Cpu {
         }
     }
 
+    // TODO: How to implement stubs for these functions?
     #[inline(always)]
     pub fn contend_read(&mut self, addr: u16, tcycles: u64) {
-        println!("{} MC {:04x}", self.tcycles, addr);
+        //println!("{: >5} MC {:04x}", self.tcycles, addr);
         self.tcycles += tcycles;
     }
 
     #[inline(always)]
     pub fn contend_read_no_mreq(&mut self, addr: u16) {
-        println!("{} MC {:04x}", self.tcycles, addr);
+        //println!("{: >5} MC {:04x}", self.tcycles, addr);
         self.tcycles += 1;
     }
 
     pub fn fetch_op(&mut self, addr: u16) -> u8 {
         self.contend_read(addr, 4);
         let val = self.memory.read_word(addr);
-        println!("{} MR {:04x} {:02x}", self.tcycles, addr, val);
+        //println!("{: >5} MR {:04x} {:02x}", self.tcycles, addr, val);
         val
     }
 
     pub fn read_word(&mut self, addr: u16) -> u8 {
         self.contend_read(addr, 3);
         let val = self.memory.read_word(addr);
-        println!("{} MR {:04x} {:02x}", self.tcycles, addr, val);
+        //println!("{: >5} MR {:04x} {:02x}", self.tcycles, addr, val);
         val
     }
 
     pub fn write_word(&mut self, addr: u16, val: u8) {
         self.contend_read(addr, 3);
         self.memory.write_word(addr, val);
-        println!("{} MW {:04x} {:02x}", self.tcycles, addr, val);
+        //println!("{: >5} MW {:04x} {:02x}", self.tcycles, addr, val);
     }
 
     // Helper function to be able to write to memory without increasing the tcycles
