@@ -359,14 +359,14 @@ impl Instruction for AddHlSs {
 
         let res = hl.wrapping_add(ss);
 
-        let pc = cpu.get_pc() + 1;
-        cpu.contend_read_no_mreq(pc);
-        cpu.contend_read_no_mreq(pc);
-        cpu.contend_read_no_mreq(pc);
-        cpu.contend_read_no_mreq(pc);
-        cpu.contend_read_no_mreq(pc);
-        cpu.contend_read_no_mreq(pc);
-        cpu.contend_read_no_mreq(pc);
+        let ir = cpu.read_reg16(Reg16::IR);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
 
         cpu.write_reg16(Reg16::HL, res);
         cpu.write_reg16(Reg16::WZ, hl);
@@ -1198,9 +1198,9 @@ impl Instruction for DecSs {
         let r   = cpu.read_reg16(self.r);
         let res = r.wrapping_sub(1);
 
-        let pc = cpu.get_pc() + 1;
-        cpu.contend_read_no_mreq(pc);
-        cpu.contend_read_no_mreq(pc);
+        let ir = cpu.read_reg16(Reg16::IR);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
 
         cpu.write_reg16(self.r, res);
 
@@ -1236,16 +1236,31 @@ impl Instruction for Djnz {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let b = cpu.read_reg8(Reg8::B);
-        cpu.write_reg8(Reg8::B, b.wrapping_sub(1));
+        let ir = cpu.read_reg16(Reg16::IR);
+        cpu.contend_read_no_mreq(ir);
 
-        let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
-        let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+        let b = cpu.read_reg8(Reg8::B).wrapping_sub(1);
+        cpu.write_reg8(Reg8::B, b);
 
-        info!("{:#06x}: DJNZ {:#06X}", cpu.get_pc(), target);
         if b != 0 {
+            let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
+            let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+
+            info!("{:#06x}: DJNZ {:#06X}", cpu.get_pc(), target);
             cpu.set_pc(target);
         } else {
+            cpu.contend_read(curr_pc + 1, 3);
+
+            let offset = cpu.zero_cycle_read_word(curr_pc + 1) as i8 + 2;
+            let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+
+            info!("{:#06x}: DJNZ {:#06X}", cpu.get_pc(), target);
             cpu.inc_pc(2);
         }
     }
@@ -1515,9 +1530,9 @@ impl Instruction for IncSs {
         let r   = cpu.read_reg16(self.r);
         let res = r.wrapping_add(1);
 
-        let pc = cpu.get_pc() + 1;
-        cpu.contend_read_no_mreq(pc);
-        cpu.contend_read_no_mreq(pc);
+        let ir = cpu.read_reg16(Reg16::IR);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
 
         cpu.write_reg16(self.r, res);
 

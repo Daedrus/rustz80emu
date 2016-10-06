@@ -122,6 +122,7 @@ impl From<Reg16> for OutputRegisters {
             Reg16::BC => OB | OC,
             Reg16::DE => OD | OE,
             Reg16::HL => OH | OL,
+            Reg16::IR => OI | OR,
             Reg16::AF_ALT => OA_ALT | OF_ALT,
             Reg16::BC_ALT => OB_ALT | OC_ALT,
             Reg16::DE_ALT => OD_ALT | OE_ALT,

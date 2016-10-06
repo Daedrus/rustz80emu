@@ -54,7 +54,7 @@ mod test_fuse {
         let halted = read_u8_hex!(file);
 
         let tstate: String = read!("{}", file);
-        let tstate = u64::from_str_radix(&tstate, 16).unwrap();
+        let tstate = u64::from_str_radix(&tstate, 10).unwrap();
 
         Some((testdesc, halted, tstate))
     }

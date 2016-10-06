@@ -19,7 +19,9 @@ pub enum Reg16 {
     SP = 8,
     IX = 9,
     IY = 10,
-    WZ = 11
+    WZ = 11,
+
+    IR = 12
 }
 }
 
@@ -274,6 +276,7 @@ impl Cpu {
                     Reg16::BC => (self.b, self.c),
                     Reg16::DE => (self.d, self.e),
                     Reg16::HL => (self.h, self.l),
+                    Reg16::IR => (self.i, self.r),
                     Reg16::AF_ALT => (self.a_alt, self.f_alt.bits() as u8),
                     Reg16::BC_ALT => (self.b_alt, self.c_alt),
                     Reg16::DE_ALT => (self.d_alt, self.e_alt),
@@ -295,6 +298,7 @@ impl Cpu {
             Reg16::BC => { self.b = high; self.c = low; }
             Reg16::DE => { self.d = high; self.e = low; }
             Reg16::HL => { self.h = high; self.l = low; }
+            Reg16::IR => { self.i = high; self.r = low; }
             Reg16::AF_ALT => { self.a_alt = high; self.f_alt = StatusIndicatorFlags::from_bits_truncate(low); }
             Reg16::BC_ALT => { self.b_alt = high; self.c_alt = low; }
             Reg16::DE_ALT => { self.d_alt = high; self.e_alt = low; }
@@ -456,6 +460,10 @@ impl Cpu {
     // Used for setting up the memory in the fuse tests
     pub fn zero_cycle_write_word(&mut self, addr: u16, val: u8) {
         self.memory.write_word(addr, val);
+    }
+
+    pub fn zero_cycle_read_word(&mut self, addr: u16) -> u8 {
+        self.memory.read_word(addr)
     }
 
     pub fn read_port(&self, port: Port) -> u8 {
