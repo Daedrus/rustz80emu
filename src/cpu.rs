@@ -144,6 +144,9 @@ pub struct Cpu {
     // T Cycle counter
     pub tcycles: u64,
 
+    // HALT state
+    halted: bool,
+
     memory: memory::Memory
 }
 
@@ -169,6 +172,7 @@ impl Cpu {
             iff1: false,
             iff2: false,
             im: 0,
+            halted: false,
 
             tcycles: 0,
 
@@ -201,6 +205,7 @@ impl Cpu {
         self.iff1 = false;
         self.iff2 = false;
         self.im = 0;
+        self.halted = false;
 
         self.tcycles = 0;
 
@@ -329,6 +334,11 @@ impl Cpu {
     // TODO: Properly model interrupt modes
     pub fn set_im(&mut self, val: u8) { self.im = val; }
     pub fn get_im(&self) -> u8 { self.im }
+
+    // TODO: Properly model halting
+    pub fn halt(&mut self) { self.halted = true; }
+    pub fn resume(&mut self) { self.halted = false; }
+    pub fn is_halted(&self) -> bool { self.halted }
 
     pub fn set_flag(&mut self, flag: StatusIndicatorFlags) { self.f.insert(flag); }
     pub fn clear_flag(&mut self, flag: StatusIndicatorFlags) { self.f.remove(flag); }

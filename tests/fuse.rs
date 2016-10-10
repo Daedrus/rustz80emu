@@ -26,7 +26,7 @@ mod test_fuse {
         }}
     }
 
-    fn regs_setup(file: &File, cpu: &mut Cpu) -> Option<(String, u8, u64)> {
+    fn regs_setup(file: &File, cpu: &mut Cpu) -> Option<(String, u64)> {
         let mut file = file.bytes().map(|ch| ch.unwrap());
 
         let testdesc: String = read!("{}", file);
@@ -51,12 +51,12 @@ mod test_fuse {
         if read_u8_hex!(file) == 0 { cpu.clear_iff2(); } else { cpu.set_iff2(); }
         cpu.set_im(read_u8_hex!(file));
 
-        let halted = read_u8_hex!(file);
+        if read_u8_hex!(file) == 0 { cpu.resume(); } else { cpu.halt(); }
 
         let tstate: String = read!("{}", file);
         let tstate = u64::from_str_radix(&tstate, 10).unwrap();
 
-        Some((testdesc, halted, tstate))
+        Some((testdesc, tstate))
     }
 
     fn memory_setup(file: &File, cpu: &mut Cpu) {
@@ -103,7 +103,7 @@ mod test_fuse {
             let mut tcycle_lim: u64 = 0;
 
             match regs_setup(&file, &mut cpu) {
-                Some((testname, _, tcycles)) => {
+                Some((testname, tcycles)) => {
                     println!("{}", testname);
                     tcycle_lim = tcycles;
                 },
@@ -132,8 +132,10 @@ mod test_fuse {
                    cpu.read_reg8(Reg8::I), cpu.read_reg8(Reg8::R),
                    if cpu.get_iff1() { 1 } else { 0 },
                    if cpu.get_iff2() { 1 } else { 0 });
-            println!("{} 0 {}\n",
-                   cpu.get_im(), cpu.tcycles);
+            println!("{} {} {}\n",
+                   cpu.get_im(),
+                   if cpu.is_halted() { 1 } else { 0 },
+                   cpu.tcycles);
 
             let mut input = String::new();
             stdin().read_line(&mut input).unwrap();

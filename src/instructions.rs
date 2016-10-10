@@ -1385,6 +1385,19 @@ impl Instruction for Exx {
 }
 
 
+struct Halt;
+
+impl Instruction for Halt {
+    fn execute(&self, cpu: &mut Cpu) {
+        info!("{:#06x}: HALT", cpu.get_pc());
+        cpu.halt();
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (ONONE, ONONE)
+    }
+}
+
 struct Im { mode: u8 }
 
 impl Instruction for Im {
@@ -4888,7 +4901,7 @@ pub const INSTR_TABLE: [&'static Instruction; 256] = [
     &LdMemHlR{r:Reg8::B}                     , &LdMemHlR{r:Reg8::C}                   , &LdMemHlR{r:Reg8::D}              , &LdMemHlR{r:Reg8::E},
 
     /* 0x74 */                                 /* 0x75 */                               /* 0x76 */                          /* 0x77 */
-    &LdMemHlR{r:Reg8::H}                     , &LdMemHlR{r:Reg8::L}                   , &Unsupported                      , &LdMemHlR{r:Reg8::A},
+    &LdMemHlR{r:Reg8::H}                     , &LdMemHlR{r:Reg8::L}                   , &Halt                             , &LdMemHlR{r:Reg8::A},
 
     /* 0x78 */                                 /* 0x79 */                               /* 0x7A */                           /* 0x7B */
     &LdRR{rt:Reg8::A,rs:Reg8::B}             , &LdRR{rt:Reg8::A,rs:Reg8::C}           , &LdRR{rt:Reg8::A,rs:Reg8::D}      , &LdRR{rt:Reg8::A,rs:Reg8::E},
