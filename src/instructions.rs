@@ -726,8 +726,8 @@ impl Instruction for Ccf {
         let a = cpu.read_reg8(Reg8::A);
         let x = cpu.get_flag(X_FLAG);
         let y = cpu.get_flag(Y_FLAG);
-        cpu.cond_flag  ( X_FLAG            , x || (a & 0x08 != 0) );
-        cpu.cond_flag  ( Y_FLAG            , y || (a & 0x20 != 0) );
+        cpu.cond_flag ( X_FLAG, a & 0x08 != 0 );
+        cpu.cond_flag ( Y_FLAG, a & 0x20 != 0 );
 
         info!("{:#06x}: CCF", cpu.get_pc());
         cpu.inc_pc(1);
@@ -1130,6 +1130,8 @@ impl Instruction for DecMemHl {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
+        cpu.contend_read_no_mreq(hl);
+
         let res = memval.wrapping_sub(1);
 
         cpu.write_word(hl, res);
@@ -1462,6 +1464,8 @@ impl Instruction for IncMemHl {
         let hl  = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
+        cpu.contend_read_no_mreq(hl);
+
         let res = memval.wrapping_add(1);
 
         cpu.write_word(hl, res);
@@ -1613,14 +1617,26 @@ impl Instruction for JrZ {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
-        let target = (cpu.get_pc() as i16 + offset as i16) as u16;
-
-        info!("{:#06x}: JR Z, {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(ZERO_FLAG) {
+            let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
+            let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+
+            info!("{:#06x}: JR Z, {:#06X}", cpu.get_pc(), target);
             cpu.set_pc(target);
             cpu.write_reg16(Reg16::WZ, target);
         } else {
+            cpu.contend_read(curr_pc + 1, 3);
+
+            let offset = cpu.zero_cycle_read_word(curr_pc + 1) as i8 + 2;
+            let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+
+            info!("{:#06x}: JR Z, {:#06X}", cpu.get_pc(), target);
             cpu.inc_pc(2);
         }
     }
@@ -1634,13 +1650,25 @@ impl Instruction for JrNz {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
-        let target = (cpu.get_pc() as i16 + offset as i16) as u16;
-
-        info!("{:#06x}: JR NZ, {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(ZERO_FLAG) {
+            cpu.contend_read(curr_pc + 1, 3);
+
+            let offset = cpu.zero_cycle_read_word(curr_pc + 1) as i8 + 2;
+            let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+
+            info!("{:#06x}: JR NZ, {:#06X}", cpu.get_pc(), target);
             cpu.inc_pc(2);
         } else {
+            let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
+            let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+
+            info!("{:#06x}: JR NZ, {:#06X}", cpu.get_pc(), target);
             cpu.set_pc(target);
             cpu.write_reg16(Reg16::WZ, target);
         }
@@ -1655,13 +1683,25 @@ impl Instruction for JrNcE {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
-        let target = (cpu.get_pc() as i16 + offset as i16) as u16;
-
-        info!("{:#06x}: JR NC, {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(CARRY_FLAG) {
+            cpu.contend_read(curr_pc + 1, 3);
+
+            let offset = cpu.zero_cycle_read_word(curr_pc + 1) as i8 + 2;
+            let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+
+            info!("{:#06x}: JR NC, {:#06X}", cpu.get_pc(), target);
             cpu.inc_pc(2);
         } else {
+            let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
+            let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+
+            info!("{:#06x}: JR NC, {:#06X}", cpu.get_pc(), target);
             cpu.set_pc(target);
             cpu.write_reg16(Reg16::WZ, target);
         }
@@ -1676,14 +1716,26 @@ impl Instruction for JrCE {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
-        let target = (cpu.get_pc() as i16 + offset as i16) as u16;
-
-        info!("{:#06x}: JR C, {:#06X}", cpu.get_pc(), target);
         if cpu.get_flag(CARRY_FLAG) {
+            let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
+            let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+            cpu.contend_read_no_mreq(curr_pc + 1);
+
+            info!("{:#06x}: JR C, {:#06X}", cpu.get_pc(), target);
             cpu.set_pc(target);
             cpu.write_reg16(Reg16::WZ, target);
         } else {
+            cpu.contend_read(curr_pc + 1, 3);
+
+            let offset = cpu.zero_cycle_read_word(curr_pc + 1) as i8 + 2;
+            let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+
+            info!("{:#06x}: JR C, {:#06X}", cpu.get_pc(), target);
             cpu.inc_pc(2);
         }
     }
@@ -1699,6 +1751,12 @@ impl Instruction for JrE {
 
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
         let target = (cpu.get_pc() as i16 + offset as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
 
         info!("{:#06x}: JR {:#06X}", cpu.get_pc(), target);
         cpu.set_pc(target);
@@ -3242,8 +3300,8 @@ impl Instruction for Scf {
         let a = cpu.read_reg8(Reg8::A);
         let x = cpu.get_flag(X_FLAG);
         let y = cpu.get_flag(Y_FLAG);
-        cpu.cond_flag ( X_FLAG , x || (a & 0x08 != 0) );
-        cpu.cond_flag ( Y_FLAG , y || (a & 0x20 != 0) );
+        cpu.cond_flag ( X_FLAG , a & 0x08 != 0 );
+        cpu.cond_flag ( Y_FLAG , a & 0x20 != 0 );
 
         info!("{:#06x}: SCF", cpu.get_pc());
         cpu.inc_pc(1);
