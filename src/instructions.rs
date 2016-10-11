@@ -688,23 +688,34 @@ impl Instruction for CallNn {
 impl Instruction for CallCcNn {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
-        let nn      =  (cpu.read_word(curr_pc + 1) as u16) |
-                      ((cpu.read_word(curr_pc + 2) as u16) << 8);
-        let curr_sp = cpu.read_reg16(Reg16::SP);
         let cc      = cpu.check_cond(self.cond);
 
-        info!("{:#06x}: CALL {:?}, {:#06X}", curr_pc, self.cond, nn);
         if cc {
+            let nn      =  (cpu.read_word(curr_pc + 1) as u16) |
+                          ((cpu.read_word(curr_pc + 2) as u16) << 8);
+            let curr_sp = cpu.read_reg16(Reg16::SP);
+
+            cpu.contend_read_no_mreq(curr_pc + 2);
+
             cpu.write_word(curr_sp - 1, (((curr_pc + 3) & 0xFF00) >> 8) as u8);
             cpu.write_word(curr_sp - 2,  ((curr_pc + 3) & 0x00FF)       as u8);
 
             cpu.write_reg16(Reg16::SP, curr_sp - 2);
 
+            info!("{:#06x}: CALL {:?}, {:#06X}", curr_pc, self.cond, nn);
             cpu.set_pc(nn);
+            cpu.write_reg16(Reg16::WZ, nn);
         } else {
+            cpu.contend_read(curr_pc + 1, 3);
+            cpu.contend_read(curr_pc + 2, 3);
+
+            let nn =  (cpu.zero_cycle_read_word(curr_pc + 1) as u16) |
+                     ((cpu.zero_cycle_read_word(curr_pc + 2) as u16) << 8);
+
+            info!("{:#06x}: CALL {:?}, {:#06X}", curr_pc, self.cond, nn);
             cpu.inc_pc(3);
+            cpu.write_reg16(Reg16::WZ, nn);
         }
-        cpu.write_reg16(Reg16::WZ, nn);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -1600,16 +1611,27 @@ impl Instruction for JpCcNn {
         let curr_pc = cpu.get_pc();
 
         let cc = cpu.check_cond(self.cond);
-        let nn =  (cpu.read_word(curr_pc + 1) as u16) |
-                 ((cpu.read_word(curr_pc + 2) as u16) << 8);
 
-        info!("{:#06x}: JP {:?}, {:#06X}", cpu.get_pc(), self.cond, nn);
         if cc {
+            let nn =  (cpu.read_word(curr_pc + 1) as u16) |
+                     ((cpu.read_word(curr_pc + 2) as u16) << 8);
+
+            info!("{:#06x}: JP {:?}, {:#06X}", cpu.get_pc(), self.cond, nn);
             cpu.set_pc(nn);
+
+            cpu.write_reg16(Reg16::WZ, nn);
         } else {
+            cpu.contend_read(curr_pc + 1, 3);
+            cpu.contend_read(curr_pc + 2, 3);
+
+            let nn =  (cpu.zero_cycle_read_word(curr_pc + 1) as u16) |
+                     ((cpu.zero_cycle_read_word(curr_pc + 2) as u16) << 8);
+
+            info!("{:#06x}: JP {:?}, {:#06X}", cpu.get_pc(), self.cond, nn);
             cpu.inc_pc(3);
+
+            cpu.write_reg16(Reg16::WZ, nn);
         }
-        cpu.write_reg16(Reg16::WZ, nn);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -2566,6 +2588,9 @@ impl Instruction for PushQq {
         let curr_sp = cpu.read_reg16(Reg16::SP);
         let r = cpu.read_reg16(self.r);
 
+        let ir = cpu.read_reg16(Reg16::IR);
+        cpu.contend_read_no_mreq(ir);
+
         cpu.write_word(curr_sp - 1, ((r & 0xFF00) >> 8) as u8);
         cpu.write_word(curr_sp - 2,  (r & 0x00FF)       as u8);
         cpu.write_reg16(Reg16::SP, curr_sp - 2);
@@ -2682,6 +2707,9 @@ impl Instruction for Ret {
 impl Instruction for RetCc {
     fn execute(&self, cpu: &mut Cpu) {
         let cc = cpu.check_cond(self.cond);
+
+        let ir = cpu.read_reg16(Reg16::IR);
+        cpu.contend_read_no_mreq(ir);
 
         info!("{:#06x}: RET {:?}", cpu.get_pc(), self.cond);
         if cc {
@@ -3284,6 +3312,9 @@ impl Instruction for Rst {
     fn execute(&self, cpu: &mut Cpu) {
         let next_pc = cpu.get_pc() + 1;
         let curr_sp = cpu.read_reg16(Reg16::SP);
+
+        let ir = cpu.read_reg16(Reg16::IR);
+        cpu.contend_read_no_mreq(ir);
 
         cpu.write_word(curr_sp - 1, ((next_pc & 0xFF00) >> 8) as u8);
         cpu.write_word(curr_sp - 2,  (next_pc & 0x00FF)       as u8);
