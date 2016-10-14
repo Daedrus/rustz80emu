@@ -566,19 +566,19 @@ struct BitBMemIyD { b: u8 }
 
 #[inline(always)]
 fn update_flags_bit(cpu: &mut Cpu, b: u8, bit_is_set: bool) {
-    cpu.cond_flag  ( SIGN_FLAG            , b == 0b111 && bit_is_set );
-    cpu.cond_flag  ( ZERO_FLAG            , !bit_is_set              );
-    cpu.set_flag   ( HALF_CARRY_FLAG                                 );
-    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , !bit_is_set              );
-    cpu.clear_flag ( ADD_SUBTRACT_FLAG                               );
+    cpu.cond_flag  ( SIGN_FLAG            , b == 7 && bit_is_set );
+    cpu.cond_flag  ( ZERO_FLAG            , !bit_is_set          );
+    cpu.set_flag   ( HALF_CARRY_FLAG                             );
+    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , !bit_is_set          );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                           );
 }
 
 #[inline(always)]
 fn update_xyflags_bit(cpu: &mut Cpu) {
     let wz = cpu.read_reg16(Reg16::WZ);
 
-    cpu.cond_flag  ( X_FLAG               , wz & 0x0800 != 0        );
-    cpu.cond_flag  ( Y_FLAG               , wz & 0x2000 != 0        );
+    cpu.cond_flag  ( X_FLAG, wz & 0x0800 != 0 );
+    cpu.cond_flag  ( Y_FLAG, wz & 0x2000 != 0 );
 }
 
 impl Instruction for BitBR {
@@ -603,6 +603,8 @@ impl Instruction for BitBMemHl {
     fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
+
+        cpu.contend_read_no_mreq(hl);
 
         update_flags_bit(cpu, self.b, memval & (1 << self.b) != 0);
         update_xyflags_bit(cpu);
@@ -669,6 +671,8 @@ impl Instruction for CallNn {
         let nn      =  (cpu.read_word(curr_pc + 1) as u16) |
                       ((cpu.read_word(curr_pc + 2) as u16) << 8);
         let curr_sp = cpu.read_reg16(Reg16::SP);
+
+        cpu.contend_read_no_mreq(curr_pc + 2);
 
         cpu.write_word(curr_sp - 1, (((curr_pc + 3) & 0xFF00) >> 8) as u8);
         cpu.write_word(curr_sp - 2,  ((curr_pc + 3) & 0x00FF)       as u8);
@@ -2671,6 +2675,8 @@ impl Instruction for ResBMemHl {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
+        cpu.contend_read_no_mreq(hl);
+
         cpu.write_word(hl, memval & !(1 << self.b));
 
         info!("{:#06x}: RES {}, (HL)", cpu.get_pc() - 1, self.b);
@@ -2794,6 +2800,8 @@ impl Instruction for RlMemHl {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
+        cpu.contend_read_no_mreq(hl);
+
         let mut res = memval.rotate_left(1);
         if cpu.get_flag(CARRY_FLAG) { res |= 0x01; } else { res &= 0xFE; }
 
@@ -2891,6 +2899,8 @@ impl Instruction for RlcMemHl {
     fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
+
+        cpu.contend_read_no_mreq(hl);
 
         let res = memval.rotate_left(1);
 
@@ -3057,6 +3067,8 @@ impl Instruction for RrMemHl {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
+        cpu.contend_read_no_mreq(hl);
+
         let mut res = memval.rotate_right(1);
         if cpu.get_flag(CARRY_FLAG) { res |= 0x80; } else { res &= 0x7F; }
 
@@ -3178,6 +3190,8 @@ impl Instruction for RrcMemHl {
     fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
+
+        cpu.contend_read_no_mreq(hl);
 
         let res = memval.rotate_right(1);
 
@@ -3419,6 +3433,8 @@ impl Instruction for SetBMemHl {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
+        cpu.contend_read_no_mreq(hl);
+
         cpu.write_word(hl, memval | (1 << self.b));
 
         info!("{:#06x}: SET {}, (HL)", cpu.get_pc() - 1, self.b);
@@ -3634,6 +3650,8 @@ impl Instruction for SlaMemHl {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
+        cpu.contend_read_no_mreq(hl);
+
         let res = memval << 1;
 
         cpu.write_word(hl, res);
@@ -3734,6 +3752,8 @@ impl Instruction for SllMemHl {
     fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
+
+        cpu.contend_read_no_mreq(hl);
 
         let res = memval << 1 | 0x1;
 
@@ -3836,6 +3856,8 @@ impl Instruction for SraMemHl {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
+        cpu.contend_read_no_mreq(hl);
+
         let res = memval >> 1 | (memval & 0x80);
 
         cpu.write_word(hl, res);
@@ -3936,6 +3958,8 @@ impl Instruction for SrlMemHl {
     fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
+
+        cpu.contend_read_no_mreq(hl);
 
         let res = memval >> 1;
 
