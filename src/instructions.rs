@@ -653,10 +653,12 @@ impl Instruction for BitBMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let d    = cpu.read_word(curr_pc) as i8;
+        let d    = cpu.zero_cycle_read_word(curr_pc) as i8;
         let addr = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
 
         let memval = cpu.read_word(addr);
+
+        cpu.contend_read_no_mreq(addr);
 
         update_flags_bit(cpu, self.b, memval & (1 << self.b) != 0);
         update_xyflags_bit(cpu);
@@ -5071,29 +5073,29 @@ pub const INSTR_TABLE_DDCB: [&'static Instruction; 256] = [
     /* 0x38 */              /* 0x39 */              /* 0x3A */              /* 0x3B */              /* 0x3C */              /* 0x3D */              /* 0x3E */    /* 0x3F */
     &SrlMemIxDR{r:Reg8::B}, &SrlMemIxDR{r:Reg8::C}, &SrlMemIxDR{r:Reg8::D}, &SrlMemIxDR{r:Reg8::E}, &SrlMemIxDR{r:Reg8::H}, &SrlMemIxDR{r:Reg8::L}, &SrlMemIxD  , &SrlMemIxDR{r:Reg8::A},
 
-    /* 0x40 */    /* 0x41 */    /* 0x42 */    /* 0x43 */    /* 0x44 */    /* 0x45 */    /* 0x46 */        /* 0x47 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:0}, &Unsupported,
+    /* 0x40 */        /* 0x41 */        /* 0x42 */        /* 0x43 */        /* 0x44 */        /* 0x45 */        /* 0x46 */        /* 0x47 */
+    &BitBMemIxD{b:0}, &BitBMemIxD{b:0}, &BitBMemIxD{b:0}, &BitBMemIxD{b:0}, &BitBMemIxD{b:0}, &BitBMemIxD{b:0}, &BitBMemIxD{b:0}, &BitBMemIxD{b:0},
 
-    /* 0x48 */    /* 0x49 */    /* 0x4A */    /* 0x4B */    /* 0x4C */    /* 0x4D */    /* 0x4E */        /* 0x4F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:1}, &Unsupported,
+    /* 0x48 */        /* 0x49 */        /* 0x4A */        /* 0x4B */        /* 0x4C */        /* 0x4D */        /* 0x4E */        /* 0x4F */
+    &BitBMemIxD{b:1}, &BitBMemIxD{b:1}, &BitBMemIxD{b:1}, &BitBMemIxD{b:1}, &BitBMemIxD{b:1}, &BitBMemIxD{b:1}, &BitBMemIxD{b:1}, &BitBMemIxD{b:1},
 
-    /* 0x50 */    /* 0x51 */    /* 0x52 */    /* 0x53 */    /* 0x54 */    /* 0x55 */    /* 0x56 */        /* 0x57 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:2}, &Unsupported,
+    /* 0x50 */        /* 0x51 */        /* 0x52 */        /* 0x53 */        /* 0x54 */        /* 0x55 */        /* 0x56 */        /* 0x57 */
+    &BitBMemIxD{b:2}, &BitBMemIxD{b:2}, &BitBMemIxD{b:2}, &BitBMemIxD{b:2}, &BitBMemIxD{b:2}, &BitBMemIxD{b:2}, &BitBMemIxD{b:2}, &BitBMemIxD{b:2},
 
-    /* 0x58 */    /* 0x59 */    /* 0x5A */    /* 0x5B */    /* 0x5C */    /* 0x5D */    /* 0x5E */        /* 0x5F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:3}, &Unsupported,
+    /* 0x58 */        /* 0x59 */        /* 0x5A */        /* 0x5B */        /* 0x5C */        /* 0x5D */        /* 0x5E */        /* 0x5F */
+    &BitBMemIxD{b:3}, &BitBMemIxD{b:3}, &BitBMemIxD{b:3}, &BitBMemIxD{b:3}, &BitBMemIxD{b:3}, &BitBMemIxD{b:3}, &BitBMemIxD{b:3}, &BitBMemIxD{b:3},
 
-    /* 0x60 */    /* 0x61 */    /* 0x62 */    /* 0x63 */    /* 0x64 */    /* 0x65 */    /* 0x66 */        /* 0x67 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:4}, &Unsupported,
+    /* 0x60 */        /* 0x61 */        /* 0x62 */        /* 0x63 */        /* 0x64 */        /* 0x65 */        /* 0x66 */        /* 0x67 */
+    &BitBMemIxD{b:4}, &BitBMemIxD{b:4}, &BitBMemIxD{b:4}, &BitBMemIxD{b:4}, &BitBMemIxD{b:4}, &BitBMemIxD{b:4}, &BitBMemIxD{b:4}, &BitBMemIxD{b:4},
 
-    /* 0x68 */    /* 0x69 */    /* 0x6A */    /* 0x6B */    /* 0x6C */    /* 0x6D */    /* 0x6E */        /* 0x6F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:5}, &Unsupported,
+    /* 0x68 */        /* 0x69 */        /* 0x6A */        /* 0x6B */        /* 0x6C */        /* 0x6D */        /* 0x6E */        /* 0x6F */
+    &BitBMemIxD{b:5}, &BitBMemIxD{b:5}, &BitBMemIxD{b:5}, &BitBMemIxD{b:5}, &BitBMemIxD{b:5}, &BitBMemIxD{b:5}, &BitBMemIxD{b:5}, &BitBMemIxD{b:5},
 
-    /* 0x70 */    /* 0x71 */    /* 0x72 */    /* 0x73 */    /* 0x74 */    /* 0x75 */    /* 0x76 */        /* 0x77 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:6}, &Unsupported,
+    /* 0x70 */        /* 0x71 */        /* 0x72 */        /* 0x73 */        /* 0x74 */        /* 0x75 */        /* 0x76 */        /* 0x77 */
+    &BitBMemIxD{b:6}, &BitBMemIxD{b:6}, &BitBMemIxD{b:6}, &BitBMemIxD{b:6}, &BitBMemIxD{b:6}, &BitBMemIxD{b:6}, &BitBMemIxD{b:6}, &BitBMemIxD{b:6},
 
-    /* 0x78 */    /* 0x79 */    /* 0x7A */    /* 0x7B */    /* 0x7C */    /* 0x7D */    /* 0x7E */        /* 0x7F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:7}, &Unsupported,
+    /* 0x78 */        /* 0x79 */        /* 0x7A */        /* 0x7B */        /* 0x7C */        /* 0x7D */        /* 0x7E */        /* 0x7F */
+    &BitBMemIxD{b:7}, &BitBMemIxD{b:7}, &BitBMemIxD{b:7}, &BitBMemIxD{b:7}, &BitBMemIxD{b:7}, &BitBMemIxD{b:7}, &BitBMemIxD{b:7}, &BitBMemIxD{b:7},
 
     /* 0x80 */    /* 0x81 */    /* 0x82 */    /* 0x83 */    /* 0x84 */    /* 0x85 */    /* 0x86 */    /* 0x87 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &ResBMemIxD{b:0}, &Unsupported,
