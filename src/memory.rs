@@ -68,6 +68,14 @@ impl Memory {
     }
 
     pub fn clear(&mut self) {
+        if self.writable_rom {
+            for x in self.rom0.iter_mut() {
+                *x = 0;
+            }
+            for x in self.rom1.iter_mut() {
+                *x = 0;
+            }
+        }
         for bank in self.bank.iter_mut() {
             for x in bank.iter_mut() {
                 *x = 0;

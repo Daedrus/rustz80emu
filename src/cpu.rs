@@ -403,6 +403,9 @@ impl Cpu {
                         self.contend_read_no_mreq(curr_pc + 1);
                         &instructions::INSTR_TABLE_DDCB[i3 as usize].execute(self);
                     },
+                    0xFD => {
+                        self.inc_pc(1);
+                    },
                     _    => {
                         &instructions::INSTR_TABLE_DD[i1 as usize].execute(self);
                     }
