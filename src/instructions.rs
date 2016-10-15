@@ -1382,11 +1382,16 @@ impl Instruction for ExMemSpHl {
         let memval = (cpu.read_word(sp    ) as u16) |
                     ((cpu.read_word(sp + 1) as u16) << 8);
 
+        cpu.contend_read_no_mreq(sp + 1);
+
         cpu.write_reg16(Reg16::HL, memval);
         cpu.write_reg16(Reg16::WZ, memval);
 
-        cpu.write_word(sp, hllow);
         cpu.write_word(sp + 1, hlhigh);
+        cpu.write_word(sp, hllow);
+
+        cpu.contend_write_no_mreq(sp);
+        cpu.contend_write_no_mreq(sp);
 
         info!("{:#06x}: EX (SP), HL", cpu.get_pc());
         cpu.inc_pc(1);
