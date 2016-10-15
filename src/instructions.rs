@@ -1352,6 +1352,7 @@ impl Instruction for Ei {
 
 struct ExAfAfAlt;
 struct ExMemSpHl;
+struct ExMemSpIx;
 struct ExDeHl;
 
 impl Instruction for ExAfAfAlt {
@@ -1413,6 +1414,34 @@ impl Instruction for ExDeHl {
     }
 }
 
+impl Instruction for ExMemSpIx {
+    fn execute(&self, cpu: &mut Cpu) {
+        let sp = cpu.read_reg16(Reg16::SP);
+        let ix = cpu.read_reg16(Reg16::IX);
+
+        let (ixhigh, ixlow) = (((ix & 0xFF00) >> 8) as u8,
+                               ((ix & 0x00FF)       as u8));
+        let memval = (cpu.read_word(sp    ) as u16) |
+                    ((cpu.read_word(sp + 1) as u16) << 8);
+
+        cpu.contend_read_no_mreq(sp + 1);
+
+        cpu.write_reg16(Reg16::IX, memval);
+
+        cpu.write_word(sp + 1, ixhigh);
+        cpu.write_word(sp, ixlow);
+
+        cpu.contend_write_no_mreq(sp);
+        cpu.contend_write_no_mreq(sp);
+
+        info!("{:#06x}: EX (SP), IX", cpu.get_pc());
+        cpu.inc_pc(1);
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OSP|OIX, OIX)
+    }
+}
 
 struct Exx;
 
@@ -1642,6 +1671,7 @@ impl Instruction for IncSs {
 
 struct JpMemHl;
 struct JpNn   ;
+struct JpIx   ;
 struct JpCcNn { cond: FlagCond }
 
 impl Instruction for JpMemHl {
@@ -1671,6 +1701,20 @@ impl Instruction for JpNn {
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OWZ, OWZ)
+    }
+}
+
+impl Instruction for JpIx {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+        let ix = cpu.read_reg16(Reg16::IX);
+
+        info!("{:#06x}: JP IX", cpu.get_pc());
+        cpu.set_pc(ix);
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OIX, ONONE)
     }
 }
 
@@ -1891,6 +1935,7 @@ struct LdHlMemNn ;
 struct LdRMemIxD { r: Reg8  }
 struct LdRMemIyD { r: Reg8  }
 struct LdSpHl    ;
+struct LdSpIx    ;
 struct LdRR      { rt: Reg8, rs: Reg8 }
 struct LdRMemHl  { r: Reg8  }
 
@@ -2304,6 +2349,25 @@ impl Instruction for LdSpHl {
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OSP|OH|OL, OSP)
+    }
+}
+
+impl Instruction for LdSpIx {
+    fn execute(&self, cpu: &mut Cpu) {
+        let ix = cpu.read_reg16(Reg16::IX);
+
+        let ir = cpu.read_reg16(Reg16::IR);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+
+        cpu.write_reg16(Reg16::SP, ix);
+
+        info!("{:#06x}: LD SP, IX", cpu.get_pc());
+        cpu.inc_pc(1);
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OSP|OIX, OSP)
     }
 }
 
@@ -4884,16 +4948,16 @@ pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xE0 */    /* 0xE1 */           /* 0xE2 */    /* 0xE3 */    /* 0xE4 */    /* 0xE5 */            /* 0xE6 */    /* 0xE7 */
-    &Unsupported, &PopQq{r:Reg16::IX}, &Unsupported, &Unsupported, &Unsupported, &PushQq{r:Reg16::IX}, &Unsupported, &Unsupported,
+    &Unsupported, &PopQq{r:Reg16::IX}, &Unsupported, &ExMemSpIx  , &Unsupported, &PushQq{r:Reg16::IX}, &Unsupported, &Unsupported,
 
     /* 0xE8 */    /* 0xE9 */    /* 0xEA */    /* 0xEB */    /* 0xEC */    /* 0xED */    /* 0xEE */    /* 0xEF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Unsupported, &JpIx       , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xF0 */    /* 0xF1 */    /* 0xF2 */    /* 0xF3 */    /* 0xF4 */    /* 0xF5 */    /* 0xF6 */    /* 0xF7 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0xF8 */    /* 0xF9 */    /* 0xFA */    /* 0xFB */    /* 0xFC */    /* 0xFD */    /* 0xFE */    /* 0xFF */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported
+    &Unsupported, &LdSpIx     , &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported
 ];
 
 pub const INSTR_TABLE_ED: [&'static Instruction; 256] = [

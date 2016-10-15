@@ -449,6 +449,18 @@ impl Cpu {
         self.tcycles += 1;
     }
 
+    #[inline(always)]
+    pub fn contend_write(&mut self, addr: u16, tcycles: u64) {
+        println!("{: >5} MC {:04x}", self.tcycles, addr);
+        self.tcycles += tcycles;
+    }
+
+    #[inline(always)]
+    pub fn contend_write_no_mreq(&mut self, addr: u16) {
+        println!("{: >5} MC {:04x}", self.tcycles, addr);
+        self.tcycles += 1;
+    }
+
     pub fn fetch_op(&mut self, addr: u16) -> u8 {
         self.contend_read(addr, 4);
         let val = self.memory.read_word(addr);
