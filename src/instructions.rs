@@ -2839,16 +2839,18 @@ impl Instruction for RetCc {
 }
 
 
-struct RlR       { r: Reg8 }
-struct RlMemHl   ;
-struct RlMemIxD  ;
-struct RlMemIyD  ;
-struct RlA       ;
-struct RlcR      { r: Reg8 }
-struct RlcMemHl  ;
-struct RlcMemIxD ;
-struct RlcMemIyD ;
-struct RlcA      ;
+struct RlR        { r: Reg8 }
+struct RlMemHl    ;
+struct RlMemIxD   ;
+struct RlMemIyD   ;
+struct RlA        ;
+struct RlMemIxDR  { r: Reg8 }
+struct RlcR       { r: Reg8 }
+struct RlcMemHl   ;
+struct RlcMemIxD  ;
+struct RlcMemIyD  ;
+struct RlcA       ;
+struct RlcMemIxDR { r: Reg8 }
 
 impl Instruction for RlA {
     fn execute(&self, cpu: &mut Cpu) {
@@ -2925,10 +2927,11 @@ impl Instruction for RlMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let d      = cpu.read_word(curr_pc) as i8;
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
+        cpu.contend_read_no_mreq(addr);
         let mut res = memval.rotate_left(1);
         if cpu.get_flag(CARRY_FLAG) { res |= 0x01; } else { res &= 0xFE; }
 
@@ -2972,6 +2975,34 @@ impl Instruction for RlMemIyD {
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OWZ, OF|OWZ)
+    }
+}
+
+impl Instruction for RlMemIxDR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        cpu.contend_read_no_mreq(addr);
+        let mut res = memval.rotate_left(1);
+        if cpu.get_flag(CARRY_FLAG) { res |= 0x01; } else { res &= 0xFE; }
+
+        cpu.write_reg8(self.r, res);
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        info!("{:#06x}: RL (IX{:+#04X}), {:?}", cpu.get_pc() - 2, d, self.r);
+        cpu.inc_pc(2);
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
@@ -3024,10 +3055,11 @@ impl Instruction for RlcMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let d      = cpu.read_word(curr_pc) as i8;
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
+        cpu.contend_read_no_mreq(addr);
         let res = memval.rotate_left(1);
 
         cpu.write_word(addr, res);
@@ -3095,6 +3127,33 @@ impl Instruction for RlcA {
     }
 }
 
+impl Instruction for RlcMemIxDR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        cpu.contend_read_no_mreq(addr);
+        let res = memval.rotate_left(1);
+
+        cpu.write_reg8(self.r, res);
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        info!("{:#06x}: RLC (IX{:+#04X}), {:?}", cpu.get_pc() - 2, d, self.r);
+        cpu.inc_pc(2);
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+}
+
 
 struct Rld;
 
@@ -3130,16 +3189,18 @@ impl Instruction for Rld {
 }
 
 
-struct RrR       { r: Reg8 }
-struct RrMemHl   ;
-struct RrMemIxD  ;
-struct RrMemIyD  ;
-struct RrA       ;
-struct RrcR      { r: Reg8 }
-struct RrcMemHl  ;
-struct RrcMemIxD ;
-struct RrcMemIyD ;
-struct RrcA      ;
+struct RrR        { r: Reg8 }
+struct RrMemHl    ;
+struct RrMemIxD   ;
+struct RrMemIyD   ;
+struct RrA        ;
+struct RrMemIxDR  { r: Reg8 }
+struct RrcR       { r: Reg8 }
+struct RrcMemHl   ;
+struct RrcMemIxD  ;
+struct RrcMemIyD  ;
+struct RrcA       ;
+struct RrcMemIxDR { r: Reg8 }
 
 impl Instruction for RrR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -3192,10 +3253,11 @@ impl Instruction for RrMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let d      = cpu.read_word(curr_pc) as i8;
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
+        cpu.contend_read_no_mreq(addr);
         let mut res = memval.rotate_right(1);
         if cpu.get_flag(CARRY_FLAG) { res |= 0x80; } else { res &= 0x7F; }
 
@@ -3266,6 +3328,34 @@ impl Instruction for RrA {
     }
 }
 
+impl Instruction for RrMemIxDR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        cpu.contend_read_no_mreq(addr);
+        let mut res = memval.rotate_right(1);
+        if cpu.get_flag(CARRY_FLAG) { res |= 0x80; } else { res &= 0x7F; }
+
+        cpu.write_reg8(self.r, res);
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        info!("{:#06x}: RR (IX{:+#04X}), {:?}", cpu.get_pc() - 2, d, self.r);
+        cpu.inc_pc(2);
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OWZ, OF|OWZ)
+    }
+}
+
 impl Instruction for RrcR {
     fn execute(&self, cpu: &mut Cpu) {
         let r = cpu.read_reg8(self.r);
@@ -3315,10 +3405,11 @@ impl Instruction for RrcMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let d      = cpu.read_word(curr_pc) as i8;
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
+        cpu.contend_read_no_mreq(addr);
         let res = memval.rotate_right(1);
 
         cpu.write_word(addr, res);
@@ -3383,6 +3474,33 @@ impl Instruction for RrcA {
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OA|OF, OA|OF)
+    }
+}
+
+impl Instruction for RrcMemIxDR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        cpu.contend_read_no_mreq(addr);
+        let res = memval.rotate_right(1);
+
+        cpu.write_reg8(self.r, res);
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        info!("{:#06x}: RRC (IX{:+#04X}), {:?}", cpu.get_pc() - 2, d, self.r);
+        cpu.inc_pc(2);
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
     }
 }
 
@@ -3727,10 +3845,11 @@ impl Instruction for SbcHlSs {
 }
 
 
-struct SlaR      { r: Reg8 }
-struct SlaMemHl  ;
-struct SlaMemIxD ;
-struct SlaMemIyD ;
+struct SlaR       { r: Reg8 }
+struct SlaMemHl   ;
+struct SlaMemIxD  ;
+struct SlaMemIyD  ;
+struct SlaMemIxDR { r: Reg8 }
 
 impl Instruction for SlaR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -3781,10 +3900,11 @@ impl Instruction for SlaMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let d      = cpu.read_word(curr_pc) as i8;
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
+        cpu.contend_read_no_mreq(addr);
         let res = memval << 1;
 
         cpu.write_word(addr, res);
@@ -3829,11 +3949,39 @@ impl Instruction for SlaMemIyD {
     }
 }
 
+impl Instruction for SlaMemIxDR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
 
-struct SllR      { r: Reg8 }
-struct SllMemHl  ;
-struct SllMemIxD ;
-struct SllMemIyD ;
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        cpu.contend_read_no_mreq(addr);
+        let res = memval << 1;
+
+        cpu.write_reg8(self.r, res);
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        info!("{:#06x}: SLA (IX{:+#04X}), {:?}", cpu.get_pc() - 2, d, self.r);
+        cpu.inc_pc(2);
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OA|OF|OIX|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+}
+
+
+struct SllR       { r: Reg8 }
+struct SllMemHl   ;
+struct SllMemIxD  ;
+struct SllMemIyD  ;
+struct SllMemIxDR { r: Reg8 }
 
 impl Instruction for SllR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -3884,10 +4032,11 @@ impl Instruction for SllMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let d      = cpu.read_word(curr_pc) as i8;
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
+        cpu.contend_read_no_mreq(addr);
         let res = memval << 1 | 0x1;
 
         cpu.write_word(addr, res);
@@ -3932,11 +4081,39 @@ impl Instruction for SllMemIyD {
     }
 }
 
+impl Instruction for SllMemIxDR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
 
-struct SraR      { r: Reg8 }
-struct SraMemHl  ;
-struct SraMemIxD ;
-struct SraMemIyD ;
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        cpu.contend_read_no_mreq(addr);
+        let res = memval << 1 | 0x1;
+
+        cpu.write_reg8(self.r, res);
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
+
+        info!("{:#06x}: SLL (IX{:+#04X}), {:?}", cpu.get_pc() - 2, d, self.r);
+        cpu.inc_pc(2);
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+}
+
+
+struct SraR       { r: Reg8 }
+struct SraMemHl   ;
+struct SraMemIxD  ;
+struct SraMemIyD  ;
+struct SraMemIxDR { r: Reg8 }
 
 impl Instruction for SraR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -3987,10 +4164,11 @@ impl Instruction for SraMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let d      = cpu.read_word(curr_pc) as i8;
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
+        cpu.contend_read_no_mreq(addr);
         let res = memval >> 1 | (memval & 0x80);
 
         cpu.write_word(addr, res);
@@ -4035,11 +4213,38 @@ impl Instruction for SraMemIyD {
     }
 }
 
+impl Instruction for SraMemIxDR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
 
-struct SrlR { r: Reg8 }
-struct SrlMemHl  ;
-struct SrlMemIxD ;
-struct SrlMemIyD ;
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        cpu.contend_read_no_mreq(addr);
+        let res = memval >> 1 | (memval & 0x80);
+
+        cpu.write_reg8(self.r, res);
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        info!("{:#06x}: SRA (IX{:+#04X}), {:?}", cpu.get_pc() - 2, d, self.r);
+        cpu.inc_pc(2);
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+}
+
+struct SrlR       { r: Reg8 }
+struct SrlMemHl   ;
+struct SrlMemIxD  ;
+struct SrlMemIyD  ;
+struct SrlMemIxDR { r: Reg8 }
 
 impl Instruction for SrlR {
     fn execute(&self, cpu: &mut Cpu) {
@@ -4090,10 +4295,11 @@ impl Instruction for SrlMemIxD {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let d      = cpu.read_word(curr_pc) as i8;
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
         let memval = cpu.read_word(addr);
 
+        cpu.contend_read_no_mreq(addr);
         let res = memval >> 1;
 
         cpu.write_word(addr, res);
@@ -4135,6 +4341,33 @@ impl Instruction for SrlMemIyD {
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OWZ, OF|OWZ)
+    }
+}
+
+impl Instruction for SrlMemIxDR {
+    fn execute(&self, cpu: &mut Cpu) {
+        let curr_pc = cpu.get_pc();
+
+        let d      = cpu.zero_cycle_read_word(curr_pc) as i8;
+        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+        let memval = cpu.read_word(addr);
+
+        cpu.contend_read_no_mreq(addr);
+        let res = memval >> 1;
+
+        cpu.write_reg8(self.r, res);
+        cpu.write_word(addr, res);
+
+        update_flags_logical(cpu, res);
+        cpu.clear_flag ( HALF_CARRY_FLAG                      );
+        cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
+
+        info!("{:#06x}: SRL (IX{:+#04X}), {:?}", cpu.get_pc() - 2, d, self.r);
+        cpu.inc_pc(2);
+    }
+
+    fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
+        (OF|OIX|OWZ, OF|OWZ)
     }
 }
 
@@ -4814,29 +5047,29 @@ pub const INSTR_TABLE_FD: [&'static Instruction; 256] = [
 ];
 
 pub const INSTR_TABLE_DDCB: [&'static Instruction; 256] = [
-    /* 0x00 */    /* 0x01 */    /* 0x02 */    /* 0x03 */    /* 0x04 */    /* 0x05 */    /* 0x06 */    /* 0x07 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RlcMemIxD  , &Unsupported,
+    /* 0x00 */              /* 0x01 */              /* 0x02 */              /* 0x03 */              /* 0x04 */              /* 0x05 */              /* 0x06 */    /* 0x07 */
+    &RlcMemIxDR{r:Reg8::B}, &RlcMemIxDR{r:Reg8::C}, &RlcMemIxDR{r:Reg8::D}, &RlcMemIxDR{r:Reg8::E}, &RlcMemIxDR{r:Reg8::H}, &RlcMemIxDR{r:Reg8::L}, &RlcMemIxD  , &RlcMemIxDR{r:Reg8::A},
 
-    /* 0x08 */    /* 0x09 */    /* 0x0A */    /* 0x0B */    /* 0x0C */    /* 0x0D */    /* 0x0E */    /* 0x0F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RrcMemIxD  , &Unsupported,
+    /* 0x08 */              /* 0x09 */              /* 0x0A */              /* 0x0B */              /* 0x0C */              /* 0x0D */              /* 0x0E */    /* 0x0F */
+    &RrcMemIxDR{r:Reg8::B}, &RrcMemIxDR{r:Reg8::C}, &RrcMemIxDR{r:Reg8::D}, &RrcMemIxDR{r:Reg8::E}, &RrcMemIxDR{r:Reg8::H}, &RrcMemIxDR{r:Reg8::L}, &RrcMemIxD  , &RrcMemIxDR{r:Reg8::A},
 
-    /* 0x10 */    /* 0x11 */    /* 0x12 */    /* 0x13 */    /* 0x14 */    /* 0x15 */    /* 0x16 */    /* 0x17 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RlMemIxD   , &Unsupported,
+    /* 0x10 */              /* 0x11 */              /* 0x12 */              /* 0x13 */              /* 0x14 */              /* 0x15 */              /* 0x16 */    /* 0x17 */
+    &RlMemIxDR{r:Reg8::B} , &RlMemIxDR{r:Reg8::C} , &RlMemIxDR{r:Reg8::D} , &RlMemIxDR{r:Reg8::E} , &RlMemIxDR{r:Reg8::H} , &RlMemIxDR{r:Reg8::L} , &RlMemIxD   , &RlMemIxDR{r:Reg8::A} ,
 
-    /* 0x18 */    /* 0x19 */    /* 0x1A */    /* 0x1B */    /* 0x1C */    /* 0x1D */    /* 0x1E */    /* 0x1F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &RrMemIxD   , &Unsupported,
+    /* 0x18 */              /* 0x19 */              /* 0x1A */              /* 0x1B */              /* 0x1C */              /* 0x1D */              /* 0x1E */    /* 0x1F */
+    &RrMemIxDR{r:Reg8::B} , &RrMemIxDR{r:Reg8::C} , &RrMemIxDR{r:Reg8::D} , &RrMemIxDR{r:Reg8::E} , &RrMemIxDR{r:Reg8::H} , &RrMemIxDR{r:Reg8::L} , &RrMemIxD   , &RrMemIxDR{r:Reg8::A} ,
 
-    /* 0x20 */    /* 0x21 */    /* 0x22 */    /* 0x23 */    /* 0x24 */    /* 0x25 */    /* 0x26 */    /* 0x27 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SlaMemIxD  , &Unsupported,
+    /* 0x20 */              /* 0x21 */              /* 0x22 */              /* 0x23 */              /* 0x24 */              /* 0x25 */              /* 0x26 */    /* 0x27 */
+    &SlaMemIxDR{r:Reg8::B}, &SlaMemIxDR{r:Reg8::C}, &SlaMemIxDR{r:Reg8::D}, &SlaMemIxDR{r:Reg8::E}, &SlaMemIxDR{r:Reg8::H}, &SlaMemIxDR{r:Reg8::L}, &SlaMemIxD  , &SlaMemIxDR{r:Reg8::A},
 
-    /* 0x28 */    /* 0x29 */    /* 0x2A */    /* 0x2B */    /* 0x2C */    /* 0x2D */    /* 0x2E */    /* 0x2F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SraMemIxD  , &Unsupported,
+    /* 0x28 */              /* 0x29 */              /* 0x2A */              /* 0x2B */              /* 0x2C */              /* 0x2D */              /* 0x2E */    /* 0x2F */
+    &SraMemIxDR{r:Reg8::B}, &SraMemIxDR{r:Reg8::C}, &SraMemIxDR{r:Reg8::D}, &SraMemIxDR{r:Reg8::E}, &SraMemIxDR{r:Reg8::H}, &SraMemIxDR{r:Reg8::L}, &SraMemIxD  , &SraMemIxDR{r:Reg8::A},
 
-    /* 0x30 */    /* 0x31 */    /* 0x32 */    /* 0x33 */    /* 0x34 */    /* 0x35 */    /* 0x36 */    /* 0x37 */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SllMemIxD  , &Unsupported,
+    /* 0x30 */              /* 0x31 */              /* 0x32 */              /* 0x33 */              /* 0x34 */              /* 0x35 */              /* 0x36 */    /* 0x37 */
+    &SllMemIxDR{r:Reg8::B}, &SllMemIxDR{r:Reg8::C}, &SllMemIxDR{r:Reg8::D}, &SllMemIxDR{r:Reg8::E}, &SllMemIxDR{r:Reg8::H}, &SllMemIxDR{r:Reg8::L}, &SllMemIxD  , &SllMemIxDR{r:Reg8::A},
 
-    /* 0x38 */    /* 0x39 */    /* 0x3A */    /* 0x3B */    /* 0x3C */    /* 0x3D */    /* 0x3E */    /* 0x3F */
-    &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &SrlMemIxD  , &Unsupported,
+    /* 0x38 */              /* 0x39 */              /* 0x3A */              /* 0x3B */              /* 0x3C */              /* 0x3D */              /* 0x3E */    /* 0x3F */
+    &SrlMemIxDR{r:Reg8::B}, &SrlMemIxDR{r:Reg8::C}, &SrlMemIxDR{r:Reg8::D}, &SrlMemIxDR{r:Reg8::E}, &SrlMemIxDR{r:Reg8::H}, &SrlMemIxDR{r:Reg8::L}, &SrlMemIxD  , &SrlMemIxDR{r:Reg8::A},
 
     /* 0x40 */    /* 0x41 */    /* 0x42 */    /* 0x43 */    /* 0x44 */    /* 0x45 */    /* 0x46 */        /* 0x47 */
     &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &BitBMemIxD{b:0}, &Unsupported,
