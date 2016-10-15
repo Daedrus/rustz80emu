@@ -119,6 +119,13 @@ impl Instruction for AdcMemIxD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
         let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
@@ -267,6 +274,13 @@ impl Instruction for AddMemIxD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_add(memval);
@@ -386,6 +400,15 @@ impl Instruction for AddIxPp {
     fn execute(&self, cpu: &mut Cpu) {
         let ix = cpu.read_reg16(Reg16::IX);
         let ss = cpu.read_reg16(self.r);
+
+        let ir = cpu.read_reg16(Reg16::IR);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
 
         let res = ix.wrapping_add(ss);
 
@@ -513,6 +536,13 @@ impl Instruction for AndMemIxD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a & memval;
@@ -834,6 +864,13 @@ impl Instruction for CpMemIxD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_sub(memval);
@@ -1166,7 +1203,15 @@ impl Instruction for DecMemIxD {
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
         let addr = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
+        cpu.contend_read_no_mreq(addr);
 
         let res = memval.wrapping_sub(1);
 
@@ -1522,7 +1567,15 @@ impl Instruction for IncMemIxD {
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
         let addr = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
+        cpu.contend_read_no_mreq(addr);
 
         let res = memval.wrapping_add(1);
 
@@ -1915,6 +1968,9 @@ impl Instruction for LdMemIxDN {
         let n    = cpu.read_word(curr_pc + 2);
         let addr = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
 
+        cpu.contend_read_no_mreq(curr_pc + 2);
+        cpu.contend_read_no_mreq(curr_pc + 2);
+
         cpu.write_word(addr, n);
         cpu.write_reg16(Reg16::WZ, addr);
 
@@ -1934,6 +1990,12 @@ impl Instruction for LdMemIxDR {
         let d    = cpu.read_word(curr_pc + 1) as i8;
         let r    = cpu.read_reg8(self.r);
         let addr = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
 
         cpu.write_word(addr, r);
         cpu.write_reg16(Reg16::WZ, addr);
@@ -2188,6 +2250,13 @@ impl Instruction for LdRMemIxD {
 
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         cpu.write_reg8(self.r, memval);
@@ -2486,6 +2555,13 @@ impl Instruction for OrMemIxD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a | memval;
@@ -3576,6 +3652,13 @@ impl Instruction for SbcMemIxD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
         let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
@@ -4144,6 +4227,13 @@ impl Instruction for SubMemIxD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_sub(memval);
@@ -4267,6 +4357,13 @@ impl Instruction for XorMemIxD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a ^ memval;
@@ -4412,7 +4509,7 @@ pub const INSTR_TABLE_CB: [&'static Instruction; 256] = [
 
 pub const INSTR_TABLE_DD: [&'static Instruction; 256] = [
     /* 0x00 */    /* 0x01 */             /* 0x02 */    /* 0x03 */    /* 0x04 */    /* 0x05 */    /* 0x06 */    /* 0x07 */
-    &Unsupported, &Unsupported,          &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
+    &Nop        , &Unsupported,          &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
 
     /* 0x08 */    /* 0x09 */             /* 0x0A */    /* 0x0B */    /* 0x0C */    /* 0x0D */    /* 0x0E */    /* 0x0F */
     &Unsupported, &AddIxPp{r:Reg16::BC}, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported, &Unsupported,
