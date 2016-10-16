@@ -413,7 +413,7 @@ impl Cpu {
             },
             0xED => {
                 self.inc_pc(1); curr_pc += 1;
-                let i1 = self.read_word(curr_pc);
+                let i1 = self.fetch_op(curr_pc);
                 self.inc_r(2);
                 &instructions::INSTR_TABLE_ED[i1 as usize].execute(self);
             },
