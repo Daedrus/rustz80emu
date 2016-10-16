@@ -419,7 +419,7 @@ impl Cpu {
             },
             0xFD => {
                 self.inc_pc(1); curr_pc += 1;
-                let i1 = self.read_word(curr_pc);
+                let i1 = self.fetch_op(curr_pc);
                 self.inc_r(2);
                 match i1 {
                     0xCB => {

@@ -152,6 +152,13 @@ impl Instruction for AdcMemIyD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
         let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
@@ -315,6 +322,13 @@ impl Instruction for AddMemIyD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_add(memval);
@@ -438,6 +452,15 @@ impl Instruction for AddIyRr {
     fn execute(&self, cpu: &mut Cpu) {
         let iy = cpu.read_reg16(Reg16::IY);
         let ss = cpu.read_reg16(self.r);
+
+        let ir = cpu.read_reg16(Reg16::IR);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
 
         let res = iy.wrapping_add(ss);
 
@@ -578,6 +601,13 @@ impl Instruction for AndMemIyD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a & memval;
@@ -905,6 +935,13 @@ impl Instruction for CpMemIyD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_sub(memval);
@@ -1274,7 +1311,15 @@ impl Instruction for DecMemIyD {
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
         let addr = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
+        cpu.contend_read_no_mreq(addr);
 
         let res = memval.wrapping_sub(1);
 
@@ -1784,7 +1829,15 @@ impl Instruction for IncMemIyD {
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
         let addr = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
+        cpu.contend_read_no_mreq(addr);
 
         let res = memval.wrapping_add(1);
         cpu.write_reg16(Reg16::WZ, addr);
@@ -2222,6 +2275,9 @@ impl Instruction for LdMemIyDN {
         let n    = cpu.read_word(curr_pc + 2);
         let addr = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
 
+        cpu.contend_read_no_mreq(curr_pc + 2);
+        cpu.contend_read_no_mreq(curr_pc + 2);
+
         cpu.write_word(addr, n);
         cpu.write_reg16(Reg16::WZ, addr);
 
@@ -2241,6 +2297,12 @@ impl Instruction for LdMemIyDR {
         let d    = cpu.read_word(curr_pc + 1) as i8;
         let r    = cpu.read_reg8(self.r);
         let addr = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
 
         cpu.write_word(addr, r);
         cpu.write_reg16(Reg16::WZ, addr);
@@ -2482,6 +2544,13 @@ impl Instruction for LdRMemIyD {
 
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         cpu.write_reg8(self.r, memval);
@@ -2499,6 +2568,11 @@ impl Instruction for LdRMemIyD {
 impl Instruction for LdSpHl {
     fn execute(&self, cpu: &mut Cpu) {
         let hl = cpu.read_reg16(Reg16::HL);
+
+        let ir = cpu.read_reg16(Reg16::IR);
+        cpu.contend_read_no_mreq(ir);
+        cpu.contend_read_no_mreq(ir);
+
         cpu.write_reg16(Reg16::SP, hl);
 
         info!("{:#06x}: LD SP, HL", cpu.get_pc());
@@ -2913,6 +2987,13 @@ impl Instruction for OrMemIyD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a | memval;
@@ -4286,6 +4367,13 @@ impl Instruction for SbcMemIyD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
         let c      = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
 
@@ -4984,6 +5072,13 @@ impl Instruction for SubMemIyD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a.wrapping_sub(memval);
@@ -5115,6 +5210,13 @@ impl Instruction for XorMemIyD {
         let a      = cpu.read_reg8(Reg8::A);
         let d      = cpu.read_word(curr_pc + 1) as i8;
         let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + d as i16) as u16;
+
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+        cpu.contend_read_no_mreq(curr_pc + 1);
+
         let memval = cpu.read_word(addr);
 
         let res = a ^ memval;
