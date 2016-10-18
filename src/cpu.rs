@@ -530,13 +530,13 @@ impl Cpu {
 
     #[inline(always)]
     pub fn contend_write(&mut self, addr: u16, tcycles: u64) {
-        println!("{: >5} MC {:04x}", self.tcycles, addr);
+        // println!("{: >5} MC {:04x}", self.tcycles, addr);
         self.tcycles += tcycles;
     }
 
     #[inline(always)]
     pub fn contend_write_no_mreq(&mut self, addr: u16) {
-        println!("{: >5} MC {:04x}", self.tcycles, addr);
+        // println!("{: >5} MC {:04x}", self.tcycles, addr);
         self.tcycles += 1;
     }
 
