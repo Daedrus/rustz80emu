@@ -1947,7 +1947,6 @@ impl Instruction for JpNn {
 
 impl Instruction for JpIx {
     fn execute(&self, cpu: &mut Cpu) {
-        let curr_pc = cpu.get_pc();
         let ix = cpu.read_reg16(Reg16::IX);
 
         info!("{:#06x}: JP IX", cpu.get_pc());
@@ -1961,7 +1960,6 @@ impl Instruction for JpIx {
 
 impl Instruction for JpIy {
     fn execute(&self, cpu: &mut Cpu) {
-        let curr_pc = cpu.get_pc();
         let iy = cpu.read_reg16(Reg16::IY);
 
         info!("{:#06x}: JP IY", cpu.get_pc());
