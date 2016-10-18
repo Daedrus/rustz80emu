@@ -379,24 +379,23 @@ impl Cpu {
     }
 
     pub fn run_instruction(&mut self) {
-        let mut curr_pc = self.pc;
-        let i0 = self.fetch_op(curr_pc);
+        let i0 = self.fetch_op();
 
-        // TODO: Handle sequences of DD and FD
         match i0 {
             0xCB => {
-                self.inc_pc(1); curr_pc += 1;
-                let i1 = self.fetch_op(curr_pc);
+                self.inc_pc(1);
+                let i1 = self.fetch_op();
                 self.inc_r(2);
                 &instructions::INSTR_TABLE_CB[i1 as usize].execute(self);
             },
             0xDD => {
-                self.inc_pc(1); curr_pc += 1;
-                let i1 = self.fetch_op(curr_pc);
+                self.inc_pc(1);
+                let i1 = self.fetch_op();
                 self.inc_r(2);
                 match i1 {
                     0xCB => {
-                        self.inc_pc(1); curr_pc += 1;
+                        self.inc_pc(1);
+                        let curr_pc = self.pc;
                         let i2 = self.read_word(curr_pc);
                         let i3 = self.read_word(curr_pc + 1);
                         self.contend_read_no_mreq(curr_pc + 1);
@@ -412,18 +411,19 @@ impl Cpu {
                 };
             },
             0xED => {
-                self.inc_pc(1); curr_pc += 1;
-                let i1 = self.fetch_op(curr_pc);
+                self.inc_pc(1);
+                let i1 = self.fetch_op();
                 self.inc_r(2);
                 &instructions::INSTR_TABLE_ED[i1 as usize].execute(self);
             },
             0xFD => {
-                self.inc_pc(1); curr_pc += 1;
-                let i1 = self.fetch_op(curr_pc);
+                self.inc_pc(1);
+                let i1 = self.fetch_op();
                 self.inc_r(2);
                 match i1 {
                     0xCB => {
-                        self.inc_pc(1); curr_pc += 1;
+                        self.inc_pc(1);
+                        let curr_pc = self.pc;
                         let i2 = self.read_word(curr_pc);
                         let i3 = self.read_word(curr_pc + 1);
                         self.contend_read_no_mreq(curr_pc + 1);
@@ -470,9 +470,10 @@ impl Cpu {
         self.tcycles += 1;
     }
 
-    pub fn fetch_op(&mut self, addr: u16) -> u8 {
-        self.contend_read(addr, 4);
-        let val = self.memory.read_word(addr);
+    pub fn fetch_op(&mut self) -> u8 {
+        let curr_pc = self.pc;
+        self.contend_read(curr_pc, 4);
+        let val = self.memory.read_word(curr_pc);
         //println!("{: >5} MR {:04x} {:02x}", self.tcycles, addr, val);
         val
     }
