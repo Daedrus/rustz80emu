@@ -21,7 +21,7 @@ impl FromStr for Command {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match command(s.as_bytes()) {
             IResult::Done(_, c) => Ok(c),
-            err => Err(format!("Unable to parse command: {:?}", err).into())
+            err => Err(format!("Unable to parse command: {:?}", err).into()),
         }
     }
 }
@@ -70,7 +70,7 @@ named!(u16_parser<u16>,
             str::from_utf8),
         FromStr::from_str));
 
-//TODO: I have a feeling this can be done in a better way, without the unwrap()
+// TODO: I have a feeling this can be done in a better way, without the unwrap()
 named!(u16_hex_parser<u16>,
     chain!(
         opt!(tag!("0x")) ~
@@ -130,7 +130,7 @@ impl From<Reg16> for OutputRegisters {
             Reg16::SP => OSP,
             Reg16::IX => OIX,
             Reg16::IY => OIY,
-            Reg16::WZ => OWZ
+            Reg16::WZ => OWZ,
         }
     }
 }
@@ -156,7 +156,7 @@ impl From<Reg8> for OutputRegisters {
             Reg8::L_ALT => OL_ALT,
             Reg8::F_ALT => OF_ALT,
             Reg8::IXL | Reg8::IXH => OIX,
-            Reg8::IYL | Reg8::IYH => OIY
+            Reg8::IYL | Reg8::IYH => OIY,
         }
     }
 }
@@ -172,65 +172,112 @@ macro_rules! reg_str {
 }
 
 pub struct Debugger {
-    cpu: Cpu
+    cpu: Cpu,
 }
 
 impl Debugger {
     pub fn new(cpu: Cpu) -> Debugger {
-        Debugger {
-            cpu: cpu
-        }
+        Debugger { cpu: cpu }
     }
 
-    //TODO: Rewrite this mess
+    // TODO: Rewrite this mess
     pub fn output(&self, regs: OutputRegisters) -> String {
         let mut outstr = String::new();
 
-        let astr    = reg_str!(regs, OA    , " {:02X} ", self.cpu.read_reg8(Reg8::A)       , "    "      );
-        let aaltstr = reg_str!(regs, OA_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::A_ALT)   , "    "      );
-        let fstr    = reg_str!(regs, OF    , " {:02X} ", self.cpu.get_flags().bits() as u8 , "    "      );
-        let fbinstr = reg_str!(regs, OF    , " {:08b} ", self.cpu.get_flags().bits()       , "          ");
-        let faltstr = reg_str!(regs, OF_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::F_ALT)   , "    "      );
-        let bstr    = reg_str!(regs, OB    , " {:02X} ", self.cpu.read_reg8(Reg8::B)       , "    "      );
-        let baltstr = reg_str!(regs, OB_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::B_ALT)   , "    "      );
-        let cstr    = reg_str!(regs, OC    , " {:02X} ", self.cpu.read_reg8(Reg8::C)       , "    "      );
-        let caltstr = reg_str!(regs, OC_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::C_ALT)   , "    "      );
-        let dstr    = reg_str!(regs, OD    , " {:02X} ", self.cpu.read_reg8(Reg8::D)       , "    "      );
-        let daltstr = reg_str!(regs, OD_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::D_ALT)   , "    "      );
-        let estr    = reg_str!(regs, OE    , " {:02X} ", self.cpu.read_reg8(Reg8::E)       , "    "      );
-        let ealtstr = reg_str!(regs, OE_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::E_ALT)   , "    "      );
-        let hstr    = reg_str!(regs, OH    , " {:02X} ", self.cpu.read_reg8(Reg8::H)       , "    "      );
-        let haltstr = reg_str!(regs, OH_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::H_ALT)   , "    "      );
-        let lstr    = reg_str!(regs, OL    , " {:02X} ", self.cpu.read_reg8(Reg8::L)       , "    "      );
-        let laltstr = reg_str!(regs, OL_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::L_ALT)   , "    "      );
-        let ixstr   = reg_str!(regs, OIX   , " {:04X} ", self.cpu.read_reg16(Reg16::IX)    , "      "    );
-        let iystr   = reg_str!(regs, OIY   , " {:04X} ", self.cpu.read_reg16(Reg16::IY)    , "      "    );
-        let spstr   = reg_str!(regs, OSP   , " {:04X} ", self.cpu.read_reg16(Reg16::SP)    , "      "    );
-        let pcstr   = format!(" {:04X} ", self.cpu.get_pc());
+        let astr =
+            reg_str!(regs, OA    , " {:02X} ", self.cpu.read_reg8(Reg8::A)       , "    "      );
+        let aaltstr =
+            reg_str!(regs, OA_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::A_ALT)   , "    "      );
+        let fstr =
+            reg_str!(regs, OF    , " {:02X} ", self.cpu.get_flags().bits() as u8 , "    "      );
+        let fbinstr =
+            reg_str!(regs, OF    , " {:08b} ", self.cpu.get_flags().bits()       , "          ");
+        let faltstr =
+            reg_str!(regs, OF_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::F_ALT)   , "    "      );
+        let bstr =
+            reg_str!(regs, OB    , " {:02X} ", self.cpu.read_reg8(Reg8::B)       , "    "      );
+        let baltstr =
+            reg_str!(regs, OB_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::B_ALT)   , "    "      );
+        let cstr =
+            reg_str!(regs, OC    , " {:02X} ", self.cpu.read_reg8(Reg8::C)       , "    "      );
+        let caltstr =
+            reg_str!(regs, OC_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::C_ALT)   , "    "      );
+        let dstr =
+            reg_str!(regs, OD    , " {:02X} ", self.cpu.read_reg8(Reg8::D)       , "    "      );
+        let daltstr =
+            reg_str!(regs, OD_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::D_ALT)   , "    "      );
+        let estr =
+            reg_str!(regs, OE    , " {:02X} ", self.cpu.read_reg8(Reg8::E)       , "    "      );
+        let ealtstr =
+            reg_str!(regs, OE_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::E_ALT)   , "    "      );
+        let hstr =
+            reg_str!(regs, OH    , " {:02X} ", self.cpu.read_reg8(Reg8::H)       , "    "      );
+        let haltstr =
+            reg_str!(regs, OH_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::H_ALT)   , "    "      );
+        let lstr =
+            reg_str!(regs, OL    , " {:02X} ", self.cpu.read_reg8(Reg8::L)       , "    "      );
+        let laltstr =
+            reg_str!(regs, OL_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::L_ALT)   , "    "      );
+        let ixstr =
+            reg_str!(regs, OIX   , " {:04X} ", self.cpu.read_reg16(Reg16::IX)    , "      "    );
+        let iystr =
+            reg_str!(regs, OIY   , " {:04X} ", self.cpu.read_reg16(Reg16::IY)    , "      "    );
+        let spstr =
+            reg_str!(regs, OSP   , " {:04X} ", self.cpu.read_reg16(Reg16::SP)    , "      "    );
+        let pcstr = format!(" {:04X} ", self.cpu.get_pc());
 
         outstr.push_str("                    -----------           -----------\n");
-        outstr.push_str("                af: |"); outstr.push_str(&astr); outstr.push_str("|"); outstr.push_str(&fstr);
-        outstr.push_str("|   af_alt: |"); outstr.push_str(&aaltstr); outstr.push_str("|"); outstr.push_str(&faltstr);
+        outstr.push_str("                af: |");
+        outstr.push_str(&astr);
+        outstr.push_str("|");
+        outstr.push_str(&fstr);
+        outstr.push_str("|   af_alt: |");
+        outstr.push_str(&aaltstr);
+        outstr.push_str("|");
+        outstr.push_str(&faltstr);
         outstr.push_str("|\n");
-        outstr.push_str("                bc: |"); outstr.push_str(&bstr); outstr.push_str("|"); outstr.push_str(&cstr);
-        outstr.push_str("|   bc_alt: |"); outstr.push_str(&baltstr); outstr.push_str("|"); outstr.push_str(&caltstr);
+        outstr.push_str("                bc: |");
+        outstr.push_str(&bstr);
+        outstr.push_str("|");
+        outstr.push_str(&cstr);
+        outstr.push_str("|   bc_alt: |");
+        outstr.push_str(&baltstr);
+        outstr.push_str("|");
+        outstr.push_str(&caltstr);
         outstr.push_str("|\n");
-        outstr.push_str("                de: |"); outstr.push_str(&dstr); outstr.push_str("|"); outstr.push_str(&estr);
-        outstr.push_str("|   de_alt: |"); outstr.push_str(&daltstr); outstr.push_str("|"); outstr.push_str(&ealtstr);
+        outstr.push_str("                de: |");
+        outstr.push_str(&dstr);
+        outstr.push_str("|");
+        outstr.push_str(&estr);
+        outstr.push_str("|   de_alt: |");
+        outstr.push_str(&daltstr);
+        outstr.push_str("|");
+        outstr.push_str(&ealtstr);
         outstr.push_str("|\n");
-        outstr.push_str("                hl: |"); outstr.push_str(&hstr); outstr.push_str("|"); outstr.push_str(&lstr);
-        outstr.push_str("|   hl_alt: |"); outstr.push_str(&haltstr); outstr.push_str("|"); outstr.push_str(&laltstr);
+        outstr.push_str("                hl: |");
+        outstr.push_str(&hstr);
+        outstr.push_str("|");
+        outstr.push_str(&lstr);
+        outstr.push_str("|   hl_alt: |");
+        outstr.push_str(&haltstr);
+        outstr.push_str("|");
+        outstr.push_str(&laltstr);
         outstr.push_str("|\n");
         outstr.push_str("                    -----------           -----------\n");
         outstr.push_str("                    ----------            ------------\n");
-        outstr.push_str("                ix: | "); outstr.push_str(&ixstr);
+        outstr.push_str("                ix: | ");
+        outstr.push_str(&ixstr);
         outstr.push_str(" |            | SZ_H_PNC |\n");
-        outstr.push_str("                iy: | "); outstr.push_str(&iystr);
-        outstr.push_str(" |         f: |"); outstr.push_str(&fbinstr);
+        outstr.push_str("                iy: | ");
+        outstr.push_str(&iystr);
+        outstr.push_str(" |         f: |");
+        outstr.push_str(&fbinstr);
         outstr.push_str("|\n");
-        outstr.push_str("                sp: | "); outstr.push_str(&spstr);
+        outstr.push_str("                sp: | ");
+        outstr.push_str(&spstr);
         outstr.push_str(" |            ------------\n");
-        outstr.push_str("                pc: | "); outstr.push_str(&pcstr);
+        outstr.push_str("                pc: | ");
+        outstr.push_str(&pcstr);
         outstr.push_str(" |\n");
         outstr.push_str("                    ----------\n");
 
@@ -247,30 +294,31 @@ impl Debugger {
             let input: String = input.trim().into();
 
             match input.parse() {
-                Ok(Command::Exit) =>
-                    break,
+                Ok(Command::Exit) => break,
 
-                Ok(Command::Cont) =>
+                Ok(Command::Cont) => {
                     loop {
-                        let (pre_regs, post_regs) = self.cpu.decode_instruction().get_accessed_regs();
+                        let (pre_regs, post_regs) =
+                            self.cpu.decode_instruction().get_accessed_regs();
                         debug!("{}", self.output(pre_regs));
                         self.cpu.run_instruction();
                         debug!("{}", self.output(post_regs));
-                    },
+                    }
+                }
 
-                Ok(Command::Step(count)) if count > 0 =>
+                Ok(Command::Step(count)) if count > 0 => {
                     for _ in 0..count {
-                        let (pre_regs, post_regs) = self.cpu.decode_instruction().get_accessed_regs();
+                        let (pre_regs, post_regs) =
+                            self.cpu.decode_instruction().get_accessed_regs();
                         debug!("{}", self.output(pre_regs));
                         self.cpu.run_instruction();
                         debug!("{}", self.output(post_regs));
-                    },
+                    }
+                }
 
-                Ok(Command::Mem(addr)) =>
-                    println!("{:#04X}", self.cpu.read_word(addr)),
+                Ok(Command::Mem(addr)) => println!("{:#04X}", self.cpu.read_word(addr)),
 
-                _ =>
-                    println!("Unknown command"),
+                _ => println!("Unknown command"),
             };
         }
     }

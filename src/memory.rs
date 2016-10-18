@@ -11,7 +11,7 @@ pub struct Memory {
     rom1: Vec<u8>,
     bank: [Vec<u8>; 8],
 
-    writable_rom: bool
+    writable_rom: bool,
 }
 
 impl Memory {
@@ -21,16 +21,13 @@ impl Memory {
                 match self.rom {
                     0 => self.rom0[addr as usize],
                     1 => self.rom1[addr as usize],
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 }
             }
-            0x4000...0x7FFF =>
-                self.bank[self.ram_0x4000_0x7fff][(addr - 0x4000) as usize],
-            0x8000...0xBFFF =>
-                self.bank[self.ram_0x8000_0xbfff][(addr - 0x8000) as usize],
-            0xC000...0xFFFF =>
-                self.bank[self.ram_0xc000_0xffff][(addr - 0xC000) as usize],
-            _ => unreachable!()
+            0x4000...0x7FFF => self.bank[self.ram_0x4000_0x7fff][(addr - 0x4000) as usize],
+            0x8000...0xBFFF => self.bank[self.ram_0x8000_0xbfff][(addr - 0x8000) as usize],
+            0xC000...0xFFFF => self.bank[self.ram_0xc000_0xffff][(addr - 0xC000) as usize],
+            _ => unreachable!(),
         };
 
         debug!("                Read value {:#04X} from address {:#06X}", val, addr);
@@ -47,9 +44,13 @@ impl Memory {
         } else {
             if self.writable_rom {
                 match self.rom {
-                    0 => { self.rom0[addr as usize] = val; },
-                    1 => { self.rom1[addr as usize] = val; },
-                    _ => unreachable!()
+                    0 => {
+                        self.rom0[addr as usize] = val;
+                    }
+                    1 => {
+                        self.rom1[addr as usize] = val;
+                    }
+                    _ => unreachable!(),
                 }
             } else {
                 panic!("Trying to write to unrecognized address: {:#x}", addr);
@@ -86,15 +87,15 @@ impl Memory {
 
 impl fmt::Debug for Memory {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "ram_0xc000_0xffff: {}
-                     ram_0x8000_0xbfff: {}
-                     ram_0x4000_0x7fff: {}
-                     rom: {}
-                    ",
-                    self.ram_0xc000_0xffff,
-                    self.ram_0x8000_0xbfff,
-                    self.ram_0x4000_0x7fff,
-                    self.rom)
+        writeln!(f,
+                 "ram_0xc000_0xffff: {}
+                  ram_0x8000_0xbfff: {}
+                  ram_0x4000_0x7fff: {}
+                  rom: {} ",
+                 self.ram_0xc000_0xffff,
+                 self.ram_0x8000_0xbfff,
+                 self.ram_0x4000_0x7fff,
+                 self.rom)
     }
 }
 
@@ -108,7 +109,7 @@ pub struct MemoryBuilder {
     rom1: Vec<u8>,
     bank: [Vec<u8>; 8],
 
-    writable_rom: bool
+    writable_rom: bool,
 }
 
 impl MemoryBuilder {
@@ -122,18 +123,16 @@ impl MemoryBuilder {
             rom0: vec![0; 16 * 1024],
             rom1: vec![0; 16 * 1024],
 
-            bank: [
-                vec![0; 16 * 1024],
-                vec![0; 16 * 1024],
-                vec![0; 16 * 1024],
-                vec![0; 16 * 1024],
-                vec![0; 16 * 1024],
-                vec![0; 16 * 1024],
-                vec![0; 16 * 1024],
-                vec![0; 16 * 1024]
-            ],
+            bank: [vec![0; 16 * 1024],
+                   vec![0; 16 * 1024],
+                   vec![0; 16 * 1024],
+                   vec![0; 16 * 1024],
+                   vec![0; 16 * 1024],
+                   vec![0; 16 * 1024],
+                   vec![0; 16 * 1024],
+                   vec![0; 16 * 1024]],
 
-            writable_rom: false
+            writable_rom: false,
         }
     }
 
@@ -163,7 +162,7 @@ impl MemoryBuilder {
             rom1: self.rom1,
             bank: self.bank,
 
-            writable_rom: self.writable_rom
+            writable_rom: self.writable_rom,
         }
     }
 }

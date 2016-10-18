@@ -9,7 +9,9 @@ pub fn save_cpu(cpu: &Cpu, path: &str) {
     let encoded: Vec<u8> = encode(cpu, SizeLimit::Infinite).unwrap();
     let mut file = File::create(path).unwrap();
     match file.write_all(&encoded) {
-        Err(e) => { panic!("Couldn't write to {} : {}", path, e.description()); }
+        Err(e) => {
+            panic!("Couldn't write to {} : {}", path, e.description());
+        }
         Ok(_) => (),
     }
 }
