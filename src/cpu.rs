@@ -160,7 +160,7 @@ pub struct Cpu {
 
 
 impl Cpu {
-    pub fn new(memory: memory::Memory) -> Cpu {
+    pub fn new(memory: memory::Memory) -> Self {
         Cpu {
             a: 0xFF,
             f: StatusIndicatorFlags::all(),
@@ -237,7 +237,7 @@ impl Cpu {
     }
 
     pub fn read_reg8(&self, reg: Reg8) -> u8 {
-        let val = match reg {
+        match reg {
             Reg8::A => self.a,
             Reg8::B => self.b,
             Reg8::C => self.c,
@@ -259,10 +259,7 @@ impl Cpu {
             Reg8::IXH => ((self.ix & 0xFF00) >> 8) as u8,
             Reg8::IYL => (self.iy & 0x00FF) as u8,
             Reg8::IYH => ((self.iy & 0xFF00) >> 8) as u8,
-        };
-
-        // debug!("                Read value {:#04X} from register {:?}", val, reg);
-        val
+        }
     }
 
     pub fn write_reg8(&mut self, reg: Reg8, val: u8) {
@@ -289,12 +286,10 @@ impl Cpu {
             Reg8::IYL => self.iy = (self.iy & 0xFF00) | val as u16,
             Reg8::IYH => self.iy = (self.iy & 0x00FF) | ((val as u16) << 8),
         }
-
-        // debug!("                Write value {:#04X} to register {:?}", val, reg);
     }
 
     pub fn read_reg16(&self, reg: Reg16) -> u16 {
-        let val = match reg {
+        match reg {
             Reg16::IX => self.ix,
             Reg16::IY => self.iy,
             Reg16::SP => self.sp,
@@ -314,10 +309,7 @@ impl Cpu {
                 };
                 (((high as u16) << 8) | low as u16)
             }
-        };
-
-        // debug!("                Read value {:#04X} from register {:?}", val, reg);
-        val
+        }
     }
 
     pub fn write_reg16(&mut self, reg: Reg16, val: u16) {
@@ -337,8 +329,6 @@ impl Cpu {
             Reg16::IY => self.iy = val,
             Reg16::WZ => self.wz = val,
         }
-
-        // debug!("                Write value {:#06X} to register {:?}", val, reg);
     }
 
     pub fn inc_pc(&mut self, val: u16) {

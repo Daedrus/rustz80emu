@@ -16,7 +16,7 @@ pub struct Memory {
 
 impl Memory {
     pub fn read_word(&self, addr: u16) -> u8 {
-        let val = match addr {
+        match addr {
             0x0000...0x3FFF => {
                 match self.rom {
                     0 => self.rom0[addr as usize],
@@ -28,10 +28,7 @@ impl Memory {
             0x8000...0xBFFF => self.bank[self.ram_0x8000_0xbfff][(addr - 0x8000) as usize],
             0xC000...0xFFFF => self.bank[self.ram_0xc000_0xffff][(addr - 0xC000) as usize],
             _ => unreachable!(),
-        };
-
-        // debug!("                Read value {:#04X} from address {:#06X}", val, addr);
-        val
+        }
     }
 
     pub fn write_word(&mut self, addr: u16, val: u8) {
@@ -56,8 +53,6 @@ impl Memory {
                 panic!("Trying to write to unrecognized address: {:#x}", addr);
             }
         }
-
-        // debug!("                Write value {:#04X} to address {:#06X}", val, addr);
     }
 
     pub fn change_bank(&mut self, val: u8) {
@@ -113,7 +108,7 @@ pub struct MemoryBuilder {
 }
 
 impl MemoryBuilder {
-    pub fn new() -> MemoryBuilder {
+    pub fn new() -> Self {
         MemoryBuilder {
             rom: 0,
             ram_0x4000_0x7fff: 5,

@@ -176,7 +176,7 @@ pub struct Debugger {
 }
 
 impl Debugger {
-    pub fn new(cpu: Cpu) -> Debugger {
+    pub fn new(cpu: Cpu) -> Self {
         Debugger { cpu: cpu }
     }
 
@@ -327,7 +327,7 @@ impl Debugger {
                     }
                 }
 
-                Ok(Command::Mem(addr)) => println!("{:#04X}", self.cpu.read_word(addr)),
+                Ok(Command::Mem(addr)) => println!("{:#04X}", self.cpu.zero_cycle_read_word(addr)),
 
                 _ => println!("Unknown command"),
             };
