@@ -57,18 +57,13 @@ mod test_zex {
 
     fn test_rom(rom: &[u8]) {
         let mut dummyrom0: Vec<u8> = vec![0; 16 * 1024];
-        let dummyrom1: Vec<u8> = vec![0; 16 * 1024];
 
         for (i, byte) in rom.iter().enumerate() {
             dummyrom0[i + 0x100] = *byte;
         }
-        // The ZEX tests seems to get their SP from address 0x0006
-        dummyrom0[0x0006] = 0x00;
-        dummyrom0[0x0007] = 0xF0;
 
         let memory = MemoryBuilder::new()
                         .rom0(dummyrom0)
-                        .rom1(dummyrom1)
                         .writable_rom(true)
                         .finalize();
 

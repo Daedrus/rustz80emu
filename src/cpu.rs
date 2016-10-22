@@ -162,16 +162,16 @@ pub struct Cpu {
 impl Cpu {
     pub fn new(memory: memory::Memory) -> Cpu {
         Cpu {
-            a: 0,
-            f: StatusIndicatorFlags::empty(),
+            a: 0xFF,
+            f: StatusIndicatorFlags::all(),
             b: 0,
             c: 0,
             d: 0,
             e: 0,
             h: 0,
             l: 0,
-            a_alt: 0,
-            f_alt: StatusIndicatorFlags::empty(),
+            a_alt: 0xFF,
+            f_alt: StatusIndicatorFlags::all(),
             b_alt: 0,
             c_alt: 0,
             d_alt: 0,
@@ -182,7 +182,7 @@ impl Cpu {
             r: 0,
             ix: 0,
             iy: 0,
-            sp: 0,
+            sp: 0xFFFF,
             pc: 0,
             wz: 0,
             iff1: false,
@@ -203,16 +203,16 @@ impl Cpu {
     }
 
     pub fn reset(&mut self) {
-        self.a = 0;
-        self.f = StatusIndicatorFlags::empty();
+        self.a = 0xFF;
+        self.f = StatusIndicatorFlags::all();
         self.b = 0;
         self.c = 0;
         self.d = 0;
         self.e = 0;
         self.h = 0;
         self.l = 0;
-        self.a_alt = 0;
-        self.f_alt = StatusIndicatorFlags::empty();
+        self.a_alt = 0xFF;
+        self.f_alt = StatusIndicatorFlags::all();
         self.b_alt = 0;
         self.c_alt = 0;
         self.d_alt = 0;
@@ -223,7 +223,7 @@ impl Cpu {
         self.r = 0;
         self.ix = 0;
         self.iy = 0;
-        self.sp = 0;
+        self.sp = 0xFFFF;
         self.pc = 0;
         self.wz = 0;
         self.iff1 = false;
