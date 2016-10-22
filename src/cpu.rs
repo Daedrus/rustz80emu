@@ -422,22 +422,6 @@ impl Cpu {
         }
     }
 
-    pub fn decode_instruction(&self) -> &instructions::Instruction {
-        let i0 = self.memory.read_word(self.pc);
-        let i1 = self.memory.read_word(self.pc + 1);
-        let i3 = self.memory.read_word(self.pc + 3);
-
-        match (i0, i1) {
-            (0xDD, 0xCB) => instructions::INSTR_TABLE_DDCB[i3 as usize],
-            (0xDD, _   ) => instructions::INSTR_TABLE_DD[i1 as usize],
-            (0xFD, 0xCB) => instructions::INSTR_TABLE_FDCB[i3 as usize],
-            (0xFD, _   ) => instructions::INSTR_TABLE_FD[i1 as usize],
-            (0xCB, _   ) => instructions::INSTR_TABLE_CB[i1 as usize],
-            (0xED, _   ) => instructions::INSTR_TABLE_ED[i1 as usize],
-            (_   , _   ) => instructions::INSTR_TABLE[i0 as usize],
-        }
-    }
-
     pub fn run_instruction(&mut self) {
         let i0 = self.fetch_op();
 
@@ -557,7 +541,7 @@ impl Cpu {
         self.memory.write_word(addr, val);
     }
 
-    pub fn zero_cycle_read_word(&mut self, addr: u16) -> u8 {
+    pub fn zero_cycle_read_word(&self, addr: u16) -> u8 {
         self.memory.read_word(addr)
     }
 

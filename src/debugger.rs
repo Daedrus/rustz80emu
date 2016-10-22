@@ -1,4 +1,6 @@
 use super::cpu::{Cpu, Reg8, Reg16};
+use super::instructions;
+
 use std::io::{stdin, stdout};
 use std::io::Write;
 
@@ -181,7 +183,7 @@ impl Debugger {
     }
 
     // TODO: Rewrite this mess
-    pub fn output(&self, regs: OutputRegisters) -> String {
+    fn output(&self, regs: OutputRegisters) -> String {
         let mut outstr = String::new();
 
         let astr =
@@ -295,6 +297,24 @@ impl Debugger {
         outstr
     }
 
+    fn peek_at_next_instruction(&self) -> &instructions::Instruction {
+        let curr_pc = self.cpu.get_pc();
+
+        let i0 = self.cpu.zero_cycle_read_word(curr_pc);
+        let i1 = self.cpu.zero_cycle_read_word(curr_pc + 1);
+        let i3 = self.cpu.zero_cycle_read_word(curr_pc + 3);
+
+        match (i0, i1) {
+            (0xDD, 0xCB) => instructions::INSTR_TABLE_DDCB[i3 as usize],
+            (0xDD, _   ) => instructions::INSTR_TABLE_DD[i1 as usize],
+            (0xFD, 0xCB) => instructions::INSTR_TABLE_FDCB[i3 as usize],
+            (0xFD, _   ) => instructions::INSTR_TABLE_FD[i1 as usize],
+            (0xCB, _   ) => instructions::INSTR_TABLE_CB[i1 as usize],
+            (0xED, _   ) => instructions::INSTR_TABLE_ED[i1 as usize],
+            (_   , _   ) => instructions::INSTR_TABLE[i0 as usize],
+        }
+    }
+
     pub fn run(&mut self) {
         loop {
             print!("z80> ");
@@ -310,7 +330,7 @@ impl Debugger {
                 Ok(Command::Cont) => {
                     loop {
                         let (pre_regs, post_regs) =
-                            self.cpu.decode_instruction().get_accessed_regs();
+                            self.peek_at_next_instruction().get_accessed_regs();
                         debug!("{}", self.output(pre_regs));
                         self.cpu.run_instruction();
                         debug!("{}", self.output(post_regs));
@@ -320,7 +340,7 @@ impl Debugger {
                 Ok(Command::Step(count)) if count > 0 => {
                     for _ in 0..count {
                         let (pre_regs, post_regs) =
-                            self.cpu.decode_instruction().get_accessed_regs();
+                            self.peek_at_next_instruction().get_accessed_regs();
                         debug!("{}", self.output(pre_regs));
                         self.cpu.run_instruction();
                         debug!("{}", self.output(post_regs));
