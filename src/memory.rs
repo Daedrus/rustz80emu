@@ -30,7 +30,7 @@ impl Memory {
             _ => unreachable!(),
         };
 
-        debug!("                Read value {:#04X} from address {:#06X}", val, addr);
+        // debug!("                Read value {:#04X} from address {:#06X}", val, addr);
         val
     }
 
@@ -57,7 +57,7 @@ impl Memory {
             }
         }
 
-        debug!("                Write value {:#04X} to address {:#06X}", val, addr);
+        // debug!("                Write value {:#04X} to address {:#06X}", val, addr);
     }
 
     pub fn change_bank(&mut self, val: u8) {

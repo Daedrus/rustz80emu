@@ -261,7 +261,7 @@ impl Cpu {
             Reg8::IYH => ((self.iy & 0xFF00) >> 8) as u8,
         };
 
-        debug!("                Read value {:#04X} from register {:?}", val, reg);
+        // debug!("                Read value {:#04X} from register {:?}", val, reg);
         val
     }
 
@@ -290,7 +290,7 @@ impl Cpu {
             Reg8::IYH => self.iy = (self.iy & 0x00FF) | ((val as u16) << 8),
         }
 
-        debug!("                Write value {:#04X} to register {:?}", val, reg);
+        // debug!("                Write value {:#04X} to register {:?}", val, reg);
     }
 
     pub fn read_reg16(&self, reg: Reg16) -> u16 {
@@ -316,7 +316,7 @@ impl Cpu {
             }
         };
 
-        debug!("                Read value {:#04X} from register {:?}", val, reg);
+        // debug!("                Read value {:#04X} from register {:?}", val, reg);
         val
     }
 
@@ -338,7 +338,7 @@ impl Cpu {
             Reg16::WZ => self.wz = val,
         }
 
-        debug!("                Write value {:#06X} to register {:?}", val, reg);
+        // debug!("                Write value {:#06X} to register {:?}", val, reg);
     }
 
     pub fn inc_pc(&mut self, val: u16) {
