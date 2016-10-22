@@ -233,6 +233,11 @@ impl Debugger {
         let istr = format!("{:02X}", self.cpu.read_reg8(Reg8::I));
         let rstr = format!("{:02X}", self.cpu.read_reg8(Reg8::R));
 
+        let mem0str = format!("{}", self.cpu.get_0000_bank());
+        let mem4str = format!("{}", self.cpu.get_4000_bank());
+        let mem8str = format!("{}", self.cpu.get_8000_bank());
+        let memcstr = format!("{}", self.cpu.get_c000_bank());
+
         outstr.push_str("                    -----------        -----------\n");
         outstr.push_str("                af: |");
         outstr.push_str(&astr);
@@ -280,18 +285,30 @@ impl Debugger {
         outstr.push_str("                    ----------         ------------\n");
         outstr.push_str("                ix: | ");
         outstr.push_str(&ixstr);
-        outstr.push_str(" |         | SZ_H_PNC |\n");
+        outstr.push_str(" |         | SZ_H_PNC |");
+        outstr.push_str("  0x0000: ROM ");
+        outstr.push_str(&mem0str);
+        outstr.push_str("\n");
         outstr.push_str("                iy: | ");
         outstr.push_str(&iystr);
         outstr.push_str(" |      f: |");
         outstr.push_str(&fbinstr);
-        outstr.push_str("|\n");
+        outstr.push_str("|");
+        outstr.push_str("  0x4000: RAM ");
+        outstr.push_str(&mem4str);
+        outstr.push_str("\n");
         outstr.push_str("                sp: | ");
         outstr.push_str(&spstr);
-        outstr.push_str(" |         ------------\n");
+        outstr.push_str(" |         ------------");
+        outstr.push_str("  0x8000: RAM ");
+        outstr.push_str(&mem8str);
+        outstr.push_str("\n");
         outstr.push_str("                pc: | ");
         outstr.push_str(&pcstr);
-        outstr.push_str(" |\n");
+        outstr.push_str(" |");
+        outstr.push_str("                       0xC000: RAM ");
+        outstr.push_str(&memcstr);
+        outstr.push_str("\n");
         outstr.push_str("                    ----------\n");
 
         outstr

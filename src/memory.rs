@@ -78,6 +78,19 @@ impl Memory {
             }
         }
     }
+
+    pub fn get_0000_bank(&self) -> u8 {
+        self.rom
+    }
+    pub fn get_4000_bank(&self) -> u8 {
+        self.ram_0x4000_0x7fff as u8
+    }
+    pub fn get_8000_bank(&self) -> u8 {
+        self.ram_0x8000_0xbfff as u8
+    }
+    pub fn get_c000_bank(&self) -> u8 {
+        self.ram_0xc000_0xffff as u8
+    }
 }
 
 impl fmt::Debug for Memory {

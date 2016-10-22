@@ -535,16 +535,6 @@ impl Cpu {
         // println!("{: >5} MW {:04x} {:02x}", self.tcycles, addr, val);
     }
 
-    // Helper function to be able to write to memory without increasing the tcycles
-    // Used for setting up the memory in the fuse tests
-    pub fn zero_cycle_write_word(&mut self, addr: u16, val: u8) {
-        self.memory.write_word(addr, val);
-    }
-
-    pub fn zero_cycle_read_word(&self, addr: u16) -> u8 {
-        self.memory.read_word(addr)
-    }
-
     pub fn read_port(&self, port: Port) -> u8 {
         // TODO
         match port {
@@ -579,5 +569,32 @@ impl Cpu {
             Port::AY38912_REG14_W => (),
             Port::FE => (),
         }
+    }
+
+    // TODO: Remove these once the debugger, tests and cpu can share memory
+
+    // Helper function to be able to write to memory without increasing the tcycles
+    // Used for setting up the memory in the fuse tests
+    pub fn zero_cycle_write_word(&mut self, addr: u16, val: u8) {
+        self.memory.write_word(addr, val);
+    }
+
+    pub fn zero_cycle_read_word(&self, addr: u16) -> u8 {
+        self.memory.read_word(addr)
+    }
+
+    // The only reason these exist is because I have not yet figured out how to
+    // get both the Cpu and the Debugger to have access to the Memory
+    pub fn get_0000_bank(&self) -> u8 {
+        self.memory.get_0000_bank()
+    }
+    pub fn get_4000_bank(&self) -> u8 {
+        self.memory.get_4000_bank()
+    }
+    pub fn get_8000_bank(&self) -> u8 {
+        self.memory.get_8000_bank()
+    }
+    pub fn get_c000_bank(&self) -> u8 {
+        self.memory.get_c000_bank()
     }
 }
