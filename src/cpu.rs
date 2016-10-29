@@ -535,18 +535,26 @@ impl Cpu {
         // println!("{: >5} MW {:04x} {:02x}", self.tcycles, addr, val);
     }
 
-    pub fn read_port(&self, port: Port) -> u8 {
+    pub fn read_port(&mut self, port: Port) -> u8 {
         // TODO
-        match port {
+        self.tcycles += 1;
+
+        let val = match port {
             Port::MEMORY => 0x0,
             Port::AY38912_REG14 => 0x0,
             Port::AY38912_REG14_W => unreachable!(),
             Port::FE => 0x0,
-        }
+        };
+
+        self.tcycles += 3;
+
+        val
     }
 
     pub fn write_port(&mut self, port: Port, val: u8) {
         // TODO
+        self.tcycles += 1;
+
         match port {
             Port::MEMORY => {
                 let bank = val & 0b00000111;
@@ -568,7 +576,9 @@ impl Cpu {
             Port::AY38912_REG14 => (),
             Port::AY38912_REG14_W => (),
             Port::FE => (),
-        }
+        };
+
+        self.tcycles += 3;
     }
 
     // TODO: Remove these once the debugger, tests and cpu can share memory
