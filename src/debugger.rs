@@ -9,6 +9,11 @@ use std::str::{self, FromStr};
 
 use nom::{IResult, eof, space, digit, hex_digit};
 
+use log::LogRecord;
+use env_logger::LogBuilder;
+use std::env;
+
+
 #[derive(Debug, Clone, Copy)]
 pub enum Command {
     Step(u16),
@@ -333,6 +338,17 @@ impl Debugger {
     }
 
     pub fn run(&mut self) {
+        let mut builder = LogBuilder::new();
+
+        let format = |record: &LogRecord| format!("{}", record.args());
+        builder.format(format);
+
+        if env::var("RUST_LOG").is_ok() {
+            builder.parse(&env::var("RUST_LOG").unwrap());
+        }
+
+        builder.init().unwrap();
+
         loop {
             print!("z80> ");
             stdout().flush().unwrap();
