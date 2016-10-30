@@ -2898,11 +2898,11 @@ impl Instruction for Ldir {
         info!("{:#06x}: LDIR", cpu.get_pc() - 1);
         if cpu.get_flag(PARITY_OVERFLOW_FLAG) {
             let de = cpu.read_reg16(Reg16::DE);
-            cpu.contend_read_no_mreq(de - 1);
-            cpu.contend_read_no_mreq(de - 1);
-            cpu.contend_read_no_mreq(de - 1);
-            cpu.contend_read_no_mreq(de - 1);
-            cpu.contend_read_no_mreq(de - 1);
+            cpu.contend_write_no_mreq(de - 1);
+            cpu.contend_write_no_mreq(de - 1);
+            cpu.contend_write_no_mreq(de - 1);
+            cpu.contend_write_no_mreq(de - 1);
+            cpu.contend_write_no_mreq(de - 1);
 
             let curr_pc = cpu.get_pc();
             cpu.write_reg16(Reg16::WZ, curr_pc + 1);
