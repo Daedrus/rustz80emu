@@ -26,7 +26,7 @@ mod test_fuse {
         }}
     }
 
-    fn regs_setup(file: &File, cpu: &mut Cpu) -> Option<(String, u64)> {
+    fn regs_setup(file: &File, cpu: &mut Cpu) -> Option<(String, u32)> {
         let mut file = file.bytes().map(|ch| ch.unwrap());
 
         let testdesc: String = read!("{}", file);
@@ -54,7 +54,7 @@ mod test_fuse {
         if read_u8_hex!(file) == 0 { cpu.resume(); } else { cpu.halt(); }
 
         let tstate: String = read!("{}", file);
-        let tstate = u64::from_str_radix(&tstate, 10).unwrap();
+        let tstate = u32::from_str_radix(&tstate, 10).unwrap();
 
         Some((testdesc, tstate))
     }
@@ -100,7 +100,7 @@ mod test_fuse {
         let mut cpu = Cpu::new(memory);
 
         loop {
-            let mut tcycle_lim: u64 = 0;
+            let mut tcycle_lim: u32 = 0;
 
             match regs_setup(&file, &mut cpu) {
                 Some((testname, tcycles)) => {

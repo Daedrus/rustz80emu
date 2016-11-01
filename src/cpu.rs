@@ -150,17 +150,23 @@ pub struct Cpu {
     im: u8,
 
     // T Cycle counter
-    pub tcycles: u64,
+    pub tcycles: u32,
 
     // HALT state
     halted: bool,
 
     memory: memory::Memory,
+
+    ula_contention: Vec<u8>,
+    ula_contention_no_mreq: Vec<u8>,
 }
 
 
 impl Cpu {
     pub fn new(memory: memory::Memory) -> Self {
+        let ula_contention = include_bytes!("ulacontention.bin");
+        let ula_contention_no_mreq = include_bytes!("ulacontention.bin");
+
         Cpu {
             a: 0xFF,
             f: StatusIndicatorFlags::all(),
@@ -193,6 +199,9 @@ impl Cpu {
             tcycles: 0,
 
             memory: memory,
+
+            ula_contention: ula_contention.to_vec(),
+            ula_contention_no_mreq: ula_contention_no_mreq.to_vec(),
         }
     }
 
@@ -489,28 +498,36 @@ impl Cpu {
         }
     }
 
+    fn is_addr_contended(&self, addr: u16) -> bool {
+        (addr >= 0x4000 && addr < 0x8000) ||
+        (addr >= 0xC000 && (self.get_c000_bank() % 2 != 0))
+    }
+
     // TODO: How to implement stubs for these functions?
     #[inline(always)]
-    pub fn contend_read(&mut self, addr: u16, tcycles: u64) {
+    pub fn contend_read(&mut self, addr: u16, tcycles: u32) {
         // println!("{: >5} MC {:04x}", self.tcycles, addr);
+        if self.is_addr_contended(addr) {
+            self.tcycles += self.ula_contention[self.tcycles as usize] as u32;
+        }
         self.tcycles += tcycles;
     }
 
     #[inline(always)]
     pub fn contend_read_no_mreq(&mut self, addr: u16) {
         // println!("{: >5} MC {:04x}", self.tcycles, addr);
+        if self.is_addr_contended(addr) {
+            self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
+        }
         self.tcycles += 1;
-    }
-
-    #[inline(always)]
-    pub fn contend_write(&mut self, addr: u16, tcycles: u64) {
-        // println!("{: >5} MC {:04x}", self.tcycles, addr);
-        self.tcycles += tcycles;
     }
 
     #[inline(always)]
     pub fn contend_write_no_mreq(&mut self, addr: u16) {
         // println!("{: >5} MC {:04x}", self.tcycles, addr);
+        if self.is_addr_contended(addr) {
+            self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
+        }
         self.tcycles += 1;
     }
 
