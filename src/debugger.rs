@@ -234,7 +234,7 @@ impl Debugger {
 
         let pcstr = format!(" {:04X} ", self.cpu.get_pc());
 
-        let tcyclesstr = format!("{:04}", self.cpu.tcycles);
+        let tcyclesstr = format!("{:05}", self.cpu.tcycles);
         let istr = format!("{:02X}", self.cpu.read_reg8(Reg8::I));
         let rstr = format!("{:02X}", self.cpu.read_reg8(Reg8::R));
 
@@ -242,6 +242,10 @@ impl Debugger {
         let mem4str = format!("{}", self.cpu.get_4000_bank());
         let mem8str = format!("{}", self.cpu.get_8000_bank());
         let memcstr = format!("{}", self.cpu.get_c000_bank());
+
+        let imstr = format!("{}", self.cpu.get_im());
+        let iff1str = format!("{}", if self.cpu.get_iff1() {1} else {0});
+        let iff2str = format!("{}", if self.cpu.get_iff2() {1} else {0});
 
         outstr.push_str("                    -----------        -----------\n");
         outstr.push_str("                af: |");
@@ -254,6 +258,8 @@ impl Debugger {
         outstr.push_str(&faltstr);
         outstr.push_str("|   tcycles: ");
         outstr.push_str(&tcyclesstr);
+        outstr.push_str("    im: ");
+        outstr.push_str(&imstr);
         outstr.push_str("\n");
         outstr.push_str("                bc: |");
         outstr.push_str(&bstr);
@@ -265,6 +271,8 @@ impl Debugger {
         outstr.push_str(&caltstr);
         outstr.push_str("|         i: ");
         outstr.push_str(&istr);
+        outstr.push_str("     iff1: ");
+        outstr.push_str(&iff1str);
         outstr.push_str("\n");
         outstr.push_str("                de: |");
         outstr.push_str(&dstr);
@@ -276,6 +284,8 @@ impl Debugger {
         outstr.push_str(&ealtstr);
         outstr.push_str("|         r: ");
         outstr.push_str(&rstr);
+        outstr.push_str("     iff2: ");
+        outstr.push_str(&iff2str);
         outstr.push_str("\n");
         outstr.push_str("                hl: |");
         outstr.push_str(&hstr);
@@ -291,7 +301,7 @@ impl Debugger {
         outstr.push_str("                ix: | ");
         outstr.push_str(&ixstr);
         outstr.push_str(" |         | SZ_H_PNC |");
-        outstr.push_str("  0x0000: ROM ");
+        outstr.push_str("   0x0000: ROM ");
         outstr.push_str(&mem0str);
         outstr.push_str("\n");
         outstr.push_str("                iy: | ");
@@ -299,19 +309,19 @@ impl Debugger {
         outstr.push_str(" |      f: |");
         outstr.push_str(&fbinstr);
         outstr.push_str("|");
-        outstr.push_str("  0x4000: RAM ");
+        outstr.push_str("   0x4000: RAM ");
         outstr.push_str(&mem4str);
         outstr.push_str("\n");
         outstr.push_str("                sp: | ");
         outstr.push_str(&spstr);
         outstr.push_str(" |         ------------");
-        outstr.push_str("  0x8000: RAM ");
+        outstr.push_str("   0x8000: RAM ");
         outstr.push_str(&mem8str);
         outstr.push_str("\n");
         outstr.push_str("                pc: | ");
         outstr.push_str(&pcstr);
         outstr.push_str(" |");
-        outstr.push_str("                       0xC000: RAM ");
+        outstr.push_str("                        0xC000: RAM ");
         outstr.push_str(&memcstr);
         outstr.push_str("\n");
         outstr.push_str("                    ----------\n");
