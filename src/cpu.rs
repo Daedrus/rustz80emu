@@ -552,9 +552,36 @@ impl Cpu {
         // println!("{: >5} MW {:04x} {:02x}", self.tcycles, addr, val);
     }
 
+    fn contend_port_early(&mut self, port: Port) {
+        if self.is_addr_contended(port as u16) {
+            self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
+        }
+
+        self.tcycles += 1;
+    }
+
+    fn contend_port_late(&mut self, port: Port) {
+        if ((port as u16) & 0x0001) == 0 {
+            self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
+            self.tcycles += 2;
+        } else {
+            if self.is_addr_contended(port as u16) {
+                self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
+                self.tcycles += 1;
+                self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
+                self.tcycles += 1;
+                self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
+            } else {
+                self.tcycles += 2;
+            }
+        }
+    }
+
     pub fn read_port(&mut self, port: Port) -> u8 {
         // TODO
-        self.tcycles += 1;
+
+        self.contend_port_early(port);
+        self.contend_port_late(port);
 
         let val = match port {
             Port::MEMORY => 0x0,
@@ -563,14 +590,15 @@ impl Cpu {
             Port::FE => 0x0,
         };
 
-        self.tcycles += 3;
+        self.tcycles += 1;
 
         val
     }
 
     pub fn write_port(&mut self, port: Port, val: u8) {
         // TODO
-        self.tcycles += 1;
+
+        self.contend_port_early(port);
 
         match port {
             Port::MEMORY => {
@@ -595,7 +623,8 @@ impl Cpu {
             Port::FE => (),
         };
 
-        self.tcycles += 3;
+        self.contend_port_late(port);
+        self.tcycles += 1;
     }
 
     // TODO: Remove these once the debugger, tests and cpu can share memory
