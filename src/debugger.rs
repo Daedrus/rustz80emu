@@ -375,6 +375,7 @@ impl Debugger {
                         let (pre_regs, post_regs) =
                             self.peek_at_next_instruction().get_accessed_regs();
                         debug!("{}", self.output(pre_regs));
+                        self.cpu.handle_interrupts();
                         self.cpu.run_instruction();
                         debug!("{}", self.output(post_regs));
                     }
@@ -385,6 +386,7 @@ impl Debugger {
                         let (pre_regs, post_regs) =
                             self.peek_at_next_instruction().get_accessed_regs();
                         debug!("{}", self.output(pre_regs));
+                        self.cpu.handle_interrupts();
                         self.cpu.run_instruction();
                         debug!("{}", self.output(post_regs));
                     }

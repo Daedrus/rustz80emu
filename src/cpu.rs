@@ -207,6 +207,7 @@ impl Cpu {
 
     pub fn run(&mut self) {
         loop {
+            self.handle_interrupts();
             self.run_instruction();
         }
     }
@@ -376,7 +377,6 @@ impl Cpu {
         self.iff2
     }
 
-    // TODO: Properly model interrupt modes
     pub fn set_im(&mut self, val: u8) {
         self.im = val;
     }
@@ -428,6 +428,46 @@ impl Cpu {
             FlagCond::PE =>  self.f.contains(PARITY_OVERFLOW_FLAG),
             FlagCond::P  => !self.f.contains(SIGN_FLAG),
             FlagCond::M  =>  self.f.contains(SIGN_FLAG),
+        }
+    }
+
+    pub fn handle_interrupts(&mut self) -> bool {
+        if self.tcycles >= 70908 {
+            self.tcycles -= 70908;
+
+            if self.iff1 {
+                self.clear_iff1();
+                self.clear_iff2();
+                self.inc_r(1);
+                self.tcycles += 7;
+
+                let curr_pc = self.pc;
+                let curr_sp = self.sp;
+                self.write_word(curr_sp - 1, ((curr_pc & 0xFF00) >> 8) as u8);
+                self.write_word(curr_sp - 2,  (curr_pc & 0x00FF)       as u8);
+                self.sp -= 2;
+
+                match self.im {
+                    0 => {
+                        self.pc = 0x0038;
+                    },
+                    1 => {
+                        self.pc = 0x0038;
+                    },
+                    2 => {
+                        let addr = 256u16 * (self.i as u16) + 256u16;
+                        let low  = self.read_word(addr);
+                        let high = self.read_word(addr + 1);
+                        self.pc = ((high as u16) << 8 ) | low as u16;
+                    },
+                    _ => {
+                        unreachable!();
+                    }
+                }
+            }
+            true
+        } else {
+            false
         }
     }
 
