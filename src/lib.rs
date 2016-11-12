@@ -14,6 +14,7 @@ extern crate bincode;
 pub mod cpu;
 pub mod memory;
 pub mod instructions;
+pub mod peripherals;
 pub mod utils;
 
 #[macro_use]

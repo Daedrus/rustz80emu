@@ -1,4 +1,5 @@
 use std::fmt;
+use super::peripherals::Peripheral;
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct Memory {
@@ -55,11 +56,11 @@ impl Memory {
         }
     }
 
-    pub fn change_bank(&mut self, val: u8) {
+    fn change_bank(&mut self, val: u8) {
         self.ram_0xc000_0xffff = val as usize;
     }
 
-    pub fn change_rom_bank(&mut self, val: u8) {
+    fn change_rom_bank(&mut self, val: u8) {
         self.rom = val;
     }
 
@@ -90,6 +91,17 @@ impl Memory {
     }
     pub fn get_c000_bank(&self) -> u8 {
         self.ram_0xc000_0xffff as u8
+    }
+}
+
+impl Peripheral for Memory {
+    fn read_port(&self, _: u16) -> u8 {
+        0
+    }
+
+    fn write_port(&mut self, _: u16, val: u8) {
+        self.change_bank(val & 0b00000111);
+        self.change_rom_bank((val & 0b00010000) >> 4);
     }
 }
 

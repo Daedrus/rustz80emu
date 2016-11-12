@@ -1,5 +1,6 @@
 use super::memory;
 use super::instructions;
+use super::peripherals::{Peripheral, Ula, Ay};
 
 
 enum_from_primitive! {
@@ -53,17 +54,6 @@ pub enum Reg8 {
     H_ALT = 0b10100,
     L_ALT = 0b10101,
     F_ALT = 0b11000,
-}
-}
-
-enum_from_primitive! {
-#[derive(Debug, Clone, Copy, RustcEncodable, RustcDecodable)]
-#[allow(non_camel_case_types)]
-pub enum Port {
-    MEMORY = 0x7ffd,
-    AY38912_REG14 = 0xfffd,
-    AY38912_REG14_W = 0xbffd,
-    FE = 0xfe
 }
 }
 
@@ -156,6 +146,8 @@ pub struct Cpu {
     halted: bool,
 
     memory: memory::Memory,
+    ay: Ay,
+    ula: Ula,
 
     ula_contention: Vec<u8>,
     ula_contention_no_mreq: Vec<u8>,
@@ -164,9 +156,11 @@ pub struct Cpu {
 
 impl Cpu {
     pub fn new(memory: memory::Memory) -> Self {
+        // TODO: Move this to ula peripheral
         let ula_contention = include_bytes!("ulacontention.bin");
         let ula_contention_no_mreq = include_bytes!("ulacontention.bin");
 
+        // TODO: Peripherals belong to machine, not CPU
         Cpu {
             a: 0xFF,
             f: StatusIndicatorFlags::all(),
@@ -199,6 +193,8 @@ impl Cpu {
             tcycles: 0,
 
             memory: memory,
+            ay: Ay { value: 0 },
+            ula: Ula { value: 0 },
 
             ula_contention: ula_contention.to_vec(),
             ula_contention_no_mreq: ula_contention_no_mreq.to_vec(),
@@ -592,20 +588,20 @@ impl Cpu {
         // println!("{: >5} MW {:04x} {:02x}", self.tcycles, addr, val);
     }
 
-    fn contend_port_early(&mut self, port: Port) {
-        if self.is_addr_contended(port as u16) {
+    fn contend_port_early(&mut self, port: u16) {
+        if self.is_addr_contended(port) {
             self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
         }
 
         self.tcycles += 1;
     }
 
-    fn contend_port_late(&mut self, port: Port) {
-        if ((port as u16) & 0x0001) == 0 {
+    fn contend_port_late(&mut self, port: u16) {
+        if (port & 0x0001) == 0 {
             self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
             self.tcycles += 2;
         } else {
-            if self.is_addr_contended(port as u16) {
+            if self.is_addr_contended(port) {
                 self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
                 self.tcycles += 1;
                 self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
@@ -617,17 +613,15 @@ impl Cpu {
         }
     }
 
-    pub fn read_port(&mut self, port: Port) -> u8 {
-        // TODO
-
+    pub fn read_port(&mut self, port: u16) -> u8 {
         self.contend_port_early(port);
         self.contend_port_late(port);
 
         let val = match port {
-            Port::MEMORY => 0x0,
-            Port::AY38912_REG14 => 0x0,
-            Port::AY38912_REG14_W => unreachable!(),
-            Port::FE => 0x0,
+            0x7ffd => self.memory.read_port(port),
+            0xfffd | 0xbffd => self.ay.read_port(port),
+            0x00fe => self.ula.read_port(port),
+            _ => unreachable!(),
         };
 
         self.tcycles += 1;
@@ -635,32 +629,14 @@ impl Cpu {
         val
     }
 
-    pub fn write_port(&mut self, port: Port, val: u8) {
-        // TODO
-
+    pub fn write_port(&mut self, port: u16, val: u8) {
         self.contend_port_early(port);
 
         match port {
-            Port::MEMORY => {
-                let bank = val & 0b00000111;
-                self.memory.change_bank(bank);
-
-                let rombank = (val & 0b00010000) >> 4;
-                self.memory.change_rom_bank(rombank);
-
-                let screen = (val & 0b00001000) >> 3;
-                if screen == 1 {
-                    panic!("Unhandled screen mode");
-                }
-
-                let disable = (val & 0b00100000) >> 5;
-                if disable == 1 {
-                    panic!("Unhandled disabled mode");
-                }
-            }
-            Port::AY38912_REG14 => (),
-            Port::AY38912_REG14_W => (),
-            Port::FE => (),
+            0x7ffd => self.memory.write_port(port, val),
+            0xfffd | 0xbffd => self.ay.write_port(port, val),
+            0x00fe => self.ula.write_port(port, val),
+            _ => unreachable!(),
         };
 
         self.contend_port_late(port);

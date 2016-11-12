@@ -1,6 +1,5 @@
 use super::cpu::*;
 use super::debugger::*;
-use num::FromPrimitive;
 
 
 pub trait Instruction {
@@ -1635,24 +1634,14 @@ impl Instruction for InAPortN {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
-        let n = cpu.read_word(curr_pc + 1);
+        let port = cpu.read_word(curr_pc + 1);
 
-        let port = Port::from_u8(n);
+        let portval = cpu.read_port(port as u16);
 
-        match port {
-            Some(port) => {
-                let portval = cpu.read_port(port);
+        cpu.write_reg8(Reg8::A, portval);
 
-                cpu.write_reg8(Reg8::A, portval);
-
-                info!("{:#06x}: IN A, ({:#04X})", cpu.get_pc(), n);
-                cpu.inc_pc(2);
-            },
-            None => {
-                warn!("Trying to read from unsupported port {:#04X}", n);
-                cpu.inc_pc(2);
-            }
-        }
+        info!("{:#06x}: IN A, ({:#04X})", cpu.get_pc(), port);
+        cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -1662,24 +1651,14 @@ impl Instruction for InAPortN {
 
 impl Instruction for InRPortC {
     fn execute(&self, cpu: &mut Cpu) {
-        let c = cpu.read_reg8(Reg8::C);
+        let port = cpu.read_reg8(Reg8::C);
 
-        let port = Port::from_u8(c);
+        let portval = cpu.read_port(port as u16);
 
-        match port {
-            Some(port) => {
-                let portval = cpu.read_port(port);
+        cpu.write_reg8(self.r, portval);
 
-                cpu.write_reg8(self.r, portval);
-
-                info!("{:#06x}: IN {:?}, (C)", cpu.get_pc() - 1, self.r);
-                cpu.inc_pc(1);
-            },
-            None => {
-                warn!("Trying to read from unsupported port {:#04X}", c);
-                cpu.inc_pc(1);
-            }
-        }
+        info!("{:#06x}: IN {:?}, (C)", cpu.get_pc() - 1, self.r);
+        cpu.inc_pc(1);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -1689,28 +1668,18 @@ impl Instruction for InRPortC {
 
 impl Instruction for InPortC {
     fn execute(&self, cpu: &mut Cpu) {
-        let c = cpu.read_reg8(Reg8::C);
+        let port = cpu.read_reg8(Reg8::C);
 
-        let port = Port::from_u8(c);
+        let portval = cpu.read_port(port as u16);
 
-        match port {
-            Some(port) => {
-                let portval = cpu.read_port(port);
+        cpu.cond_flag  ( SIGN_FLAG            , portval & 0x80 != 0           );
+        cpu.cond_flag  ( ZERO_FLAG            , portval == 0                  );
+        cpu.clear_flag ( HALF_CARRY_FLAG                                      );
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , portval.count_ones() % 2 == 0 );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                    );
 
-                cpu.cond_flag  ( SIGN_FLAG            , portval & 0x80 != 0           );
-                cpu.cond_flag  ( ZERO_FLAG            , portval == 0                  );
-                cpu.clear_flag ( HALF_CARRY_FLAG                                      );
-                cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , portval.count_ones() % 2 == 0 );
-                cpu.clear_flag ( ADD_SUBTRACT_FLAG                                    );
-
-                info!("{:#06x}: IN (C)", cpu.get_pc() - 1);
-                cpu.inc_pc(1);
-            },
-            None => {
-                warn!("Trying to read from unsupported port {:#04X}", c);
-                cpu.inc_pc(1);
-            }
-        }
+        info!("{:#06x}: IN (C)", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -3091,21 +3060,12 @@ struct Otdr      ;
 impl Instruction for OutPortCR {
     fn execute(&self, cpu: &mut Cpu) {
         let r    = cpu.read_reg8(self.r);
-        let bc   = cpu.read_reg16(Reg16::BC);
-        let port = Port::from_u16(bc);
+        let port = cpu.read_reg16(Reg16::BC);
 
-        match port {
-            Some(port) => {
-                cpu.write_port(port, r);
+        cpu.write_port(port, r);
 
-                info!("{:#06x}: OUT (C), {:?}", cpu.get_pc() - 1, self.r);
-                cpu.inc_pc(1);
-            },
-            None => {
-                warn!("Trying to write to unsupported port {:#04X}", bc);
-                cpu.inc_pc(1);
-            }
-        }
+        info!("{:#06x}: OUT (C), {:?}", cpu.get_pc() - 1, self.r);
+        cpu.inc_pc(1);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -3118,21 +3078,12 @@ impl Instruction for OutPortNA {
         let curr_pc = cpu.get_pc();
 
         let a    = cpu.read_reg8(Reg8::A);
-        let n    = cpu.read_word(curr_pc + 1);
-        let port = Port::from_u8(n);
+        let port = cpu.read_word(curr_pc + 1);
 
-        match port {
-            Some(port) => {
-                cpu.write_port(port, a);
+        cpu.write_port(port as u16, a);
 
-                info!("{:#06x}: OUT ({:#04X}), A", cpu.get_pc(), n);
-                cpu.inc_pc(2);
-            },
-            None => {
-                warn!("Trying to write to unsupported port {:#04X}", n);
-                cpu.inc_pc(2);
-            }
-        }
+        info!("{:#06x}: OUT ({:#04X}), A", cpu.get_pc(), port);
+        cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -3142,21 +3093,12 @@ impl Instruction for OutPortNA {
 
 impl Instruction for OutPortC {
     fn execute(&self, cpu: &mut Cpu) {
-        let bc   = cpu.read_reg16(Reg16::BC);
-        let port = Port::from_u16(bc);
+        let port = cpu.read_reg8(Reg8::C);
 
-        match port {
-            Some(port) => {
-                cpu.write_port(port, 0);
+        cpu.write_port(port as u16, 0);
 
-                info!("{:#06x}: OUT (C), 0", cpu.get_pc() - 1);
-                cpu.inc_pc(1);
-            },
-            None => {
-                warn!("Trying to write to unsupported port {:#04X}", bc);
-                cpu.inc_pc(1);
-            }
-        }
+        info!("{:#06x}: OUT (C), 0", cpu.get_pc() - 1);
+        cpu.inc_pc(1);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
