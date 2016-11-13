@@ -618,9 +618,9 @@ impl Cpu {
         self.contend_port_late(port);
 
         let val = match port {
+            port if port & 0x0001 == 0 => self.ula.read_port(port),
             0x7ffd => self.memory.read_port(port),
             0xfffd | 0xbffd => self.ay.read_port(port),
-            0x00fe => self.ula.read_port(port),
             _ => unreachable!(),
         };
 
@@ -633,9 +633,9 @@ impl Cpu {
         self.contend_port_early(port);
 
         match port {
+            port if port & 0x0001 == 0 => self.ula.write_port(port, val),
             0x7ffd => self.memory.write_port(port, val),
             0xfffd | 0xbffd => self.ay.write_port(port, val),
-            0x00fe => self.ula.write_port(port, val),
             _ => unreachable!(),
         };
 
