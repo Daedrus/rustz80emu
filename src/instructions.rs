@@ -1630,13 +1630,25 @@ struct Inir     ;
 struct Ind      ;
 struct Indr     ;
 
+#[inline(always)]
+fn update_flags_in(cpu: &mut Cpu, portval: u8) {
+    cpu.cond_flag  ( SIGN_FLAG            , portval & 0x80 != 0           );
+    cpu.cond_flag  ( ZERO_FLAG            , portval == 0                  );
+    cpu.clear_flag ( HALF_CARRY_FLAG                                      );
+    cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , portval.count_ones() % 2 == 0 );
+    cpu.clear_flag ( ADD_SUBTRACT_FLAG                                    );
+    cpu.cond_flag  ( X_FLAG               , portval & 0x08 != 0           );
+    cpu.cond_flag  ( Y_FLAG               , portval & 0x20 != 0           );
+}
+
 impl Instruction for InAPortN {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
+        let a = cpu.read_reg8(Reg8::A);
 
-        let port = cpu.read_word(curr_pc + 1);
+        let port = (cpu.read_word(curr_pc + 1) as u16) | ((a as u16) << 8);
 
-        let portval = cpu.read_port(port as u16);
+        let portval = cpu.read_port(port);
 
         cpu.write_reg8(Reg8::A, portval);
 
@@ -1651,11 +1663,13 @@ impl Instruction for InAPortN {
 
 impl Instruction for InRPortC {
     fn execute(&self, cpu: &mut Cpu) {
-        let port = cpu.read_reg8(Reg8::C);
+        let port = cpu.read_reg16(Reg16::BC);
 
-        let portval = cpu.read_port(port as u16);
+        let portval = cpu.read_port(port);
 
         cpu.write_reg8(self.r, portval);
+
+        update_flags_in(cpu, portval);
 
         info!("{:#06x}: IN {:?}, (C)", cpu.get_pc() - 1, self.r);
         cpu.inc_pc(1);
@@ -1668,15 +1682,11 @@ impl Instruction for InRPortC {
 
 impl Instruction for InPortC {
     fn execute(&self, cpu: &mut Cpu) {
-        let port = cpu.read_reg8(Reg8::C);
+        let port = cpu.read_reg16(Reg16::BC);
 
-        let portval = cpu.read_port(port as u16);
+        let portval = cpu.read_port(port);
 
-        cpu.cond_flag  ( SIGN_FLAG            , portval & 0x80 != 0           );
-        cpu.cond_flag  ( ZERO_FLAG            , portval == 0                  );
-        cpu.clear_flag ( HALF_CARRY_FLAG                                      );
-        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , portval.count_ones() % 2 == 0 );
-        cpu.clear_flag ( ADD_SUBTRACT_FLAG                                    );
+        update_flags_in(cpu, portval);
 
         info!("{:#06x}: IN (C)", cpu.get_pc() - 1);
         cpu.inc_pc(1);
@@ -1692,6 +1702,7 @@ impl Instruction for Ini {
     fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: INI", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+        unreachable!();
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -1704,6 +1715,7 @@ impl Instruction for Inir {
     fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: INIR", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+        unreachable!();
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -1716,6 +1728,7 @@ impl Instruction for Ind {
     fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: IND", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+        unreachable!();
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -1728,6 +1741,7 @@ impl Instruction for Indr {
     fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: INDR", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+        unreachable!();
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -3076,9 +3090,9 @@ impl Instruction for OutPortCR {
 impl Instruction for OutPortNA {
     fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
-
         let a    = cpu.read_reg8(Reg8::A);
-        let port = cpu.read_word(curr_pc + 1);
+
+        let port = (cpu.read_word(curr_pc + 1) as u16) | ((a as u16) << 8);
 
         cpu.write_port(port as u16, a);
 
@@ -3093,9 +3107,9 @@ impl Instruction for OutPortNA {
 
 impl Instruction for OutPortC {
     fn execute(&self, cpu: &mut Cpu) {
-        let port = cpu.read_reg8(Reg8::C);
+        let port = cpu.read_reg16(Reg16::BC);
 
-        cpu.write_port(port as u16, 0);
+        cpu.write_port(port, 0);
 
         info!("{:#06x}: OUT (C), 0", cpu.get_pc() - 1);
         cpu.inc_pc(1);
@@ -3111,6 +3125,7 @@ impl Instruction for Outi {
     fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: OUTI", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+        unreachable!();
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -3123,6 +3138,7 @@ impl Instruction for Otir {
     fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: OTIR", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+        unreachable!();
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -3135,6 +3151,7 @@ impl Instruction for Outd {
     fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: OUTI", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+        unreachable!();
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
@@ -3147,6 +3164,7 @@ impl Instruction for Otdr {
     fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: OTIR", cpu.get_pc() - 1);
         cpu.inc_pc(1);
+        unreachable!();
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
