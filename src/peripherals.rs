@@ -31,10 +31,10 @@ pub struct Ay {
 
 impl Peripheral for Ay {
     fn read_port(&self, _: u16) -> u8 {
-        0
+        0xff
     }
 
     fn write_port(&mut self, _: u16, val: u8) {
-        self.value = 0;
+        self.value = val;
     }
 }
