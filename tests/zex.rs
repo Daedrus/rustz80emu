@@ -56,7 +56,7 @@ mod test_zex {
     }
 
     fn test_rom(rom: &[u8]) {
-        let mut dummyrom0: Vec<u8> = vec![0; 16 * 1024];
+        let mut dummyrom0 = vec![0; 16 * 1024].into_boxed_slice();
 
         for (i, byte) in rom.iter().enumerate() {
             dummyrom0[i + 0x100] = *byte;

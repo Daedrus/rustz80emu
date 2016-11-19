@@ -8,9 +8,9 @@ pub struct Memory {
     ram_0x8000_0xbfff: usize,
     ram_0xc000_0xffff: usize,
 
-    rom0: Vec<u8>,
-    rom1: Vec<u8>,
-    bank: [Vec<u8>; 8],
+    rom0: Box<[u8]>,
+    rom1: Box<[u8]>,
+    bank: [Box<[u8]>; 8],
 
     writable_rom: bool,
 }
@@ -125,9 +125,9 @@ pub struct MemoryBuilder {
     ram_0x8000_0xbfff: usize,
     ram_0xc000_0xffff: usize,
 
-    rom0: Vec<u8>,
-    rom1: Vec<u8>,
-    bank: [Vec<u8>; 8],
+    rom0: Box<[u8]>,
+    rom1: Box<[u8]>,
+    bank: [Box<[u8]>; 8],
 
     writable_rom: bool,
 }
@@ -140,28 +140,28 @@ impl MemoryBuilder {
             ram_0x8000_0xbfff: 2,
             ram_0xc000_0xffff: 0,
 
-            rom0: vec![0; 16 * 1024],
-            rom1: vec![0; 16 * 1024],
+            rom0: vec![0; 16 * 1024].into_boxed_slice(),
+            rom1: vec![0; 16 * 1024].into_boxed_slice(),
 
-            bank: [vec![0; 16 * 1024],
-                   vec![0; 16 * 1024],
-                   vec![0; 16 * 1024],
-                   vec![0; 16 * 1024],
-                   vec![0; 16 * 1024],
-                   vec![0; 16 * 1024],
-                   vec![0; 16 * 1024],
-                   vec![0; 16 * 1024]],
+            bank: [vec![0; 16 * 1024].into_boxed_slice(),
+                   vec![0; 16 * 1024].into_boxed_slice(),
+                   vec![0; 16 * 1024].into_boxed_slice(),
+                   vec![0; 16 * 1024].into_boxed_slice(),
+                   vec![0; 16 * 1024].into_boxed_slice(),
+                   vec![0; 16 * 1024].into_boxed_slice(),
+                   vec![0; 16 * 1024].into_boxed_slice(),
+                   vec![0; 16 * 1024].into_boxed_slice()],
 
             writable_rom: false,
         }
     }
 
-    pub fn rom0(mut self, mem: Vec<u8>) -> MemoryBuilder {
+    pub fn rom0(mut self, mem: Box<[u8]>) -> MemoryBuilder {
         self.rom0 = mem;
         self
     }
 
-    pub fn rom1(mut self, mem: Vec<u8>) -> MemoryBuilder {
+    pub fn rom1(mut self, mem: Box<[u8]>) -> MemoryBuilder {
         self.rom1 = mem;
         self
     }

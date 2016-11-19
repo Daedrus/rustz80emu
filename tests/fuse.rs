@@ -88,8 +88,8 @@ mod test_fuse {
     fn test_fuse() {
         let file = File::open("tests/tests.in").unwrap();
 
-        let dummyrom0: Vec<u8> = vec![0; 16 * 1024];
-        let dummyrom1: Vec<u8> = vec![0; 16 * 1024];
+        let dummyrom0 = vec![0; 16 * 1024].into_boxed_slice();
+        let dummyrom1 = vec![0; 16 * 1024].into_boxed_slice();
 
         let memory = MemoryBuilder::new()
                         .rom0(dummyrom0)
