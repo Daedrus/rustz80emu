@@ -6,7 +6,7 @@ pub trait Peripheral {
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct Ula {
-    pub value: u8
+    pub value: u8,
 }
 
 impl Peripheral for Ula {
@@ -14,7 +14,7 @@ impl Peripheral for Ula {
         self.value
     }
 
-    fn write_port(&mut self, _ : u16, val: u8) {
+    fn write_port(&mut self, _: u16, val: u8) {
         if val & 0x10 != 0 {
             self.value = 0xff;
         } else {
@@ -26,7 +26,7 @@ impl Peripheral for Ula {
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct Ay {
-    pub value: u8
+    pub value: u8,
 }
 
 impl Peripheral for Ay {

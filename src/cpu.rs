@@ -446,16 +446,16 @@ impl Cpu {
                 match self.im {
                     0 => {
                         self.pc = 0x0038;
-                    },
+                    }
                     1 => {
                         self.pc = 0x0038;
-                    },
+                    }
                     2 => {
                         let addr = 256u16 * (self.i as u16) + 256u16;
                         let low  = self.read_word(addr);
                         let high = self.read_word(addr + 1);
                         self.pc = ((high as u16) << 8 ) | low as u16;
-                    },
+                    }
                     _ => {
                         unreachable!();
                     }
