@@ -15,6 +15,9 @@ mod test_zex {
     use std::env;
     use std::io::{stdout, Write};
 
+    use std::rc::Rc;
+    use std::cell::RefCell;
+
 
     static ZEXDOC: &'static [u8] = include_bytes!("zexdoc.com");
     static ZEXALL: &'static [u8] = include_bytes!("zexall.com");
@@ -62,10 +65,10 @@ mod test_zex {
             dummyrom0[i + 0x100] = *byte;
         }
 
-        let memory = MemoryBuilder::new()
+        let memory = Rc::new(RefCell::new(MemoryBuilder::new()
                         .rom0(dummyrom0)
                         .writable_rom(true)
-                        .finalize();
+                        .finalize()));
 
         let mut cpu = Cpu::new(memory);
         cpu.set_pc(0x0100);

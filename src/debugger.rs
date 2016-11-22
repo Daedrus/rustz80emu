@@ -1,5 +1,6 @@
 use super::cpu::{Cpu, Reg8, Reg16};
 use super::instructions;
+use super::memory::{Memory};
 
 use std::io::{stdin, stdout};
 use std::io::Write;
@@ -12,6 +13,9 @@ use nom::{IResult, eof, space, digit, hex_digit};
 use log::LogRecord;
 use env_logger::LogBuilder;
 use std::env;
+
+use std::rc::Rc;
+use std::cell::RefCell;
 
 
 #[derive(Debug, Clone, Copy)]
@@ -180,11 +184,15 @@ macro_rules! reg_str {
 
 pub struct Debugger {
     cpu: Cpu,
+    memory: Rc<RefCell<Memory>>,
 }
 
 impl Debugger {
-    pub fn new(cpu: Cpu) -> Self {
-        Debugger { cpu: cpu }
+    pub fn new(cpu: Cpu, memory: Rc<RefCell<Memory>>) -> Self {
+        Debugger {
+            cpu: cpu,
+            memory: memory,
+        }
     }
 
     // TODO: Rewrite this mess
@@ -238,10 +246,10 @@ impl Debugger {
         let istr = format!("{:02X}", self.cpu.read_reg8(Reg8::I));
         let rstr = format!("{:02X}", self.cpu.read_reg8(Reg8::R));
 
-        let mem0str = format!("{}", self.cpu.get_0000_bank());
-        let mem4str = format!("{}", self.cpu.get_4000_bank());
-        let mem8str = format!("{}", self.cpu.get_8000_bank());
-        let memcstr = format!("{}", self.cpu.get_c000_bank());
+        let mem0str = format!("{}", self.memory.borrow().get_0000_bank());
+        let mem4str = format!("{}", self.memory.borrow().get_4000_bank());
+        let mem8str = format!("{}", self.memory.borrow().get_8000_bank());
+        let memcstr = format!("{}", self.memory.borrow().get_c000_bank());
 
         let imstr = format!("{}", self.cpu.get_im());
         let iff1str = format!("{}", if self.cpu.get_iff1() {1} else {0});
@@ -332,9 +340,9 @@ impl Debugger {
     fn peek_at_next_instruction(&self) -> &instructions::Instruction {
         let curr_pc = self.cpu.get_pc();
 
-        let i0 = self.cpu.zero_cycle_read_word(curr_pc);
-        let i1 = self.cpu.zero_cycle_read_word(curr_pc + 1);
-        let i3 = self.cpu.zero_cycle_read_word(curr_pc + 3);
+        let i0 = self.memory.borrow().read_word(curr_pc);
+        let i1 = self.memory.borrow().read_word(curr_pc + 1);
+        let i3 = self.memory.borrow().read_word(curr_pc + 3);
 
         match (i0, i1) {
             (0xDD, 0xCB) => instructions::INSTR_TABLE_DDCB[i3 as usize],
@@ -392,7 +400,7 @@ impl Debugger {
                     }
                 }
 
-                Ok(Command::Mem(addr)) => println!("{:#04X}", self.cpu.zero_cycle_read_word(addr)),
+                Ok(Command::Mem(addr)) => println!("{:#04X}", self.memory.borrow().read_word(addr)),
 
                 _ => println!("Unknown command"),
             };

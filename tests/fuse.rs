@@ -12,6 +12,9 @@ mod test_fuse {
     use std::fs::File;
     use std::io::{stdin, stdout};
 
+    use std::rc::Rc;
+    use std::cell::RefCell;
+
     macro_rules! read_u8_hex {
         ($i: ident) => {{
             let val: String = read!("{}", $i);
@@ -59,7 +62,7 @@ mod test_fuse {
         Some((testdesc, tstate))
     }
 
-    fn memory_setup(file: &File, cpu: &mut Cpu) {
+    fn memory_setup(file: &File, memory: &Rc<RefCell<Memory>>) {
         let mut file = file.bytes().map(|ch| ch.unwrap());
 
         loop {
@@ -75,7 +78,7 @@ mod test_fuse {
 
                 let memval = u8::from_str_radix(&memval, 16).unwrap();
 
-                cpu.zero_cycle_write_word(addr + idx, memval);
+                memory.borrow_mut().write_word(addr + idx, memval);
 
                 idx = idx + 1;
             }
@@ -91,13 +94,13 @@ mod test_fuse {
         let dummyrom0 = vec![0; 16 * 1024].into_boxed_slice();
         let dummyrom1 = vec![0; 16 * 1024].into_boxed_slice();
 
-        let memory = MemoryBuilder::new()
+        let memory = Rc::new(RefCell::new(MemoryBuilder::new()
                         .rom0(dummyrom0)
                         .rom1(dummyrom1)
                         .writable_rom(true)
-                        .finalize();
+                        .finalize()));
 
-        let mut cpu = Cpu::new(memory);
+        let mut cpu = Cpu::new(memory.clone());
 
         loop {
             let mut tcycle_lim: u32 = 0;
@@ -112,7 +115,7 @@ mod test_fuse {
                     break
                 }
             }
-            memory_setup(&file, &mut cpu);
+            memory_setup(&file, &memory);
 
             loop {
                 cpu.run_instruction();

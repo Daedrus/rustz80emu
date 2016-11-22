@@ -2,6 +2,8 @@ use super::memory;
 use super::instructions;
 use super::peripherals::{Peripheral, Ula, Ay};
 
+use std::rc::Rc;
+use std::cell::RefCell;
 
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy)]
@@ -145,7 +147,7 @@ pub struct Cpu {
     // HALT state
     halted: bool,
 
-    memory: memory::Memory,
+    memory: Rc<RefCell<memory::Memory>>,
     ay: Ay,
     ula: Ula,
 
@@ -155,7 +157,7 @@ pub struct Cpu {
 
 
 impl Cpu {
-    pub fn new(memory: memory::Memory) -> Self {
+    pub fn new(memory: Rc<RefCell<memory::Memory>>) -> Self {
         // TODO: Move this to ula peripheral
         let ula_contention = include_bytes!("ulacontention.bin");
         let ula_contention_no_mreq = include_bytes!("ulacontention.bin");
@@ -239,7 +241,7 @@ impl Cpu {
 
         self.tcycles = 0;
 
-        self.memory.clear();
+        self.memory.borrow_mut().clear();
     }
 
     pub fn read_reg8(&self, reg: Reg8) -> u8 {
@@ -536,7 +538,7 @@ impl Cpu {
 
     fn is_addr_contended(&self, addr: u16) -> bool {
         (addr >= 0x4000 && addr < 0x8000) ||
-        (addr >= 0xC000 && (self.get_c000_bank() % 2 != 0))
+        (addr >= 0xC000 && (self.memory.borrow().get_c000_bank() % 2 != 0))
     }
 
     // TODO: How to implement stubs for these functions?
@@ -570,21 +572,21 @@ impl Cpu {
     pub fn fetch_op(&mut self) -> u8 {
         let curr_pc = self.pc;
         self.contend_read(curr_pc, 4);
-        let val = self.memory.read_word(curr_pc);
+        let val = self.memory.borrow().read_word(curr_pc);
         // println!("{: >5} MR {:04x} {:02x}", self.tcycles, addr, val);
         val
     }
 
     pub fn read_word(&mut self, addr: u16) -> u8 {
         self.contend_read(addr, 3);
-        let val = self.memory.read_word(addr);
+        let val = self.memory.borrow().read_word(addr);
         // println!("{: >5} MR {:04x} {:02x}", self.tcycles, addr, val);
         val
     }
 
     pub fn write_word(&mut self, addr: u16, val: u8) {
         self.contend_read(addr, 3);
-        self.memory.write_word(addr, val);
+        self.memory.borrow_mut().write_word(addr, val);
         // println!("{: >5} MW {:04x} {:02x}", self.tcycles, addr, val);
     }
 
@@ -619,7 +621,7 @@ impl Cpu {
 
         let val = match port {
             port if port & 0x0001 == 0 => self.ula.read_port(port),
-            0x7ffd => self.memory.read_port(port),
+            0x7ffd => self.memory.borrow().read_port(port),
             0xfffd | 0xbffd => self.ay.read_port(port),
             _ => unreachable!(),
         };
@@ -634,7 +636,7 @@ impl Cpu {
 
         match port {
             port if port & 0x0001 == 0 => self.ula.write_port(port, val),
-            0x7ffd => self.memory.write_port(port, val),
+            0x7ffd => self.memory.borrow_mut().write_port(port, val),
             0xfffd | 0xbffd => self.ay.write_port(port, val),
             _ => unreachable!(),
         };
@@ -643,30 +645,11 @@ impl Cpu {
         self.tcycles += 1;
     }
 
-    // TODO: Remove these once the debugger, tests and cpu can share memory
-
-    // Helper function to be able to write to memory without increasing the tcycles
-    // Used for setting up the memory in the fuse tests
     pub fn zero_cycle_write_word(&mut self, addr: u16, val: u8) {
-        self.memory.write_word(addr, val);
+        self.memory.borrow_mut().write_word(addr, val);
     }
 
     pub fn zero_cycle_read_word(&self, addr: u16) -> u8 {
-        self.memory.read_word(addr)
-    }
-
-    // The only reason these exist is because I have not yet figured out how to
-    // get both the Cpu and the Debugger to have access to the Memory
-    pub fn get_0000_bank(&self) -> u8 {
-        self.memory.get_0000_bank()
-    }
-    pub fn get_4000_bank(&self) -> u8 {
-        self.memory.get_4000_bank()
-    }
-    pub fn get_8000_bank(&self) -> u8 {
-        self.memory.get_8000_bank()
-    }
-    pub fn get_c000_bank(&self) -> u8 {
-        self.memory.get_c000_bank()
+        self.memory.borrow().read_word(addr)
     }
 }
