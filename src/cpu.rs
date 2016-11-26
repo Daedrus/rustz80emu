@@ -573,7 +573,7 @@ impl Cpu {
         let curr_pc = self.pc;
         self.contend_read(curr_pc, 4);
         let val = self.memory.borrow().read_word(curr_pc);
-        // println!("{: >5} MR {:04x} {:02x}", self.tcycles, addr, val);
+        // println!("{: >5} MR {:04x} {:02x}", self.tcycles, curr_pc, val);
         val
     }
 
@@ -592,6 +592,7 @@ impl Cpu {
 
     fn contend_port_early(&mut self, port: u16) {
         if self.is_addr_contended(port) {
+            // println!("{: >5} PC {:04x}", self.tcycles, port);
             self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
         }
 
@@ -600,14 +601,18 @@ impl Cpu {
 
     fn contend_port_late(&mut self, port: u16) {
         if (port & 0x0001) == 0 {
+            // println!("{: >5} PC {:04x}", self.tcycles, port);
             self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
             self.tcycles += 2;
         } else {
             if self.is_addr_contended(port) {
+                // println!("{: >5} PC {:04x}", self.tcycles, port);
                 self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
                 self.tcycles += 1;
+                // println!("{: >5} PC {:04x}", self.tcycles, port);
                 self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
                 self.tcycles += 1;
+                // println!("{: >5} PC {:04x}", self.tcycles, port);
                 self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
             } else {
                 self.tcycles += 2;
@@ -617,7 +622,6 @@ impl Cpu {
 
     pub fn read_port(&mut self, port: u16) -> u8 {
         self.contend_port_early(port);
-        self.contend_port_late(port);
 
         let val = match port {
             port if port & 0x0001 == 0 => self.ula.read_port(port),
@@ -626,6 +630,9 @@ impl Cpu {
             _ => unreachable!(),
         };
 
+        // println!("{: >5} PR {:04x} {:02x}", self.tcycles, port, val);
+
+        self.contend_port_late(port);
         self.tcycles += 1;
 
         val
@@ -633,6 +640,8 @@ impl Cpu {
 
     pub fn write_port(&mut self, port: u16, val: u8) {
         self.contend_port_early(port);
+
+        // println!("{: >5} PW {:04x} {:02x}", self.tcycles, port, val);
 
         match port {
             port if port & 0x0001 == 0 => self.ula.write_port(port, val),
