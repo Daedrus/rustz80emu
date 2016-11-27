@@ -334,7 +334,7 @@ impl Cpu {
     }
 
     pub fn inc_r(&mut self, val: u8) {
-        self.r = (self.r.wrapping_add(val)) & 0b01111111;
+        self.r = ((self.r.wrapping_add(val)) & 0b01111111) | (self.r & 0b10000000);
     }
 
     pub fn set_iff1(&mut self) {

@@ -2754,6 +2754,13 @@ impl Instruction for LdAR {
 
         cpu.write_reg8(Reg8::A, r);
 
+        cpu.cond_flag  ( SIGN_FLAG            , r & 0x80 != 0  );
+        cpu.cond_flag  ( ZERO_FLAG            , r == 0         );
+        cpu.clear_flag ( HALF_CARRY_FLAG                       );
+        let iff2 = cpu.get_iff2();
+        cpu.cond_flag  ( PARITY_OVERFLOW_FLAG , iff2           );
+        cpu.clear_flag ( ADD_SUBTRACT_FLAG                     );
+
         info!("{:#06x}: LD A,R", cpu.get_pc() - 1);
         cpu.inc_pc(1);
     }
