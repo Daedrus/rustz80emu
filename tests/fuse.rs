@@ -7,6 +7,8 @@ mod test_fuse {
 
     use z80emulib::memory::*;
     use z80emulib::cpu::*;
+    use z80emulib::peripherals::*;
+    use z80emulib::interconnect::*;
 
     use std::io::prelude::*;
     use std::fs::File;
@@ -99,8 +101,15 @@ mod test_fuse {
                         .rom1(dummyrom1)
                         .writable_rom(true)
                         .finalize()));
+        let ay = Rc::new(RefCell::new(Ay { value: 0 }));
+        let ula = Rc::new(RefCell::new(Ula { value: 0 }));
 
-        let mut cpu = Cpu::new(memory.clone());
+        let interconnect = Interconnect::new(
+            memory.clone(),
+            ay.clone(),
+            ula.clone());
+
+        let mut cpu = Cpu::new(interconnect);
 
         loop {
             let mut tcycle_lim: u32 = 0;
@@ -119,7 +128,7 @@ mod test_fuse {
 
             loop {
                 cpu.run_instruction();
-                if cpu.tcycles > tcycle_lim { break }
+                if cpu.tcycles >= tcycle_lim { break }
             }
 
             print!("{:04x} {:04x} {:04x} {:04x} ",

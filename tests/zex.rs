@@ -8,6 +8,8 @@ mod test_zex {
 
     use z80emulib::memory::*;
     use z80emulib::cpu::*;
+    use z80emulib::peripherals::*;
+    use z80emulib::interconnect::*;
     use z80emulib::instructions::{self};
 
     use log::{LogRecord};
@@ -69,8 +71,15 @@ mod test_zex {
                         .rom0(dummyrom0)
                         .writable_rom(true)
                         .finalize()));
+        let ay = Rc::new(RefCell::new(Ay { value: 0 }));
+        let ula = Rc::new(RefCell::new(Ula { value: 0 }));
 
-        let mut cpu = Cpu::new(memory);
+        let interconnect = Interconnect::new(
+            memory.clone(),
+            ay.clone(),
+            ula.clone());
+
+        let mut cpu = Cpu::new(interconnect);
         cpu.set_pc(0x0100);
 
         loop {

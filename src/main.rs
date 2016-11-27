@@ -1,5 +1,7 @@
 extern crate z80emulib;
 
+use z80emulib::interconnect::*;
+use z80emulib::peripherals::*;
 use z80emulib::memory::*;
 use z80emulib::cpu::*;
 use z80emulib::debugger::*;
@@ -30,8 +32,15 @@ fn main() {
         .rom0(rom0)
         .rom1(rom1)
         .finalize()));
+    let ay = Rc::new(RefCell::new(Ay { value: 0 }));
+    let ula = Rc::new(RefCell::new(Ula { value: 0 }));
 
-    let mut cpu = Cpu::new(memory.clone());
+    let interconnect = Interconnect::new(
+        memory.clone(),
+        ay.clone(),
+        ula.clone());
+
+    let mut cpu = Cpu::new(interconnect);
 
     if env::var("RUST_LOG").is_ok() {
         let mut debugger = Debugger::new(cpu, memory.clone());

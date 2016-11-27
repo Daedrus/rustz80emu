@@ -1,9 +1,5 @@
-use super::memory;
+use super::interconnect::*;
 use super::instructions;
-use super::peripherals::{Peripheral, Ula, Ay};
-
-use std::rc::Rc;
-use std::cell::RefCell;
 
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy)]
@@ -147,22 +143,12 @@ pub struct Cpu {
     // HALT state
     halted: bool,
 
-    memory: Rc<RefCell<memory::Memory>>,
-    ay: Ay,
-    ula: Ula,
-
-    ula_contention: Vec<u8>,
-    ula_contention_no_mreq: Vec<u8>,
+    interconnect: Interconnect,
 }
 
 
 impl Cpu {
-    pub fn new(memory: Rc<RefCell<memory::Memory>>) -> Self {
-        // TODO: Move this to ula peripheral
-        let ula_contention = include_bytes!("ulacontention.bin");
-        let ula_contention_no_mreq = include_bytes!("ulacontention.bin");
-
-        // TODO: Peripherals belong to machine, not CPU
+    pub fn new(interconnect: Interconnect) -> Self {
         Cpu {
             a: 0xFF,
             f: StatusIndicatorFlags::all(),
@@ -194,12 +180,7 @@ impl Cpu {
 
             tcycles: 0,
 
-            memory: memory,
-            ay: Ay { value: 0 },
-            ula: Ula { value: 0 },
-
-            ula_contention: ula_contention.to_vec(),
-            ula_contention_no_mreq: ula_contention_no_mreq.to_vec(),
+            interconnect: interconnect,
         }
     }
 
@@ -241,7 +222,7 @@ impl Cpu {
 
         self.tcycles = 0;
 
-        self.memory.borrow_mut().clear();
+        self.interconnect.reset();
     }
 
     pub fn read_reg8(&self, reg: Reg8) -> u8 {
@@ -536,104 +517,53 @@ impl Cpu {
         }
     }
 
-    fn is_addr_contended(&self, addr: u16) -> bool {
-        (addr >= 0x4000 && addr < 0x8000) ||
-        (addr >= 0xC000 && (self.memory.borrow().get_c000_bank() % 2 != 0))
-    }
-
-    // TODO: How to implement stubs for these functions?
     #[inline(always)]
     pub fn contend_read(&mut self, addr: u16, tcycles: u32) {
-        // println!("{: >5} MC {:04x}", self.tcycles, addr);
-        if self.is_addr_contended(addr) {
-            self.tcycles += self.ula_contention[self.tcycles as usize] as u32;
-        }
-        self.tcycles += tcycles;
+        self.tcycles += self.interconnect.contend_read(addr, self.tcycles, tcycles);
     }
 
     #[inline(always)]
     pub fn contend_read_no_mreq(&mut self, addr: u16) {
-        // println!("{: >5} MC {:04x}", self.tcycles, addr);
-        if self.is_addr_contended(addr) {
-            self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
-        }
-        self.tcycles += 1;
+        self.tcycles += self.interconnect.contend_read_no_mreq(addr, self.tcycles);
     }
 
     #[inline(always)]
     pub fn contend_write_no_mreq(&mut self, addr: u16) {
-        // println!("{: >5} MC {:04x}", self.tcycles, addr);
-        if self.is_addr_contended(addr) {
-            self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
-        }
-        self.tcycles += 1;
+        self.tcycles += self.interconnect.contend_write_no_mreq(addr, self.tcycles);
     }
 
-    pub fn fetch_op(&mut self) -> u8 {
+    fn fetch_op(&mut self) -> u8 {
         let curr_pc = self.pc;
         self.contend_read(curr_pc, 4);
-        let val = self.memory.borrow().read_word(curr_pc);
-        // println!("{: >5} MR {:04x} {:02x}", self.tcycles, curr_pc, val);
-        val
+        self.interconnect.read_word(curr_pc, self.tcycles)
     }
 
     pub fn read_word(&mut self, addr: u16) -> u8 {
         self.contend_read(addr, 3);
-        let val = self.memory.borrow().read_word(addr);
-        // println!("{: >5} MR {:04x} {:02x}", self.tcycles, addr, val);
-        val
+        self.interconnect.read_word(addr, self.tcycles)
     }
 
     pub fn write_word(&mut self, addr: u16, val: u8) {
         self.contend_read(addr, 3);
-        self.memory.borrow_mut().write_word(addr, val);
-        // println!("{: >5} MW {:04x} {:02x}", self.tcycles, addr, val);
+        self.interconnect.write_word(addr, val, self.tcycles);
     }
 
+    #[inline(always)]
     fn contend_port_early(&mut self, port: u16) {
-        if self.is_addr_contended(port) {
-            // println!("{: >5} PC {:04x}", self.tcycles, port);
-            self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
-        }
-
-        self.tcycles += 1;
+        self.tcycles += self.interconnect.contend_port_early(port, self.tcycles);
     }
 
+    #[inline(always)]
     fn contend_port_late(&mut self, port: u16) {
-        if (port & 0x0001) == 0 {
-            // println!("{: >5} PC {:04x}", self.tcycles, port);
-            self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
-            self.tcycles += 2;
-        } else {
-            if self.is_addr_contended(port) {
-                // println!("{: >5} PC {:04x}", self.tcycles, port);
-                self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
-                self.tcycles += 1;
-                // println!("{: >5} PC {:04x}", self.tcycles, port);
-                self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
-                self.tcycles += 1;
-                // println!("{: >5} PC {:04x}", self.tcycles, port);
-                self.tcycles += self.ula_contention_no_mreq[self.tcycles as usize] as u32;
-            } else {
-                self.tcycles += 2;
-            }
-        }
+        self.tcycles += self.interconnect.contend_port_late(port, self.tcycles);
     }
 
     pub fn read_port(&mut self, port: u16) -> u8 {
         self.contend_port_early(port);
 
-        let val = match port {
-            port if port & 0x0001 == 0 => self.ula.read_port(port),
-            0x7ffd => self.memory.borrow().read_port(port),
-            0xfffd | 0xbffd => self.ay.read_port(port),
-            _ => unreachable!(),
-        };
-
-        // println!("{: >5} PR {:04x} {:02x}", self.tcycles, port, val);
+        let val = self.interconnect.read_port(port, self.tcycles);
 
         self.contend_port_late(port);
-        self.tcycles += 1;
 
         val
     }
@@ -641,24 +571,16 @@ impl Cpu {
     pub fn write_port(&mut self, port: u16, val: u8) {
         self.contend_port_early(port);
 
-        // println!("{: >5} PW {:04x} {:02x}", self.tcycles, port, val);
-
-        match port {
-            port if port & 0x0001 == 0 => self.ula.write_port(port, val),
-            0x7ffd => self.memory.borrow_mut().write_port(port, val),
-            0xfffd | 0xbffd => self.ay.write_port(port, val),
-            _ => unreachable!(),
-        };
+        self.interconnect.write_port(port, val, self.tcycles);
 
         self.contend_port_late(port);
-        self.tcycles += 1;
     }
 
     pub fn zero_cycle_write_word(&mut self, addr: u16, val: u8) {
-        self.memory.borrow_mut().write_word(addr, val);
+        self.interconnect.zero_cycle_write_word(addr, val);
     }
 
     pub fn zero_cycle_read_word(&self, addr: u16) -> u8 {
-        self.memory.borrow().read_word(addr)
+        self.interconnect.zero_cycle_read_word(addr)
     }
 }
