@@ -72,15 +72,15 @@ impl Interconnect {
         delay + 1
     }
 
-    pub fn read_word(&self, addr: u16, curr_tcycle: u32) -> u8 {
+    pub fn read_word(&self, addr: u16, _curr_tcycle: u32) -> u8 {
         let val = self.memory.borrow().read_word(addr);
-        //println!("{: >5} MR {:04x} {:02x}", curr_tcycle, addr, val);
+        //println!("{: >5} MR {:04x} {:02x}", _curr_tcycle, addr, val);
         val
     }
 
-    pub fn write_word(&mut self, addr: u16, val: u8, curr_tcycle: u32) {
+    pub fn write_word(&mut self, addr: u16, val: u8, _curr_tcycle: u32) {
         self.memory.borrow_mut().write_word(addr, val);
-        //println!("{: >5} MW {:04x} {:02x}", curr_tcycle, addr, val);
+        //println!("{: >5} MW {:04x} {:02x}", _curr_tcycle, addr, val);
     }
 
     pub fn contend_port_early(&mut self, port: u16, curr_tcycle: u32) -> u32 {
@@ -114,19 +114,19 @@ impl Interconnect {
         delay + 1
     }
 
-    pub fn read_port(&mut self, port: u16, curr_tcycle: u32) -> u8 {
+    pub fn read_port(&mut self, port: u16, _curr_tcycle: u32) -> u8 {
         let val = match port {
             port if port & 0x0001 == 0 => self.ula.borrow().read_port(port),
             0x7ffd => self.memory.borrow().read_port(port),
             0xfffd | 0xbffd => self.ay.borrow().read_port(port),
             _ => 0,
         };
-        //println!("{: >5} PR {:04x} {:02x}", curr_tcycle, port, val);
+        //println!("{: >5} PR {:04x} {:02x}", _curr_tcycle, port, val);
         val
     }
 
-    pub fn write_port(&mut self, port: u16, val: u8, curr_tcycle: u32) {
-        //println!("{: >5} PW {:04x} {:02x}", curr_tcycle, port, val);
+    pub fn write_port(&mut self, port: u16, val: u8, _curr_tcycle: u32) {
+        //println!("{: >5} PW {:04x} {:02x}", _curr_tcycle, port, val);
         match port {
             port if port & 0x0001 == 0 => self.ula.borrow_mut().write_port(port, val),
             0x7ffd => self.memory.borrow_mut().write_port(port, val),
