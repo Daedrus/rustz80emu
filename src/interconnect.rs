@@ -138,12 +138,4 @@ impl Interconnect {
     pub fn reset(&mut self) {
         self.memory.borrow_mut().clear();
     }
-
-    pub fn zero_cycle_read_word(&self, addr: u16) -> u8 {
-        self.memory.borrow().read_word(addr)
-    }
-
-    pub fn zero_cycle_write_word(&mut self, addr: u16, val: u8) {
-        self.memory.borrow_mut().write_word(addr, val);
-    }
 }

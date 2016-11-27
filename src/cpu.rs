@@ -458,7 +458,7 @@ impl Cpu {
                 self.inc_pc(1);
                 let i1 = self.fetch_op();
                 self.inc_r(2);
-                &instructions::INSTR_TABLE_CB[i1 as usize].execute(self);
+                &instructions::INSTR_TABLE_CB[i1 as usize].execute(self, 0);
             }
             0xDD => {
                 self.inc_pc(1);
@@ -472,13 +472,13 @@ impl Cpu {
                         let i3 = self.read_word(curr_pc + 1);
                         self.contend_read_no_mreq(curr_pc + 1);
                         self.contend_read_no_mreq(curr_pc + 1);
-                        &instructions::INSTR_TABLE_DDCB[i3 as usize].execute(self);
+                        &instructions::INSTR_TABLE_DDCB[i3 as usize].execute(self, i2 as i8);
                     }
                     0xFD => {
                         self.inc_pc(1);
                     }
                     _ => {
-                        &instructions::INSTR_TABLE_DD[i1 as usize].execute(self);
+                        &instructions::INSTR_TABLE_DD[i1 as usize].execute(self, 0);
                     }
                 };
             }
@@ -486,7 +486,7 @@ impl Cpu {
                 self.inc_pc(1);
                 let i1 = self.fetch_op();
                 self.inc_r(2);
-                &instructions::INSTR_TABLE_ED[i1 as usize].execute(self);
+                &instructions::INSTR_TABLE_ED[i1 as usize].execute(self, 0);
             }
             0xFD => {
                 self.inc_pc(1);
@@ -500,19 +500,19 @@ impl Cpu {
                         let i3 = self.read_word(curr_pc + 1);
                         self.contend_read_no_mreq(curr_pc + 1);
                         self.contend_read_no_mreq(curr_pc + 1);
-                        &instructions::INSTR_TABLE_FDCB[i3 as usize].execute(self);
+                        &instructions::INSTR_TABLE_FDCB[i3 as usize].execute(self, i2 as i8);
                     }
                     0xDD => {
                         self.inc_pc(1);
                     }
                     _ => {
-                        &instructions::INSTR_TABLE_FD[i1 as usize].execute(self);
+                        &instructions::INSTR_TABLE_FD[i1 as usize].execute(self, 0);
                     }
                 };
             }
             _ => {
                 self.inc_r(1);
-                &instructions::INSTR_TABLE[i0 as usize].execute(self);
+                &instructions::INSTR_TABLE[i0 as usize].execute(self, 0);
             }
         }
     }
@@ -574,13 +574,5 @@ impl Cpu {
         self.interconnect.write_port(port, val, self.tcycles);
 
         self.contend_port_late(port);
-    }
-
-    pub fn zero_cycle_write_word(&mut self, addr: u16, val: u8) {
-        self.interconnect.zero_cycle_write_word(addr, val);
-    }
-
-    pub fn zero_cycle_read_word(&self, addr: u16) -> u8 {
-        self.interconnect.zero_cycle_read_word(addr)
     }
 }
