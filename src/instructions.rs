@@ -7,6 +7,7 @@ pub trait Instruction {
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters);
 }
 
+
 struct Unsupported;
 
 impl Instruction for Unsupported {

@@ -2,71 +2,71 @@ use super::interconnect::*;
 use super::instructions;
 
 enum_from_primitive! {
+#[derive(Debug, Clone, Copy, RustcEncodable, RustcDecodable)]
+#[allow(non_camel_case_types)]
+    pub enum Reg8 {
+        A = 0b111,
+        B = 0b000,
+        C = 0b001,
+        D = 0b010,
+        E = 0b011,
+        H = 0b100,
+        L = 0b101,
+
+        IXL = 0b1000,
+        IXH = 0b1001,
+        IYL = 0b1010,
+        IYH = 0b1011,
+
+        I = 0b1100,
+        R = 0b1101,
+
+        A_ALT = 0b10111,
+        B_ALT = 0b10000,
+        C_ALT = 0b10001,
+        D_ALT = 0b10010,
+        E_ALT = 0b10011,
+        H_ALT = 0b10100,
+        L_ALT = 0b10101,
+        F_ALT = 0b11000,
+    }
+}
+
+enum_from_primitive! {
 #[derive(Debug, Clone, Copy)]
 #[allow(non_camel_case_types)]
-pub enum Reg16 {
-    AF = 0,
-    BC = 1,
-    DE = 2,
-    HL = 3,
+    pub enum Reg16 {
+        AF = 0,
+        BC = 1,
+        DE = 2,
+        HL = 3,
 
-    AF_ALT = 4,
-    BC_ALT = 5,
-    DE_ALT = 6,
-    HL_ALT = 7,
+        AF_ALT = 4,
+        BC_ALT = 5,
+        DE_ALT = 6,
+        HL_ALT = 7,
 
-    SP = 8,
-    IX = 9,
-    IY = 10,
-    WZ = 11,
+        SP = 8,
+        IX = 9,
+        IY = 10,
+        WZ = 11,
 
-    IR = 12
-}
-}
-
-enum_from_primitive! {
-#[derive(Debug, Clone, Copy, RustcEncodable, RustcDecodable)]
-#[allow(non_camel_case_types)]
-pub enum Reg8 {
-    A = 0b111,
-    B = 0b000,
-    C = 0b001,
-    D = 0b010,
-    E = 0b011,
-    H = 0b100,
-    L = 0b101,
-
-    IXL = 0b1000,
-    IXH = 0b1001,
-    IYL = 0b1010,
-    IYH = 0b1011,
-
-    I = 0b1100,
-    R = 0b1101,
-
-    A_ALT = 0b10111,
-    B_ALT = 0b10000,
-    C_ALT = 0b10001,
-    D_ALT = 0b10010,
-    E_ALT = 0b10011,
-    H_ALT = 0b10100,
-    L_ALT = 0b10101,
-    F_ALT = 0b11000,
-}
+        IR = 12
+    }
 }
 
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy, RustcEncodable, RustcDecodable)]
-pub enum FlagCond {
-    NZ = 0b000,
-    Z  = 0b001,
-    NC = 0b010,
-    C  = 0b011,
-    PO = 0b100,
-    PE = 0b101,
-    P  = 0b110,
-    M  = 0b111
-}
+    pub enum FlagCond {
+        NZ = 0b000,
+        Z  = 0b001,
+        NC = 0b010,
+        C  = 0b011,
+        PO = 0b100,
+        PE = 0b101,
+        P  = 0b110,
+        M  = 0b111
+    }
 }
 
 bitflags! {
@@ -152,27 +152,27 @@ impl Cpu {
         Cpu {
             a: 0xFF,
             f: StatusIndicatorFlags::all(),
-            b: 0,
-            c: 0,
-            d: 0,
-            e: 0,
-            h: 0,
-            l: 0,
+            b: 0x00,
+            c: 0x00,
+            d: 0x00,
+            e: 0x00,
+            h: 0x00,
+            l: 0x00,
             a_alt: 0xFF,
             f_alt: StatusIndicatorFlags::all(),
-            b_alt: 0,
-            c_alt: 0,
-            d_alt: 0,
-            e_alt: 0,
-            h_alt: 0,
-            l_alt: 0,
-            i: 0,
-            r: 0,
-            ix: 0,
-            iy: 0,
+            b_alt: 0x00,
+            c_alt: 0x00,
+            d_alt: 0x00,
+            e_alt: 0x00,
+            h_alt: 0x00,
+            l_alt: 0x00,
+            i: 0x00,
+            r: 0x00,
+            ix: 0x00,
+            iy: 0x00,
             sp: 0xFFFF,
-            pc: 0,
-            wz: 0,
+            pc: 0x0000,
+            wz: 0x0000,
             iff1: false,
             iff2: false,
             im: 0,
@@ -184,37 +184,30 @@ impl Cpu {
         }
     }
 
-    pub fn run(&mut self) {
-        loop {
-            self.handle_interrupts();
-            self.run_instruction();
-        }
-    }
-
     pub fn reset(&mut self) {
         self.a = 0xFF;
         self.f = StatusIndicatorFlags::all();
-        self.b = 0;
-        self.c = 0;
-        self.d = 0;
-        self.e = 0;
-        self.h = 0;
-        self.l = 0;
+        self.b = 0x00;
+        self.c = 0x00;
+        self.d = 0x00;
+        self.e = 0x00;
+        self.h = 0x00;
+        self.l = 0x00;
         self.a_alt = 0xFF;
         self.f_alt = StatusIndicatorFlags::all();
-        self.b_alt = 0;
-        self.c_alt = 0;
-        self.d_alt = 0;
-        self.e_alt = 0;
-        self.h_alt = 0;
-        self.l_alt = 0;
-        self.i = 0;
-        self.r = 0;
-        self.ix = 0;
-        self.iy = 0;
+        self.b_alt = 0x00;
+        self.c_alt = 0x00;
+        self.d_alt = 0x00;
+        self.e_alt = 0x00;
+        self.h_alt = 0x00;
+        self.l_alt = 0x00;
+        self.i = 0x00;
+        self.r = 0x00;
+        self.ix = 0x00
+        self.iy = 0x00;
         self.sp = 0xFFFF;
-        self.pc = 0;
-        self.wz = 0;
+        self.pc = 0x0000;
+        self.wz = 0x0000;
         self.iff1 = false;
         self.iff2 = false;
         self.im = 0;
@@ -514,6 +507,13 @@ impl Cpu {
                 self.inc_r(1);
                 &instructions::INSTR_TABLE[i0 as usize].execute(self, 0);
             }
+        }
+    }
+
+    pub fn run(&mut self) {
+        loop {
+            self.handle_interrupts();
+            self.run_instruction();
         }
     }
 
