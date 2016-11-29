@@ -203,7 +203,7 @@ impl Cpu {
         self.l_alt = 0x00;
         self.i = 0x00;
         self.r = 0x00;
-        self.ix = 0x00
+        self.ix = 0x00;
         self.iy = 0x00;
         self.sp = 0xFFFF;
         self.pc = 0x0000;
