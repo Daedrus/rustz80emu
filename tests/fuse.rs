@@ -12,7 +12,7 @@ mod test_fuse {
 
     use std::io::prelude::*;
     use std::fs::File;
-    use std::io::{stdin, stdout};
+    use std::io::stdin;
 
     use std::rc::Rc;
     use std::cell::RefCell;
@@ -151,7 +151,6 @@ mod test_fuse {
 
             let mut input = String::new();
             stdin().read_line(&mut input).unwrap();
-            let input: String = input.trim().into();
 
             cpu.reset();
         }

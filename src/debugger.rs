@@ -8,7 +8,7 @@ use std::io::Write;
 use std::borrow::Cow;
 use std::str::{self, FromStr};
 
-use nom::{IResult, eof, space, digit, hex_digit};
+use nom::{IResult, space, digit, hex_digit};
 
 use log::LogRecord;
 use env_logger::LogBuilder;
@@ -45,7 +45,7 @@ named!(
             mem  |
             cont |
             exit) ~
-            eof,
+            eof!(),
     || c));
 
 named!(
