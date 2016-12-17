@@ -57,7 +57,7 @@ mod test_zex {
         stdout().flush().unwrap();
 
         // Manually call RET
-        &instructions::INSTR_TABLE[0xC9].execute(cpu, 0);
+        &instructions::INSTR_TABLE[0xC9].execute(cpu);
     }
 
     fn test_rom(rom: &[u8]) {

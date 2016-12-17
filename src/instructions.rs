@@ -3,7 +3,7 @@ use super::debugger::*;
 
 
 pub trait Instruction {
-    fn execute(&self, &mut Cpu, i8);
+    fn execute(&self, &mut Cpu);
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters);
 }
 
@@ -11,7 +11,7 @@ pub trait Instruction {
 struct Unsupported;
 
 impl Instruction for Unsupported {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
         panic!("Unsupported instruction {:#x} at address {:#06x}", cpu.read_word(curr_pc), curr_pc);
     }
@@ -25,7 +25,7 @@ impl Instruction for Unsupported {
 struct Nop;
 
 impl Instruction for Nop {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: NOP", cpu.get_pc());
         cpu.inc_pc(1);
     }
@@ -68,7 +68,7 @@ fn update_flags_adc16(cpu: &mut Cpu, op1: u16, op2: u16, c: u16, res: u16) {
 }
 
 impl Instruction for AdcR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
         let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
@@ -89,7 +89,7 @@ impl Instruction for AdcR {
 }
 
 impl Instruction for AdcN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a = cpu.read_reg8(Reg8::A);
@@ -112,7 +112,7 @@ impl Instruction for AdcN {
 }
 
 impl Instruction for AdcMemIxD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -145,7 +145,7 @@ impl Instruction for AdcMemIxD {
 }
 
 impl Instruction for AdcMemIyD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -178,7 +178,7 @@ impl Instruction for AdcMemIyD {
 }
 
 impl Instruction for AdcMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -200,7 +200,7 @@ impl Instruction for AdcMemHl {
 }
 
 impl Instruction for AdcHlSs {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl = cpu.read_reg16(Reg16::HL);
         let ss = cpu.read_reg16(self.r);
         let c  = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
@@ -262,7 +262,7 @@ fn update_flags_add16(cpu: &mut Cpu, op1: u16, op2: u16, res: u16) {
 }
 
 impl Instruction for AddMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -283,7 +283,7 @@ impl Instruction for AddMemHl {
 }
 
 impl Instruction for AddMemIxD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -315,7 +315,7 @@ impl Instruction for AddMemIxD {
 }
 
 impl Instruction for AddMemIyD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -347,7 +347,7 @@ impl Instruction for AddMemIyD {
 }
 
 impl Instruction for AddN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a = cpu.read_reg8(Reg8::A);
@@ -369,7 +369,7 @@ impl Instruction for AddN {
 }
 
 impl Instruction for AddR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -389,7 +389,7 @@ impl Instruction for AddR {
 }
 
 impl Instruction for AddHlSs {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl = cpu.read_reg16(Reg16::HL);
         let ss = cpu.read_reg16(self.r);
 
@@ -419,7 +419,7 @@ impl Instruction for AddHlSs {
 }
 
 impl Instruction for AddIxPp {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let ix = cpu.read_reg16(Reg16::IX);
         let ss = cpu.read_reg16(self.r);
 
@@ -448,7 +448,7 @@ impl Instruction for AddIxPp {
 }
 
 impl Instruction for AddIyRr {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let iy = cpu.read_reg16(Reg16::IY);
         let ss = cpu.read_reg16(self.r);
 
@@ -495,7 +495,7 @@ fn update_flags_logical(cpu: &mut Cpu, res: u8) {
 }
 
 impl Instruction for AndR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -516,7 +516,7 @@ impl Instruction for AndR {
 }
 
 impl Instruction for AndN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a = cpu.read_reg8(Reg8::A);
@@ -539,7 +539,7 @@ impl Instruction for AndN {
 }
 
 impl Instruction for AndMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -561,7 +561,7 @@ impl Instruction for AndMemHl {
 }
 
 impl Instruction for AndMemIxD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -594,7 +594,7 @@ impl Instruction for AndMemIxD {
 }
 
 impl Instruction for AndMemIyD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -650,7 +650,7 @@ fn update_xyflags_bit(cpu: &mut Cpu) {
 }
 
 impl Instruction for BitBR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let val = cpu.read_reg8(self.r);
 
         update_flags_bit(cpu, self.b, val & (1 << self.b) != 0);
@@ -668,7 +668,7 @@ impl Instruction for BitBR {
 }
 
 impl Instruction for BitBMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -688,8 +688,8 @@ impl Instruction for BitBMemHl {
 }
 
 impl Instruction for BitBMemIxD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -697,7 +697,8 @@ impl Instruction for BitBMemIxD {
         update_flags_bit(cpu, self.b, memval & (1 << self.b) != 0);
         update_xyflags_bit(cpu);
 
-        info!("{:#06x}: BIT {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, offset);
+        //TODO
+        //info!("{:#06x}: BIT {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, offset);
         cpu.inc_pc(2);
     }
 
@@ -707,8 +708,8 @@ impl Instruction for BitBMemIxD {
 }
 
 impl Instruction for BitBMemIyD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -716,7 +717,8 @@ impl Instruction for BitBMemIyD {
         update_flags_bit(cpu, self.b, memval & (1 << self.b) != 0);
         update_xyflags_bit(cpu);
 
-        info!("{:#06x}: BIT {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset);
+        //TODO
+        //info!("{:#06x}: BIT {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset);
         cpu.inc_pc(2);
     }
 
@@ -730,7 +732,7 @@ struct CallNn   ;
 struct CallCcNn { cond: FlagCond }
 
 impl Instruction for CallNn {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
         let nn      =  (cpu.read_word(curr_pc + 1) as u16) |
                       ((cpu.read_word(curr_pc + 2) as u16) << 8);
@@ -754,7 +756,7 @@ impl Instruction for CallNn {
 }
 
 impl Instruction for CallCcNn {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
         let cc      = cpu.check_cond(self.cond);
 
@@ -795,7 +797,7 @@ impl Instruction for CallCcNn {
 struct Ccf;
 
 impl Instruction for Ccf {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let c = cpu.get_flag(CARRY_FLAG);
 
         cpu.cond_flag  ( HALF_CARRY_FLAG   , c  );
@@ -835,7 +837,7 @@ fn update_flags_cp8(cpu: &mut Cpu, op1: u8, op2: u8, res: u8) {
 }
 
 impl Instruction for CpR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -853,7 +855,7 @@ impl Instruction for CpR {
 }
 
 impl Instruction for CpN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a = cpu.read_reg8(Reg8::A);
@@ -873,7 +875,7 @@ impl Instruction for CpN {
 }
 
 impl Instruction for CpMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -892,7 +894,7 @@ impl Instruction for CpMemHl {
 }
 
 impl Instruction for CpMemIxD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -922,7 +924,7 @@ impl Instruction for CpMemIxD {
 }
 
 impl Instruction for CpMemIyD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -991,7 +993,7 @@ fn cpd(cpu: &mut Cpu) {
 }
 
 impl Instruction for Cpd {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         cpd(cpu);
 
         let wz = cpu.read_reg16(Reg16::WZ);
@@ -1007,7 +1009,7 @@ impl Instruction for Cpd {
 }
 
 impl Instruction for Cpdr {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         cpd(cpu);
 
         info!("{:#06x}: CPDR", cpu.get_pc() - 1);
@@ -1073,7 +1075,7 @@ fn cpi(cpu: &mut Cpu) {
 }
 
 impl Instruction for Cpi {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         cpi(cpu);
 
         let wz = cpu.read_reg16(Reg16::WZ);
@@ -1089,7 +1091,7 @@ impl Instruction for Cpi {
 }
 
 impl Instruction for Cpir {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         cpi(cpu);
 
         info!("{:#06x}: CPIR", cpu.get_pc() - 1);
@@ -1119,7 +1121,7 @@ impl Instruction for Cpir {
 struct Cpl;
 
 impl Instruction for Cpl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
 
         let res = a ^ 0xFF;
@@ -1144,7 +1146,7 @@ impl Instruction for Cpl {
 struct Daa;
 
 impl Instruction for Daa {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
 
         let diff = match (cpu.get_flag(CARRY_FLAG),
@@ -1227,7 +1229,7 @@ fn update_flags_dec8(cpu: &mut Cpu, op: u8, res: u8) {
 }
 
 impl Instruction for DecR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r   = cpu.read_reg8(self.r);
         let res = r.wrapping_sub(1);
 
@@ -1245,7 +1247,7 @@ impl Instruction for DecR {
 }
 
 impl Instruction for DecMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -1267,7 +1269,7 @@ impl Instruction for DecMemHl {
 }
 
 impl Instruction for DecMemIxD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
@@ -1299,7 +1301,7 @@ impl Instruction for DecMemIxD {
 }
 
 impl Instruction for DecMemIyD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
@@ -1331,7 +1333,7 @@ impl Instruction for DecMemIyD {
 }
 
 impl Instruction for DecSs {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r   = cpu.read_reg16(self.r);
         let res = r.wrapping_sub(1);
 
@@ -1353,7 +1355,7 @@ impl Instruction for DecSs {
 struct Di;
 
 impl Instruction for Di {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         cpu.clear_iff1();
         cpu.clear_iff2();
 
@@ -1370,7 +1372,7 @@ impl Instruction for Di {
 struct Djnz;
 
 impl Instruction for Djnz {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let ir = cpu.read_reg16(Reg16::IR);
@@ -1411,7 +1413,7 @@ impl Instruction for Djnz {
 struct Ei;
 
 impl Instruction for Ei {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         cpu.set_iff1();
         cpu.set_iff2();
 
@@ -1432,7 +1434,7 @@ struct ExMemSpIy;
 struct ExDeHl;
 
 impl Instruction for ExAfAfAlt {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let af    = cpu.read_reg16(Reg16::AF);
         let afalt = cpu.read_reg16(Reg16::AF_ALT);
 
@@ -1449,7 +1451,7 @@ impl Instruction for ExAfAfAlt {
 }
 
 impl Instruction for ExMemSpHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let sp = cpu.read_reg16(Reg16::SP);
         let hl = cpu.read_reg16(Reg16::HL);
 
@@ -1479,7 +1481,7 @@ impl Instruction for ExMemSpHl {
 }
 
 impl Instruction for ExDeHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let de = cpu.read_reg16(Reg16::DE);
         let hl = cpu.read_reg16(Reg16::HL);
 
@@ -1496,7 +1498,7 @@ impl Instruction for ExDeHl {
 }
 
 impl Instruction for ExMemSpIx {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let sp = cpu.read_reg16(Reg16::SP);
         let ix = cpu.read_reg16(Reg16::IX);
 
@@ -1525,7 +1527,7 @@ impl Instruction for ExMemSpIx {
 }
 
 impl Instruction for ExMemSpIy {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let sp = cpu.read_reg16(Reg16::SP);
         let iy = cpu.read_reg16(Reg16::IY);
 
@@ -1557,7 +1559,7 @@ impl Instruction for ExMemSpIy {
 struct Exx;
 
 impl Instruction for Exx {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let bc = cpu.read_reg16(Reg16::BC);
         let de = cpu.read_reg16(Reg16::DE);
         let hl = cpu.read_reg16(Reg16::HL);
@@ -1588,7 +1590,7 @@ impl Instruction for Exx {
 struct Halt;
 
 impl Instruction for Halt {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: HALT", cpu.get_pc());
         cpu.halt();
     }
@@ -1601,7 +1603,7 @@ impl Instruction for Halt {
 struct Im { mode: u8 }
 
 impl Instruction for Im {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         cpu.set_im(self.mode);
 
         info!("{:#06x}: IM {}", cpu.get_pc() - 1, self.mode);
@@ -1634,7 +1636,7 @@ fn update_flags_in(cpu: &mut Cpu, portval: u8) {
 }
 
 impl Instruction for InAPortN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
         let a = cpu.read_reg8(Reg8::A);
 
@@ -1654,7 +1656,7 @@ impl Instruction for InAPortN {
 }
 
 impl Instruction for InRPortC {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let port = cpu.read_reg16(Reg16::BC);
 
         let portval = cpu.read_port(port);
@@ -1673,7 +1675,7 @@ impl Instruction for InRPortC {
 }
 
 impl Instruction for InPortC {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let port = cpu.read_reg16(Reg16::BC);
 
         let portval = cpu.read_port(port);
@@ -1691,7 +1693,7 @@ impl Instruction for InPortC {
 
 // TODO
 impl Instruction for Ini {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: INI", cpu.get_pc() - 1);
         cpu.inc_pc(1);
         //unreachable!();
@@ -1704,7 +1706,7 @@ impl Instruction for Ini {
 
 // TODO
 impl Instruction for Inir {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: INIR", cpu.get_pc() - 1);
         cpu.inc_pc(1);
         //unreachable!();
@@ -1717,7 +1719,7 @@ impl Instruction for Inir {
 
 // TODO
 impl Instruction for Ind {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: IND", cpu.get_pc() - 1);
         cpu.inc_pc(1);
         //unreachable!();
@@ -1730,7 +1732,7 @@ impl Instruction for Ind {
 
 // TODO
 impl Instruction for Indr {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: INDR", cpu.get_pc() - 1);
         cpu.inc_pc(1);
         //unreachable!();
@@ -1760,7 +1762,7 @@ fn update_flags_inc8(cpu: &mut Cpu, op: u8, res: u8) {
 }
 
 impl Instruction for IncR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r   = cpu.read_reg8(self.r);
         let res = r.wrapping_add(1);
 
@@ -1778,7 +1780,7 @@ impl Instruction for IncR {
 }
 
 impl Instruction for IncMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl  = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -1800,7 +1802,7 @@ impl Instruction for IncMemHl {
 }
 
 impl Instruction for IncMemIxD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
@@ -1832,7 +1834,7 @@ impl Instruction for IncMemIxD {
 }
 
 impl Instruction for IncMemIyD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
@@ -1864,7 +1866,7 @@ impl Instruction for IncMemIyD {
 }
 
 impl Instruction for IncSs {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r   = cpu.read_reg16(self.r);
         let res = r.wrapping_add(1);
 
@@ -1891,7 +1893,7 @@ struct JpIy   ;
 struct JpCcNn { cond: FlagCond }
 
 impl Instruction for JpMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl = cpu.read_reg16(Reg16::HL);
 
         info!("{:#06x}: JP (HL)", cpu.get_pc());
@@ -1904,7 +1906,7 @@ impl Instruction for JpMemHl {
 }
 
 impl Instruction for JpNn {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let nn =  (cpu.read_word(curr_pc + 1) as u16) |
@@ -1921,7 +1923,7 @@ impl Instruction for JpNn {
 }
 
 impl Instruction for JpIx {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let ix = cpu.read_reg16(Reg16::IX);
 
         info!("{:#06x}: JP IX", cpu.get_pc());
@@ -1934,7 +1936,7 @@ impl Instruction for JpIx {
 }
 
 impl Instruction for JpIy {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let iy = cpu.read_reg16(Reg16::IY);
 
         info!("{:#06x}: JP IY", cpu.get_pc());
@@ -1947,7 +1949,7 @@ impl Instruction for JpIy {
 }
 
 impl Instruction for JpCcNn {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let cc = cpu.check_cond(self.cond);
@@ -1987,7 +1989,7 @@ struct JrCE;
 struct JrE ;
 
 impl Instruction for JrZ {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         if cpu.get_flag(ZERO_FLAG) {
@@ -2020,7 +2022,7 @@ impl Instruction for JrZ {
 }
 
 impl Instruction for JrNz {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         if cpu.get_flag(ZERO_FLAG) {
@@ -2053,7 +2055,7 @@ impl Instruction for JrNz {
 }
 
 impl Instruction for JrNcE {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         if cpu.get_flag(CARRY_FLAG) {
@@ -2086,7 +2088,7 @@ impl Instruction for JrNcE {
 }
 
 impl Instruction for JrCE {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         if cpu.get_flag(CARRY_FLAG) {
@@ -2119,7 +2121,7 @@ impl Instruction for JrCE {
 }
 
 impl Instruction for JrE {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let offset = cpu.read_word(curr_pc + 1) as i8 + 2;
@@ -2173,7 +2175,7 @@ struct LdAI      ;
 struct LdAR      ;
 
 impl Instruction for LdMemBcA {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let bc = cpu.read_reg16(Reg16::BC);
         let a  = cpu.read_reg8(Reg8::A);
 
@@ -2190,7 +2192,7 @@ impl Instruction for LdMemBcA {
 }
 
 impl Instruction for LdMemDeA {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let de = cpu.read_reg16(Reg16::DE);
         let a  = cpu.read_reg8(Reg8::A);
 
@@ -2207,7 +2209,7 @@ impl Instruction for LdMemDeA {
 }
 
 impl Instruction for LdMemHlN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let hl = cpu.read_reg16(Reg16::HL);
@@ -2225,7 +2227,7 @@ impl Instruction for LdMemHlN {
 }
 
 impl Instruction for LdMemHlR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl = cpu.read_reg16(Reg16::HL);
         let r  = cpu.read_reg8(self.r);
 
@@ -2241,7 +2243,7 @@ impl Instruction for LdMemHlR {
 }
 
 impl Instruction for LdMemIxDN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
@@ -2264,7 +2266,7 @@ impl Instruction for LdMemIxDN {
 }
 
 impl Instruction for LdMemIxDR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
@@ -2290,7 +2292,7 @@ impl Instruction for LdMemIxDR {
 }
 
 impl Instruction for LdMemIyDN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
@@ -2313,7 +2315,7 @@ impl Instruction for LdMemIyDN {
 }
 
 impl Instruction for LdMemIyDR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let d    = cpu.read_word(curr_pc + 1) as i8;
@@ -2339,7 +2341,7 @@ impl Instruction for LdMemIyDR {
 }
 
 impl Instruction for LdMemNnA {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a  = cpu.read_reg8(Reg8::A);
@@ -2359,7 +2361,7 @@ impl Instruction for LdMemNnA {
 }
 
 impl Instruction for LdMemNnDd {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let r = cpu.read_reg16(self.r);
@@ -2382,7 +2384,7 @@ impl Instruction for LdMemNnDd {
 }
 
 impl Instruction for LdMemNnHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let hl = cpu.read_reg16(Reg16::HL);
@@ -2404,7 +2406,7 @@ impl Instruction for LdMemNnHl {
 }
 
 impl Instruction for LdAMemBc {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let bc     = cpu.read_reg16(Reg16::BC);
         let memval = cpu.read_word(bc);
 
@@ -2421,7 +2423,7 @@ impl Instruction for LdAMemBc {
 }
 
 impl Instruction for LdAMemDe {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let de     = cpu.read_reg16(Reg16::DE);
         let memval = cpu.read_word(de);
 
@@ -2438,7 +2440,7 @@ impl Instruction for LdAMemDe {
 }
 
 impl Instruction for LdAMemNn {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let nn =  (cpu.read_word(curr_pc + 1) as u16) |
@@ -2458,7 +2460,7 @@ impl Instruction for LdAMemNn {
 }
 
 impl Instruction for LdDdMemNn {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let nn =  (cpu.read_word(curr_pc + 1) as u16) |
@@ -2479,7 +2481,7 @@ impl Instruction for LdDdMemNn {
 }
 
 impl Instruction for LdDdNn {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let nn =  (cpu.read_word(curr_pc + 1) as u16) |
@@ -2497,7 +2499,7 @@ impl Instruction for LdDdNn {
 }
 
 impl Instruction for LdRN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let n = cpu.read_word(curr_pc + 1);
@@ -2514,7 +2516,7 @@ impl Instruction for LdRN {
 }
 
 impl Instruction for LdHlMemNn {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let nn =  (cpu.read_word(curr_pc + 1) as u16) |
@@ -2534,7 +2536,7 @@ impl Instruction for LdHlMemNn {
 }
 
 impl Instruction for LdRMemIxD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let d      = cpu.read_word(curr_pc + 1) as i8;
@@ -2561,7 +2563,7 @@ impl Instruction for LdRMemIxD {
 }
 
 impl Instruction for LdRMemIyD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let d      = cpu.read_word(curr_pc + 1) as i8;
@@ -2588,7 +2590,7 @@ impl Instruction for LdRMemIyD {
 }
 
 impl Instruction for LdSpHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl = cpu.read_reg16(Reg16::HL);
 
         let ir = cpu.read_reg16(Reg16::IR);
@@ -2607,7 +2609,7 @@ impl Instruction for LdSpHl {
 }
 
 impl Instruction for LdSpIx {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let ix = cpu.read_reg16(Reg16::IX);
 
         let ir = cpu.read_reg16(Reg16::IR);
@@ -2626,7 +2628,7 @@ impl Instruction for LdSpIx {
 }
 
 impl Instruction for LdSpIy {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let iy = cpu.read_reg16(Reg16::IY);
 
         let ir = cpu.read_reg16(Reg16::IR);
@@ -2645,7 +2647,7 @@ impl Instruction for LdSpIy {
 }
 
 impl Instruction for LdRR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let rs = cpu.read_reg8(self.rs);
 
         cpu.write_reg8(self.rt, rs);
@@ -2661,7 +2663,7 @@ impl Instruction for LdRR {
 }
 
 impl Instruction for LdRMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -2677,7 +2679,7 @@ impl Instruction for LdRMemHl {
 }
 
 impl Instruction for LdIA {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
 
         let ir = cpu.read_reg16(Reg16::IR);
@@ -2695,7 +2697,7 @@ impl Instruction for LdIA {
 }
 
 impl Instruction for LdRA {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
 
         let ir = cpu.read_reg16(Reg16::IR);
@@ -2713,7 +2715,7 @@ impl Instruction for LdRA {
 }
 
 impl Instruction for LdAI {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let i = cpu.read_reg8(Reg8::I);
 
         let ir = cpu.read_reg16(Reg16::IR);
@@ -2738,7 +2740,7 @@ impl Instruction for LdAI {
 }
 
 impl Instruction for LdAR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r = cpu.read_reg8(Reg8::R);
 
         let ir = cpu.read_reg16(Reg16::IR);
@@ -2792,7 +2794,7 @@ fn ldd(cpu: &mut Cpu) {
 }
 
 impl Instruction for Ldd {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         ldd(cpu);
 
         info!("{:#06x}: LDD", cpu.get_pc() - 1);
@@ -2805,7 +2807,7 @@ impl Instruction for Ldd {
 }
 
 impl Instruction for Lddr {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         ldd(cpu);
 
         info!("{:#06x}: LDDR", cpu.get_pc() - 1);
@@ -2861,7 +2863,7 @@ fn ldi(cpu: &mut Cpu) {
 }
 
 impl Instruction for Ldi {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         ldi(cpu);
 
         info!("{:#06x}: LDI", cpu.get_pc() - 1);
@@ -2874,7 +2876,7 @@ impl Instruction for Ldi {
 }
 
 impl Instruction for Ldir {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         ldi(cpu);
 
         info!("{:#06x}: LDIR", cpu.get_pc() - 1);
@@ -2904,7 +2906,7 @@ impl Instruction for Ldir {
 struct Neg;
 
 impl Instruction for Neg {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
 
         let neg = 0u8.wrapping_sub(a);
@@ -2930,7 +2932,7 @@ struct OrMemIxD ;
 struct OrMemIyD ;
 
 impl Instruction for OrR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -2951,7 +2953,7 @@ impl Instruction for OrR {
 }
 
 impl Instruction for OrN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a = cpu.read_reg8(Reg8::A);
@@ -2974,7 +2976,7 @@ impl Instruction for OrN {
 }
 
 impl Instruction for OrMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -2996,7 +2998,7 @@ impl Instruction for OrMemHl {
 }
 
 impl Instruction for OrMemIxD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -3029,7 +3031,7 @@ impl Instruction for OrMemIxD {
 }
 
 impl Instruction for OrMemIyD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -3071,7 +3073,7 @@ struct Outd      ;
 struct Otdr      ;
 
 impl Instruction for OutPortCR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r    = cpu.read_reg8(self.r);
         let port = cpu.read_reg16(Reg16::BC);
 
@@ -3087,7 +3089,7 @@ impl Instruction for OutPortCR {
 }
 
 impl Instruction for OutPortNA {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
         let a    = cpu.read_reg8(Reg8::A);
 
@@ -3105,7 +3107,7 @@ impl Instruction for OutPortNA {
 }
 
 impl Instruction for OutPortC {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let port = cpu.read_reg16(Reg16::BC);
 
         cpu.write_port(port, 0);
@@ -3121,7 +3123,7 @@ impl Instruction for OutPortC {
 
 // TODO
 impl Instruction for Outi {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: OUTI", cpu.get_pc() - 1);
         cpu.inc_pc(1);
         //unreachable!();
@@ -3134,7 +3136,7 @@ impl Instruction for Outi {
 
 // TODO
 impl Instruction for Otir {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: OTIR", cpu.get_pc() - 1);
         cpu.inc_pc(1);
         //unreachable!();
@@ -3147,7 +3149,7 @@ impl Instruction for Otir {
 
 // TODO
 impl Instruction for Outd {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: OUTI", cpu.get_pc() - 1);
         cpu.inc_pc(1);
         //unreachable!();
@@ -3160,7 +3162,7 @@ impl Instruction for Outd {
 
 // TODO
 impl Instruction for Otdr {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         info!("{:#06x}: OTIR", cpu.get_pc() - 1);
         cpu.inc_pc(1);
         //unreachable!();
@@ -3175,7 +3177,7 @@ impl Instruction for Otdr {
 struct PopQq { r: Reg16 }
 
 impl Instruction for PopQq {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_sp = cpu.read_reg16(Reg16::SP);
 
         let low  = cpu.read_word(curr_sp);
@@ -3197,7 +3199,7 @@ impl Instruction for PopQq {
 struct PushQq { r: Reg16 }
 
 impl Instruction for PushQq {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_sp = cpu.read_reg16(Reg16::SP);
         let r = cpu.read_reg16(self.r);
 
@@ -3226,7 +3228,7 @@ struct ResBMemIxDR { b: u8, r: Reg8 }
 struct ResBMemIyDR { b: u8, r: Reg8 }
 
 impl Instruction for ResBR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let val = cpu.read_reg8(self.r);
 
         cpu.write_reg8(self.r, val & !(1 << self.b));
@@ -3242,8 +3244,8 @@ impl Instruction for ResBR {
 }
 
 impl Instruction for ResBMemIxD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3251,7 +3253,8 @@ impl Instruction for ResBMemIxD {
         cpu.write_word(addr, memval & !(1 << self.b));
         cpu.write_reg16(Reg16::WZ, addr);
 
-        info!("{:#06x}: RES {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, offset);
+        //TODO
+        //info!("{:#06x}: RES {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, offset);
         cpu.inc_pc(2);
     }
 
@@ -3261,8 +3264,8 @@ impl Instruction for ResBMemIxD {
 }
 
 impl Instruction for ResBMemIyD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3270,7 +3273,7 @@ impl Instruction for ResBMemIyD {
         cpu.write_word(addr, memval & !(1 << self.b));
         cpu.write_reg16(Reg16::WZ, addr);
 
-        info!("{:#06x}: RES {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset);
+        //TODO info!("{:#06x}: RES {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset);
         cpu.inc_pc(2);
     }
 
@@ -3280,7 +3283,7 @@ impl Instruction for ResBMemIyD {
 }
 
 impl Instruction for ResBMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -3298,8 +3301,8 @@ impl Instruction for ResBMemHl {
 }
 
 impl Instruction for ResBMemIxDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3307,7 +3310,7 @@ impl Instruction for ResBMemIxDR {
         cpu.write_reg8(self.r, memval & !(1 << self.b));
         cpu.write_word(addr, memval & !(1 << self.b));
 
-        info!("{:#06x}: RES {}, (IX{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r);
+        //TODO info!("{:#06x}: RES {}, (IX{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -3317,8 +3320,8 @@ impl Instruction for ResBMemIxDR {
 }
 
 impl Instruction for ResBMemIyDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3326,7 +3329,7 @@ impl Instruction for ResBMemIyDR {
         cpu.write_reg8(self.r, memval & !(1 << self.b));
         cpu.write_word(addr, memval & !(1 << self.b));
 
-        info!("{:#06x}: RES {}, (IY{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r);
+        //TODO info!("{:#06x}: RES {}, (IY{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -3341,7 +3344,7 @@ struct RetN  ;
 struct RetCc { cond: FlagCond }
 
 impl Instruction for Ret {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_sp = cpu.read_reg16(Reg16::SP);
 
         let low  = cpu.read_word(curr_sp);
@@ -3359,7 +3362,7 @@ impl Instruction for Ret {
 }
 
 impl Instruction for RetN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         if cpu.get_iff2() { cpu.set_iff1(); } else { cpu.clear_iff1(); }
 
         let curr_sp = cpu.read_reg16(Reg16::SP);
@@ -3379,7 +3382,7 @@ impl Instruction for RetN {
 }
 
 impl Instruction for RetCc {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let cc = cpu.check_cond(self.cond);
 
         let ir = cpu.read_reg16(Reg16::IR);
@@ -3422,7 +3425,7 @@ struct RlcMemIxDR { r: Reg8 }
 struct RlcMemIyDR { r: Reg8 }
 
 impl Instruction for RlA {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
 
         let mut res = a.rotate_left(1);
@@ -3446,7 +3449,7 @@ impl Instruction for RlA {
 }
 
 impl Instruction for RlR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r = cpu.read_reg8(self.r);
 
         let mut res = r.rotate_left(1);
@@ -3468,7 +3471,7 @@ impl Instruction for RlR {
 }
 
 impl Instruction for RlMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -3493,8 +3496,8 @@ impl Instruction for RlMemHl {
 }
 
 impl Instruction for RlMemIxD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3508,7 +3511,7 @@ impl Instruction for RlMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: RL (IX{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: RL (IX{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -3518,8 +3521,8 @@ impl Instruction for RlMemIxD {
 }
 
 impl Instruction for RlMemIyD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3533,7 +3536,7 @@ impl Instruction for RlMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: RL (IY{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: RL (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -3543,8 +3546,8 @@ impl Instruction for RlMemIyD {
 }
 
 impl Instruction for RlMemIxDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3558,7 +3561,7 @@ impl Instruction for RlMemIxDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: RL (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: RL (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -3568,8 +3571,8 @@ impl Instruction for RlMemIxDR {
 }
 
 impl Instruction for RlMemIyDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3583,7 +3586,7 @@ impl Instruction for RlMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: RL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: RL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -3593,7 +3596,7 @@ impl Instruction for RlMemIyDR {
 }
 
 impl Instruction for RlcR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r = cpu.read_reg8(self.r);
 
         let res = r.rotate_left(1);
@@ -3614,7 +3617,7 @@ impl Instruction for RlcR {
 }
 
 impl Instruction for RlcMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -3638,8 +3641,8 @@ impl Instruction for RlcMemHl {
 }
 
 impl Instruction for RlcMemIxD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3652,7 +3655,7 @@ impl Instruction for RlcMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: RLC (IX{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: RLC (IX{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -3662,8 +3665,8 @@ impl Instruction for RlcMemIxD {
 }
 
 impl Instruction for RlcMemIyD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3676,7 +3679,7 @@ impl Instruction for RlcMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: RLC (IY{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: RLC (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -3686,7 +3689,7 @@ impl Instruction for RlcMemIyD {
 }
 
 impl Instruction for RlcA {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
 
         let res = a.rotate_left(1);
@@ -3709,8 +3712,8 @@ impl Instruction for RlcA {
 }
 
 impl Instruction for RlcMemIxDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3723,7 +3726,7 @@ impl Instruction for RlcMemIxDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: RLC (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: RLC (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -3733,8 +3736,8 @@ impl Instruction for RlcMemIxDR {
 }
 
 impl Instruction for RlcMemIyDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3747,7 +3750,7 @@ impl Instruction for RlcMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: RLC (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: RLC (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -3760,7 +3763,7 @@ impl Instruction for RlcMemIyDR {
 struct Rld;
 
 impl Instruction for Rld {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -3812,7 +3815,7 @@ struct RrcMemIxDR { r: Reg8 }
 struct RrcMemIyDR { r: Reg8 }
 
 impl Instruction for RrR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r = cpu.read_reg8(self.r);
 
         let mut res = r.rotate_right(1);
@@ -3834,7 +3837,7 @@ impl Instruction for RrR {
 }
 
 impl Instruction for RrMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -3859,8 +3862,8 @@ impl Instruction for RrMemHl {
 }
 
 impl Instruction for RrMemIxD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3874,7 +3877,7 @@ impl Instruction for RrMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: RR (IX{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: RR (IX{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -3884,8 +3887,8 @@ impl Instruction for RrMemIxD {
 }
 
 impl Instruction for RrMemIyD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3899,7 +3902,7 @@ impl Instruction for RrMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: RR (IY{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: RR (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -3909,7 +3912,7 @@ impl Instruction for RrMemIyD {
 }
 
 impl Instruction for RrA {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
 
         let mut res = a.rotate_right(1);
@@ -3933,8 +3936,8 @@ impl Instruction for RrA {
 }
 
 impl Instruction for RrMemIxDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3948,7 +3951,7 @@ impl Instruction for RrMemIxDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: RR (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: RR (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -3958,8 +3961,8 @@ impl Instruction for RrMemIxDR {
 }
 
 impl Instruction for RrMemIyDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -3973,7 +3976,7 @@ impl Instruction for RrMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: RR (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: RR (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -3983,7 +3986,7 @@ impl Instruction for RrMemIyDR {
 }
 
 impl Instruction for RrcR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r = cpu.read_reg8(self.r);
 
         let res = r.rotate_right(1);
@@ -4004,7 +4007,7 @@ impl Instruction for RrcR {
 }
 
 impl Instruction for RrcMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -4028,8 +4031,8 @@ impl Instruction for RrcMemHl {
 }
 
 impl Instruction for RrcMemIxD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4042,7 +4045,7 @@ impl Instruction for RrcMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: RRC (IX{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: RRC (IX{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -4052,8 +4055,8 @@ impl Instruction for RrcMemIxD {
 }
 
 impl Instruction for RrcMemIyD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4066,7 +4069,7 @@ impl Instruction for RrcMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: RRC (IY{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: RRC (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -4076,7 +4079,7 @@ impl Instruction for RrcMemIyD {
 }
 
 impl Instruction for RrcA {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
 
         let res = a.rotate_right(1);
@@ -4099,8 +4102,8 @@ impl Instruction for RrcA {
 }
 
 impl Instruction for RrcMemIxDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4113,7 +4116,7 @@ impl Instruction for RrcMemIxDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: RRC (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: RRC (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -4123,8 +4126,8 @@ impl Instruction for RrcMemIxDR {
 }
 
 impl Instruction for RrcMemIyDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4137,7 +4140,7 @@ impl Instruction for RrcMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: RRC (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: RRC (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -4150,7 +4153,7 @@ impl Instruction for RrcMemIyDR {
 struct Rrd;
 
 impl Instruction for Rrd {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -4189,7 +4192,7 @@ impl Instruction for Rrd {
 struct Rst { addr: u8 }
 
 impl Instruction for Rst {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let next_pc = cpu.get_pc() + 1;
         let curr_sp = cpu.read_reg16(Reg16::SP);
 
@@ -4214,7 +4217,7 @@ impl Instruction for Rst {
 struct Scf;
 
 impl Instruction for Scf {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         cpu.set_flag   ( CARRY_FLAG        );
         cpu.clear_flag ( HALF_CARRY_FLAG   );
         cpu.clear_flag ( ADD_SUBTRACT_FLAG );
@@ -4241,7 +4244,7 @@ struct SetBMemIxDR { b: u8, r: Reg8 }
 struct SetBMemIyDR { b: u8, r: Reg8 }
 
 impl Instruction for SetBR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let val = cpu.read_reg8(self.r);
 
         cpu.write_reg8(self.r, val | (1 << self.b));
@@ -4257,8 +4260,8 @@ impl Instruction for SetBR {
 }
 
 impl Instruction for SetBMemIxD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4266,7 +4269,7 @@ impl Instruction for SetBMemIxD {
         cpu.write_word(addr, memval | (1 << self.b));
         cpu.write_reg16(Reg16::WZ, addr);
 
-        info!("{:#06x}: SET {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, offset);
+        //TODO info!("{:#06x}: SET {}, (IX{:+#04X})", cpu.get_pc() - 2, self.b, offset);
         cpu.inc_pc(2);
     }
 
@@ -4276,8 +4279,8 @@ impl Instruction for SetBMemIxD {
 }
 
 impl Instruction for SetBMemIyD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4285,7 +4288,7 @@ impl Instruction for SetBMemIyD {
         cpu.write_word(addr, memval | (1 << self.b));
         cpu.write_reg16(Reg16::WZ, addr);
 
-        info!("{:#06x}: SET {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset);
+        //TODO info!("{:#06x}: SET {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset);
         cpu.inc_pc(2);
     }
 
@@ -4295,7 +4298,7 @@ impl Instruction for SetBMemIyD {
 }
 
 impl Instruction for SetBMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -4313,8 +4316,8 @@ impl Instruction for SetBMemHl {
 }
 
 impl Instruction for SetBMemIxDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4322,7 +4325,7 @@ impl Instruction for SetBMemIxDR {
         cpu.write_reg8(self.r, memval | (1 << self.b));
         cpu.write_word(addr, memval | (1 << self.b));
 
-        info!("{:#06x}: SET {}, (IX{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r);
+        //TODO info!("{:#06x}: SET {}, (IX{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -4332,8 +4335,8 @@ impl Instruction for SetBMemIxDR {
 }
 
 impl Instruction for SetBMemIyDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4341,7 +4344,7 @@ impl Instruction for SetBMemIyDR {
         cpu.write_reg8(self.r, memval | (1 << self.b));
         cpu.write_word(addr, memval | (1 << self.b));
 
-        info!("{:#06x}: SET {}, (IY{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r);
+        //TODO info!("{:#06x}: SET {}, (IY{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -4383,7 +4386,7 @@ fn update_flags_sbc16(cpu: &mut Cpu, op1: u16, op2: u16, c: u16, res: u16) {
 }
 
 impl Instruction for SbcR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
         let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
@@ -4404,7 +4407,7 @@ impl Instruction for SbcR {
 }
 
 impl Instruction for SbcN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a = cpu.read_reg8(Reg8::A);
@@ -4427,7 +4430,7 @@ impl Instruction for SbcN {
 }
 
 impl Instruction for SbcMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -4449,7 +4452,7 @@ impl Instruction for SbcMemHl {
 }
 
 impl Instruction for SbcMemIxD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -4482,7 +4485,7 @@ impl Instruction for SbcMemIxD {
 }
 
 impl Instruction for SbcMemIyD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -4515,7 +4518,7 @@ impl Instruction for SbcMemIyD {
 }
 
 impl Instruction for SbcHlSs {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl = cpu.read_reg16(Reg16::HL);
         let r  = cpu.read_reg16(self.r);
         let c = if cpu.get_flag(CARRY_FLAG) { 1 } else { 0 };
@@ -4554,7 +4557,7 @@ struct SlaMemIxDR { r: Reg8 }
 struct SlaMemIyDR { r: Reg8 }
 
 impl Instruction for SlaR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r = cpu.read_reg8(self.r);
 
         let res = r << 1;
@@ -4575,7 +4578,7 @@ impl Instruction for SlaR {
 }
 
 impl Instruction for SlaMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -4599,8 +4602,8 @@ impl Instruction for SlaMemHl {
 }
 
 impl Instruction for SlaMemIxD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4613,7 +4616,7 @@ impl Instruction for SlaMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: SLA (IX{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: SLA (IX{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -4623,8 +4626,8 @@ impl Instruction for SlaMemIxD {
 }
 
 impl Instruction for SlaMemIyD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4637,7 +4640,7 @@ impl Instruction for SlaMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: SLA (IY{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: SLA (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -4647,8 +4650,8 @@ impl Instruction for SlaMemIyD {
 }
 
 impl Instruction for SlaMemIxDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4661,7 +4664,7 @@ impl Instruction for SlaMemIxDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: SLA (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: SLA (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -4671,8 +4674,8 @@ impl Instruction for SlaMemIxDR {
 }
 
 impl Instruction for SlaMemIyDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4685,7 +4688,7 @@ impl Instruction for SlaMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: SLA (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: SLA (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -4703,7 +4706,7 @@ struct SllMemIxDR { r: Reg8 }
 struct SllMemIyDR { r: Reg8 }
 
 impl Instruction for SllR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r = cpu.read_reg8(self.r);
 
         let res = r << 1 | 0x1;
@@ -4724,7 +4727,7 @@ impl Instruction for SllR {
 }
 
 impl Instruction for SllMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -4748,8 +4751,8 @@ impl Instruction for SllMemHl {
 }
 
 impl Instruction for SllMemIxD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4762,7 +4765,7 @@ impl Instruction for SllMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: SLL (IX{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: SLL (IX{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -4772,8 +4775,8 @@ impl Instruction for SllMemIxD {
 }
 
 impl Instruction for SllMemIyD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4786,7 +4789,7 @@ impl Instruction for SllMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: SLL (IY{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: SLL (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -4796,8 +4799,8 @@ impl Instruction for SllMemIyD {
 }
 
 impl Instruction for SllMemIxDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4810,7 +4813,7 @@ impl Instruction for SllMemIxDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: SLL (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: SLL (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -4820,8 +4823,8 @@ impl Instruction for SllMemIxDR {
 }
 
 impl Instruction for SllMemIyDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4834,7 +4837,7 @@ impl Instruction for SllMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        info!("{:#06x}: SLL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: SLL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -4852,7 +4855,7 @@ struct SraMemIxDR { r: Reg8 }
 struct SraMemIyDR { r: Reg8 }
 
 impl Instruction for SraR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r = cpu.read_reg8(self.r);
 
         let res = r >> 1 | (r & 0x80);
@@ -4873,7 +4876,7 @@ impl Instruction for SraR {
 }
 
 impl Instruction for SraMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -4897,8 +4900,8 @@ impl Instruction for SraMemHl {
 }
 
 impl Instruction for SraMemIxD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4911,7 +4914,7 @@ impl Instruction for SraMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: SRA (IX{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: SRA (IX{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -4921,8 +4924,8 @@ impl Instruction for SraMemIxD {
 }
 
 impl Instruction for SraMemIyD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4935,7 +4938,7 @@ impl Instruction for SraMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: SRA (IY{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: SRA (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -4945,8 +4948,8 @@ impl Instruction for SraMemIyD {
 }
 
 impl Instruction for SraMemIxDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4959,7 +4962,7 @@ impl Instruction for SraMemIxDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: SRA (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: SRA (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -4969,8 +4972,8 @@ impl Instruction for SraMemIxDR {
 }
 
 impl Instruction for SraMemIyDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -4983,7 +4986,7 @@ impl Instruction for SraMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: SRA (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: SRA (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -5001,7 +5004,7 @@ struct SrlMemIxDR { r: Reg8 }
 struct SrlMemIyDR { r: Reg8 }
 
 impl Instruction for SrlR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let r = cpu.read_reg8(self.r);
 
         let res = r >> 1;
@@ -5022,7 +5025,7 @@ impl Instruction for SrlR {
 }
 
 impl Instruction for SrlMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
 
@@ -5046,8 +5049,8 @@ impl Instruction for SrlMemHl {
 }
 
 impl Instruction for SrlMemIxD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -5060,7 +5063,7 @@ impl Instruction for SrlMemIxD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: SRL (IX{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: SRL (IX{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -5070,8 +5073,8 @@ impl Instruction for SrlMemIxD {
 }
 
 impl Instruction for SrlMemIyD {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -5084,7 +5087,7 @@ impl Instruction for SrlMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: SRL (IY{:+#04X})", cpu.get_pc() - 2, offset);
+        //TODO info!("{:#06x}: SRL (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
@@ -5094,8 +5097,8 @@ impl Instruction for SrlMemIyD {
 }
 
 impl Instruction for SrlMemIxDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IX) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -5108,7 +5111,7 @@ impl Instruction for SrlMemIxDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: SRL (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: SRL (IX{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -5118,8 +5121,8 @@ impl Instruction for SrlMemIxDR {
 }
 
 impl Instruction for SrlMemIyDR {
-    fn execute(&self, cpu: &mut Cpu, offset: i8) {
-        let addr   = ((cpu.read_reg16(Reg16::IY) as i16) + offset as i16) as u16;
+    fn execute(&self, cpu: &mut Cpu) {
+        let addr = cpu.read_reg16(Reg16::WZ);
         let memval = cpu.read_word(addr);
 
         cpu.contend_read_no_mreq(addr);
@@ -5132,7 +5135,7 @@ impl Instruction for SrlMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        info!("{:#06x}: SRL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
+        //TODO info!("{:#06x}: SRL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
@@ -5161,7 +5164,7 @@ fn update_flags_sub8(cpu: &mut Cpu, op1: u8, op2: u8, res: u8) {
 }
 
 impl Instruction for SubR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -5181,7 +5184,7 @@ impl Instruction for SubR {
 }
 
 impl Instruction for SubN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a = cpu.read_reg8(Reg8::A);
@@ -5203,7 +5206,7 @@ impl Instruction for SubN {
 }
 
 impl Instruction for SubMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -5224,7 +5227,7 @@ impl Instruction for SubMemHl {
 }
 
 impl Instruction for SubMemIxD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -5256,7 +5259,7 @@ impl Instruction for SubMemIxD {
 }
 
 impl Instruction for SubMemIyD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -5295,7 +5298,7 @@ struct XorMemIxD ;
 struct XorMemIyD ;
 
 impl Instruction for XorR {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a = cpu.read_reg8(Reg8::A);
         let r = cpu.read_reg8(self.r);
 
@@ -5316,7 +5319,7 @@ impl Instruction for XorR {
 }
 
 impl Instruction for XorN {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a = cpu.read_reg8(Reg8::A);
@@ -5339,7 +5342,7 @@ impl Instruction for XorN {
 }
 
 impl Instruction for XorMemHl {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let a      = cpu.read_reg8(Reg8::A);
         let hl     = cpu.read_reg16(Reg16::HL);
         let memval = cpu.read_word(hl);
@@ -5361,7 +5364,7 @@ impl Instruction for XorMemHl {
 }
 
 impl Instruction for XorMemIxD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
@@ -5394,7 +5397,7 @@ impl Instruction for XorMemIxD {
 }
 
 impl Instruction for XorMemIyD {
-    fn execute(&self, cpu: &mut Cpu, _: i8) {
+    fn execute(&self, cpu: &mut Cpu) {
         let curr_pc = cpu.get_pc();
 
         let a      = cpu.read_reg8(Reg8::A);
