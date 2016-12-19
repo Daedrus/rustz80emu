@@ -1,4 +1,3 @@
-use super::memory::*;
 use super::peripherals::*;
 
 use std::rc::Rc;
@@ -22,8 +21,8 @@ impl Interconnect {
                ay : Rc<RefCell<Ay>>,
                ula : Rc<RefCell<Ula>>) -> Self {
 
-        let ula_contention = include_bytes!("ulacontention.bin");
-        let ula_contention_no_mreq = include_bytes!("ulacontention.bin");
+        let ula_contention = include_bytes!("peripherals/ulacontention.bin");
+        let ula_contention_no_mreq = include_bytes!("peripherals/ulacontentionnomreq.bin");
 
         Interconnect {
             memory: memory,

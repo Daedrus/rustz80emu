@@ -2,7 +2,6 @@ extern crate z80emulib;
 
 use z80emulib::interconnect::*;
 use z80emulib::peripherals::*;
-use z80emulib::memory::*;
 use z80emulib::cpu::*;
 use z80emulib::debugger::*;
 

@@ -6,7 +6,6 @@ extern crate env_logger;
 #[cfg(test)]
 mod test_zex {
 
-    use z80emulib::memory::*;
     use z80emulib::cpu::*;
     use z80emulib::peripherals::*;
     use z80emulib::interconnect::*;

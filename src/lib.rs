@@ -12,7 +12,6 @@ extern crate rustc_serialize;
 extern crate bincode;
 
 pub mod cpu;
-pub mod memory;
 pub mod interconnect;
 pub mod peripherals;
 pub mod utils;

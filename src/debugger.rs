@@ -1,5 +1,5 @@
 use super::cpu::*;
-use super::memory::{Memory};
+use super::peripherals::{Memory};
 
 use std::io::{stdin, stdout};
 use std::io::Write;

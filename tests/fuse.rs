@@ -5,7 +5,6 @@ extern crate z80emulib;
 #[cfg(test)]
 mod test_fuse {
 
-    use z80emulib::memory::*;
     use z80emulib::cpu::*;
     use z80emulib::peripherals::*;
     use z80emulib::interconnect::*;
