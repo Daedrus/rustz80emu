@@ -1,5 +1,5 @@
-use super::cpu::*;
-use super::peripherals::{Memory};
+use ::cpu::*;
+use ::peripherals::{Memory};
 
 use std::io::{stdin, stdout};
 use std::io::Write;
@@ -18,7 +18,7 @@ use std::cell::RefCell;
 
 
 #[derive(Debug, Clone, Copy)]
-pub enum Command {
+enum Command {
     Step(u16),
     Mem(u16),
     Cont,
