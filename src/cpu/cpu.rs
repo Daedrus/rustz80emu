@@ -1,4 +1,4 @@
-use super::interconnect::*;
+use super::super::interconnect::*;
 use super::instructions;
 
 enum_from_primitive! {

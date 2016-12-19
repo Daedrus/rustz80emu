@@ -10,7 +10,6 @@ mod test_zex {
     use z80emulib::cpu::*;
     use z80emulib::peripherals::*;
     use z80emulib::interconnect::*;
-    use z80emulib::instructions::{self};
 
     use log::{LogRecord};
     use env_logger::LogBuilder;
@@ -57,7 +56,7 @@ mod test_zex {
         stdout().flush().unwrap();
 
         // Manually call RET
-        &instructions::INSTR_TABLE[0xC9].execute(cpu);
+        &INSTR_TABLE[0xC9].execute(cpu);
     }
 
     fn test_rom(rom: &[u8]) {

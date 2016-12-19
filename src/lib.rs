@@ -13,7 +13,6 @@ extern crate bincode;
 
 pub mod cpu;
 pub mod memory;
-pub mod instructions;
 pub mod interconnect;
 pub mod peripherals;
 pub mod utils;

@@ -1,5 +1,4 @@
-use super::cpu::{Cpu, Reg8, Reg16};
-use super::instructions;
+use super::cpu::*;
 use super::memory::{Memory};
 
 use std::io::{stdin, stdout};
@@ -337,7 +336,7 @@ impl Debugger {
         outstr
     }
 
-    fn peek_at_next_instruction(&self) -> &instructions::Instruction {
+    fn peek_at_next_instruction(&self) -> &Instruction {
         let curr_pc = self.cpu.get_pc();
 
         let i0 = self.memory.borrow().read_word(curr_pc);
@@ -345,13 +344,13 @@ impl Debugger {
         let i3 = self.memory.borrow().read_word(curr_pc + 3);
 
         match (i0, i1) {
-            (0xDD, 0xCB) => instructions::INSTR_TABLE_DDCB[i3 as usize],
-            (0xDD, _   ) => instructions::INSTR_TABLE_DD[i1 as usize],
-            (0xFD, 0xCB) => instructions::INSTR_TABLE_FDCB[i3 as usize],
-            (0xFD, _   ) => instructions::INSTR_TABLE_FD[i1 as usize],
-            (0xCB, _   ) => instructions::INSTR_TABLE_CB[i1 as usize],
-            (0xED, _   ) => instructions::INSTR_TABLE_ED[i1 as usize],
-            (_   , _   ) => instructions::INSTR_TABLE[i0 as usize],
+            (0xDD, 0xCB) => INSTR_TABLE_DDCB[i3 as usize],
+            (0xDD, _   ) => INSTR_TABLE_DD[i1 as usize],
+            (0xFD, 0xCB) => INSTR_TABLE_FDCB[i3 as usize],
+            (0xFD, _   ) => INSTR_TABLE_FD[i1 as usize],
+            (0xCB, _   ) => INSTR_TABLE_CB[i1 as usize],
+            (0xED, _   ) => INSTR_TABLE_ED[i1 as usize],
+            (_   , _   ) => INSTR_TABLE[i0 as usize],
         }
     }
 
