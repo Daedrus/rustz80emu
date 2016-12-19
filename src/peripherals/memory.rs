@@ -1,5 +1,5 @@
-use std::fmt;
 use super::peripherals::Peripheral;
+use std::fmt;
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct Memory {

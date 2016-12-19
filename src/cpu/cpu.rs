@@ -1,5 +1,5 @@
-use super::super::interconnect::*;
 use super::instructions;
+use ::interconnect::*;
 
 enum_from_primitive! {
 #[derive(Debug, Clone, Copy, RustcEncodable, RustcDecodable)]

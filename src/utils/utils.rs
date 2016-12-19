@@ -1,7 +1,7 @@
+use ::cpu::Cpu;
 use std::error::Error;
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{encode, decode};
-use super::cpu::*;
 
 pub fn save_cpu(cpu: &Cpu, path: &str) {
     use std::fs::File;
