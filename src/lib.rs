@@ -14,6 +14,5 @@ extern crate nom;
 pub mod cpu;
 pub mod interconnect;
 pub mod peripherals;
-pub mod utils;
 pub mod debugger;
 
