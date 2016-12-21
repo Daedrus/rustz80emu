@@ -15,6 +15,10 @@ rustc-serialize = "*"
 nom = "*"
 text_io = "*"
 
+[features]
+# This feature is only meant to be used by the fuse tests
+trace-interconnect = []
+
 [lib]
 name = "z80emulib"
 path = "src/lib.rs"

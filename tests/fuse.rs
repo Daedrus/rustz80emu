@@ -2,6 +2,7 @@ extern crate z80emulib;
 
 #[macro_use] extern crate text_io;
 
+#[cfg(feature = "trace-interconnect")]
 #[cfg(test)]
 mod test_fuse {
 
@@ -88,7 +89,7 @@ mod test_fuse {
         let emptyline: String = read!("{}", file);
     }
 
-    //#[test]
+    #[test]
     fn test_fuse() {
         let file = File::open("tests/tests.in").unwrap();
 
@@ -148,8 +149,8 @@ mod test_fuse {
                    if cpu.is_halted() { 1 } else { 0 },
                    cpu.tcycles);
 
-            let mut input = String::new();
-            stdin().read_line(&mut input).unwrap();
+            //let mut input = String::new();
+            //stdin().read_line(&mut input).unwrap();
 
             cpu.reset();
         }
