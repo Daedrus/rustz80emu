@@ -1,4 +1,10 @@
 use super::instructions;
+use super::instructions_ddcb::INSTR_TABLE_DDCB;
+use super::instructions_fdcb::INSTR_TABLE_FDCB;
+use super::instructions_cb::INSTR_TABLE_CB;
+use super::instructions_ed::INSTR_TABLE_ED;
+use super::instructions_dd::INSTR_TABLE_DD;
+use super::instructions_fd::INSTR_TABLE_FD;
 use ::interconnect::*;
 
 enum_from_primitive! {
@@ -451,7 +457,7 @@ impl Cpu {
                 self.inc_pc(1);
                 let i1 = self.fetch_op();
                 self.inc_r(2);
-                &instructions::INSTR_TABLE_CB[i1 as usize].execute(self);
+                &INSTR_TABLE_CB[i1 as usize].execute(self);
             }
             0xDD => {
                 self.inc_pc(1);
@@ -467,13 +473,13 @@ impl Cpu {
                         self.contend_read_no_mreq(curr_pc + 1);
                         let addr = ((self.read_reg16(Reg16::IX) as i16) + i2 as i16) as u16;
                         self.write_reg16(Reg16::WZ, addr);
-                        &instructions::INSTR_TABLE_DDCB[i3 as usize].execute(self);
+                        &INSTR_TABLE_DDCB[i3 as usize].execute(self);
                     }
                     0xFD => {
                         self.inc_pc(1);
                     }
                     _ => {
-                        &instructions::INSTR_TABLE_DD[i1 as usize].execute(self);
+                        &INSTR_TABLE_DD[i1 as usize].execute(self);
                     }
                 };
             }
@@ -481,7 +487,7 @@ impl Cpu {
                 self.inc_pc(1);
                 let i1 = self.fetch_op();
                 self.inc_r(2);
-                &instructions::INSTR_TABLE_ED[i1 as usize].execute(self);
+                &INSTR_TABLE_ED[i1 as usize].execute(self);
             }
             0xFD => {
                 self.inc_pc(1);
@@ -497,13 +503,13 @@ impl Cpu {
                         self.contend_read_no_mreq(curr_pc + 1);
                         let addr = ((self.read_reg16(Reg16::IY) as i16) + i2 as i16) as u16;
                         self.write_reg16(Reg16::WZ, addr);
-                        &instructions::INSTR_TABLE_FDCB[i3 as usize].execute(self);
+                        &INSTR_TABLE_FDCB[i3 as usize].execute(self);
                     }
                     0xDD => {
                         self.inc_pc(1);
                     }
                     _ => {
-                        &instructions::INSTR_TABLE_FD[i1 as usize].execute(self);
+                        &INSTR_TABLE_FD[i1 as usize].execute(self);
                     }
                 };
             }
