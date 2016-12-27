@@ -1,5 +1,6 @@
 use ::cpu::*;
 use ::peripherals::Memory;
+use self::output_registers::*;
 
 use std::io::{stdin, stdout};
 use std::io::Write;
@@ -90,83 +91,88 @@ named!(u16_hex_parser<u16>,
     || u16::from_str_radix(number, 16).unwrap()));
 
 
-bitflags! {
-    pub flags OutputRegisters: u32 {
-        const ONONE = 0x00000000,
+pub mod output_registers {
 
-        const OA = 0x00000001,
-        const OF = 0x00000002,
-        const OB = 0x00000004,
-        const OC = 0x00000008,
-        const OD = 0x00000010,
-        const OE = 0x00000020,
-        const OH = 0x00000040,
-        const OL = 0x00000080,
+    use ::cpu::{Reg8, Reg16};
 
-        const OA_ALT = 0x00000100,
-        const OF_ALT = 0x00000200,
-        const OB_ALT = 0x00000400,
-        const OC_ALT = 0x00000800,
-        const OD_ALT = 0x00001000,
-        const OE_ALT = 0x00002000,
-        const OH_ALT = 0x00004000,
-        const OL_ALT = 0x00008000,
+    bitflags! {
+        pub flags OutputRegisters: u32 {
+            const ONONE = 0x00000000,
 
-        const OIX = 0x00010000,
-        const OIY = 0x00020000,
-        const OSP = 0x00040000,
-        const OPC = 0x00080000,
-        const OWZ = 0x00100000,
+            const OA = 0x00000001,
+            const OF = 0x00000002,
+            const OB = 0x00000004,
+            const OC = 0x00000008,
+            const OD = 0x00000010,
+            const OE = 0x00000020,
+            const OH = 0x00000040,
+            const OL = 0x00000080,
 
-        const OI = 0x00200000,
-        const OR = 0x00400080,
+            const OA_ALT = 0x00000100,
+            const OF_ALT = 0x00000200,
+            const OB_ALT = 0x00000400,
+            const OC_ALT = 0x00000800,
+            const OD_ALT = 0x00001000,
+            const OE_ALT = 0x00002000,
+            const OH_ALT = 0x00004000,
+            const OL_ALT = 0x00008000,
 
-        const OALL = 0xFFFFFFFF,
-    }
-}
+            const OIX = 0x00010000,
+            const OIY = 0x00020000,
+            const OSP = 0x00040000,
+            const OPC = 0x00080000,
+            const OWZ = 0x00100000,
 
-impl From<Reg16> for OutputRegisters {
-    fn from(r: Reg16) -> OutputRegisters {
-        match r {
-            Reg16::AF => OA | OF,
-            Reg16::BC => OB | OC,
-            Reg16::DE => OD | OE,
-            Reg16::HL => OH | OL,
-            Reg16::IR => OI | OR,
-            Reg16::AF_ALT => OA_ALT | OF_ALT,
-            Reg16::BC_ALT => OB_ALT | OC_ALT,
-            Reg16::DE_ALT => OD_ALT | OE_ALT,
-            Reg16::HL_ALT => OH_ALT | OL_ALT,
-            Reg16::SP => OSP,
-            Reg16::IX => OIX,
-            Reg16::IY => OIY,
-            Reg16::WZ => OWZ,
+            const OI = 0x00200000,
+            const OR = 0x00400080,
+
+            const OALL = 0xFFFFFFFF,
         }
     }
-}
 
-impl From<Reg8> for OutputRegisters {
-    fn from(r: Reg8) -> OutputRegisters {
-        match r {
-            Reg8::A => OA,
-            Reg8::B => OB,
-            Reg8::C => OC,
-            Reg8::D => OD,
-            Reg8::E => OE,
-            Reg8::H => OH,
-            Reg8::L => OL,
-            Reg8::I => OI,
-            Reg8::R => OR,
-            Reg8::A_ALT => OA_ALT,
-            Reg8::B_ALT => OB_ALT,
-            Reg8::C_ALT => OC_ALT,
-            Reg8::D_ALT => OD_ALT,
-            Reg8::E_ALT => OE_ALT,
-            Reg8::H_ALT => OH_ALT,
-            Reg8::L_ALT => OL_ALT,
-            Reg8::F_ALT => OF_ALT,
-            Reg8::IXL | Reg8::IXH => OIX,
-            Reg8::IYL | Reg8::IYH => OIY,
+    impl From<Reg16> for OutputRegisters {
+        fn from(r: Reg16) -> OutputRegisters {
+            match r {
+                Reg16::AF => OA | OF,
+                Reg16::BC => OB | OC,
+                Reg16::DE => OD | OE,
+                Reg16::HL => OH | OL,
+                Reg16::IR => OI | OR,
+                Reg16::AF_ALT => OA_ALT | OF_ALT,
+                Reg16::BC_ALT => OB_ALT | OC_ALT,
+                Reg16::DE_ALT => OD_ALT | OE_ALT,
+                Reg16::HL_ALT => OH_ALT | OL_ALT,
+                Reg16::SP => OSP,
+                Reg16::IX => OIX,
+                Reg16::IY => OIY,
+                Reg16::WZ => OWZ,
+            }
+        }
+    }
+
+    impl From<Reg8> for OutputRegisters {
+        fn from(r: Reg8) -> OutputRegisters {
+            match r {
+                Reg8::A => OA,
+                Reg8::B => OB,
+                Reg8::C => OC,
+                Reg8::D => OD,
+                Reg8::E => OE,
+                Reg8::H => OH,
+                Reg8::L => OL,
+                Reg8::I => OI,
+                Reg8::R => OR,
+                Reg8::A_ALT => OA_ALT,
+                Reg8::B_ALT => OB_ALT,
+                Reg8::C_ALT => OC_ALT,
+                Reg8::D_ALT => OD_ALT,
+                Reg8::E_ALT => OE_ALT,
+                Reg8::H_ALT => OH_ALT,
+                Reg8::L_ALT => OL_ALT,
+                Reg8::F_ALT => OF_ALT,
+                Reg8::IXL | Reg8::IXH => OIX,
+                Reg8::IYL | Reg8::IYH => OIY,
+            }
         }
     }
 }

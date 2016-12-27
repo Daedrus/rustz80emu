@@ -1,6 +1,6 @@
 use super::instructions::{Instruction, Unsupported, update_flags_sub8};
 use super::cpu::*;
-use ::debugger::*;
+use ::debugger::output_registers::*;
 
 
 struct InRPortC { r: Reg8 }

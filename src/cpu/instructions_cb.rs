@@ -1,6 +1,6 @@
 use super::instructions::{Instruction, update_flags_logical, update_flags_bit, update_xyflags_bit};
 use super::cpu::*;
-use ::debugger::*;
+use ::debugger::output_registers::*;
 
 
 struct RlcR       { r: Reg8 }

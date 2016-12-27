@@ -4,7 +4,7 @@ use super::instructions::{Instruction, update_flags_logical, update_flags_add8, 
     LdRN, DecR, IncR, IncSs, DecSs, LdDdNn, Nop, INSTR_TABLE};
 use super::instructions_ed::{LdDdMemNn, LdMemNnDd};
 use super::cpu::*;
-use ::debugger::*;
+use ::debugger::output_registers::*;
 
 
 struct AddIxPp { r: Reg16 }

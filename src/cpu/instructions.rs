@@ -1,5 +1,5 @@
 use super::cpu::*;
-use ::debugger::*;
+use ::debugger::output_registers::*;
 
 
 pub trait Instruction {
