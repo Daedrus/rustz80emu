@@ -1,4 +1,4 @@
-use super::instructions;
+use super::instructions::INSTR_TABLE;
 use super::instructions_ddcb::INSTR_TABLE_DDCB;
 use super::instructions_fdcb::INSTR_TABLE_FDCB;
 use super::instructions_cb::INSTR_TABLE_CB;
@@ -515,7 +515,7 @@ impl Cpu {
             }
             _ => {
                 self.inc_r(1);
-                &instructions::INSTR_TABLE[i0 as usize].execute(self);
+                &INSTR_TABLE[i0 as usize].execute(self);
             }
         }
     }
