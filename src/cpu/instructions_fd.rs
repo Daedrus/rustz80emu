@@ -5,6 +5,7 @@ use super::instructions::{Instruction, update_flags_logical, update_flags_add8, 
 use super::instructions_ed::{LdDdMemNn, LdMemNnDd};
 use super::cpu::*;
 use ::debugger::output_registers::*;
+use ::peripherals::Memory;
 
 
 struct AddIyRr   { r: Reg16 }
@@ -29,12 +30,15 @@ impl Instruction for AddIyRr {
 
         update_flags_add16(cpu, iy, ss, res);
 
-        info!("{:#06x}: ADD IY, {:?}", cpu.get_pc(), self.r);
         cpu.inc_pc(1);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OH|OL|OIY, OH|OL|OF|OIY)
+    }
+
+    fn get_string(&self, cpu: &Cpu, _memory: &Memory) -> String {
+        format!("{:#06x}: ADD IY, {:?}", cpu.get_pc(), self.r)
     }
 }
 
@@ -64,12 +68,16 @@ impl Instruction for IncMemIyD {
 
         update_flags_inc8(cpu, memval, res);
 
-        info!("{:#06x}: INC (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OWZ, OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: INC (IY{:+#04X})", cpu.get_pc() - 1, d)
     }
 }
 
@@ -99,12 +107,16 @@ impl Instruction for DecMemIyD {
 
         update_flags_dec8(cpu, memval, res);
 
-        info!("{:#06x}: DEC (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OWZ, OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: DEC (IY{:+#04X})", cpu.get_pc() - 1, d)
     }
 }
 
@@ -130,12 +142,16 @@ impl Instruction for LdMemIyDR {
         cpu.write_word(addr, r);
         cpu.write_reg16(Reg16::WZ, addr);
 
-        info!("{:#06x}: LD (IY{:+#04X}), {:?}", cpu.get_pc() - 1, d, self.r);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OIY|OWZ, OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: LD (IY{:+#04X}), {:?}", cpu.get_pc() - 1, d, self.r)
     }
 }
 
@@ -153,12 +169,17 @@ impl Instruction for LdMemIyDN {
         cpu.write_word(addr, n);
         cpu.write_reg16(Reg16::WZ, addr);
 
-        info!("{:#06x}: LD (IY{:+#04X}), {:#04X}", cpu.get_pc() - 1, d, n);
         cpu.inc_pc(3);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OIY|OWZ, OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        let n = memory.read_word(cpu.get_pc() + 2);
+        format!("{:#06x}: LD (IY{:+#04X}), {:#04X}", cpu.get_pc() - 1, d, n)
     }
 }
 
@@ -180,12 +201,16 @@ impl Instruction for LdRMemIyD {
         cpu.write_reg8(self.r, memval);
         cpu.write_reg16(Reg16::WZ, addr);
 
-        info!("{:#06x}: LD {:?}, (IY{:+#04X})", cpu.get_pc() - 1, self.r, d);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OIY|OWZ|OutputRegisters::from(self.r), OWZ|OutputRegisters::from(self.r))
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: LD {:?}, (IY{:+#04X})", cpu.get_pc() - 1, self.r, d)
     }
 }
 
@@ -215,12 +240,16 @@ impl Instruction for AddMemIyD {
 
         update_flags_add8(cpu, a, memval, res);
 
-        info!("{:#06x}: ADD A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OA|OF|OIY|OWZ, OA|OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: ADD A, (IY{:+#04X})", cpu.get_pc() - 1, d)
     }
 }
 
@@ -251,12 +280,16 @@ impl Instruction for AdcMemIyD {
 
         update_flags_adc8(cpu, a, memval, c, res);
 
-        info!("{:#06x}: ADC A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OA|OF|OIY|OWZ, OA|OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: ADC A, (IY{:+#04X})", cpu.get_pc() - 1, d)
     }
 }
 
@@ -286,12 +319,16 @@ impl Instruction for SubMemIyD {
 
         update_flags_sub8(cpu, a, memval, res);
 
-        info!("{:#06x}: SUB A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OA|OF|OIY|OWZ, OA|OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: SUB A, (IY{:+#04X})", cpu.get_pc() - 1, d)
     }
 }
 
@@ -322,12 +359,16 @@ impl Instruction for SbcMemIyD {
 
         update_flags_sbc8(cpu, a, memval, c, res);
 
-        info!("{:#06x}: SBC A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OA|OF|OIX|OWZ, OA|OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: SBC A, (IY{:+#04X})", cpu.get_pc() - 1, d)
     }
 }
 
@@ -358,12 +399,16 @@ impl Instruction for AndMemIyD {
         update_flags_logical(cpu, res);
         cpu.set_flag(HALF_CARRY_FLAG);
 
-        info!("{:#06x}: AND A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OA|OF|OIY|OWZ, OA|OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: AND A, (IY{:+#04X})", cpu.get_pc() - 1, d)
     }
 }
 
@@ -394,12 +439,16 @@ impl Instruction for XorMemIyD {
         update_flags_logical(cpu, res);
         cpu.clear_flag(HALF_CARRY_FLAG);
 
-        info!("{:#06x}: XOR A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OA|OF|OIY|OWZ, OA|OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: XOR A, (IY{:+#04X})", cpu.get_pc() - 1, d)
     }
 }
 
@@ -430,12 +479,16 @@ impl Instruction for OrMemIyD {
         update_flags_logical(cpu, res);
         cpu.clear_flag(HALF_CARRY_FLAG);
 
-        info!("{:#06x}: OR A, (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OA|OF|OIY|OWZ, OA|OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: OR A, (IY{:+#04X})", cpu.get_pc() - 1, d)
     }
 }
 
@@ -463,12 +516,16 @@ impl Instruction for CpMemIyD {
 
         update_flags_cp8(cpu, a, memval, res);
 
-        info!("{:#06x}: CP (IY{:+#04X})", cpu.get_pc() - 1, d);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OA|OF|OIY|OWZ, OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let d = memory.read_word(cpu.get_pc() + 1) as i8;
+        format!("{:#06x}: CP (IY{:+#04X})", cpu.get_pc() - 1, d)
     }
 }
 
@@ -495,12 +552,15 @@ impl Instruction for ExMemSpIy {
         cpu.contend_write_no_mreq(sp);
         cpu.contend_write_no_mreq(sp);
 
-        info!("{:#06x}: EX (SP), IY", cpu.get_pc());
         cpu.inc_pc(1);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OSP|OIY, OIY)
+    }
+
+    fn get_string(&self, cpu: &Cpu, _memory: &Memory) -> String {
+        format!("{:#06x}: EX (SP), IY", cpu.get_pc() - 1)
     }
 }
 
@@ -511,12 +571,15 @@ impl Instruction for JpIy {
     fn execute(&self, cpu: &mut Cpu) {
         let iy = cpu.read_reg16(Reg16::IY);
 
-        info!("{:#06x}: JP IY", cpu.get_pc());
         cpu.set_pc(iy);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OIY, ONONE)
+    }
+
+    fn get_string(&self, cpu: &Cpu, _memory: &Memory) -> String {
+        format!("{:#06x}: JP IY", cpu.get_pc() - 1)
     }
 }
 
@@ -533,12 +596,15 @@ impl Instruction for LdSpIy {
 
         cpu.write_reg16(Reg16::SP, iy);
 
-        info!("{:#06x}: LD SP, IY", cpu.get_pc());
         cpu.inc_pc(1);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OSP|OIY, OSP)
+    }
+
+    fn get_string(&self, cpu: &Cpu, _memory: &Memory) -> String {
+        format!("{:#06x}: LD SP, IY", cpu.get_pc() - 1)
     }
 }
 

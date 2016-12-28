@@ -1,6 +1,7 @@
 use super::instructions::{Instruction, update_flags_logical, update_flags_bit, update_xyflags_bit};
 use super::cpu::*;
 use ::debugger::output_registers::*;
+use ::peripherals::Memory;
 
 
 struct RlcMemIyDR { r: Reg8 }
@@ -21,12 +22,16 @@ impl Instruction for RlcMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        //TODO info!("{:#06x}: RLC (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: RLC (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r)
     }
 }
 
@@ -45,12 +50,16 @@ impl Instruction for RlcMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        //TODO info!("{:#06x}: RLC (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OWZ, OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: RLC (IY{:+#04X})", cpu.get_pc() - 2, offset)
     }
 }
 
@@ -73,12 +82,16 @@ impl Instruction for RrcMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        //TODO info!("{:#06x}: RRC (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: RRC (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r)
     }
 }
 
@@ -97,12 +110,16 @@ impl Instruction for RrcMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        //TODO info!("{:#06x}: RRC (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OWZ, OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: RRC (IY{:+#04X})", cpu.get_pc() - 2, offset)
     }
 }
 
@@ -126,12 +143,16 @@ impl Instruction for RlMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        //TODO info!("{:#06x}: RL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: RL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r)
     }
 }
 
@@ -151,12 +172,16 @@ impl Instruction for RlMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        //TODO info!("{:#06x}: RL (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OWZ, OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: RL (IY{:+#04X})", cpu.get_pc() - 2, offset)
     }
 }
 
@@ -180,12 +205,16 @@ impl Instruction for RrMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        //TODO info!("{:#06x}: RR (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: RR (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r)
     }
 }
 
@@ -205,12 +234,16 @@ impl Instruction for RrMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        //TODO info!("{:#06x}: RR (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OWZ, OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: RR (IY{:+#04X})", cpu.get_pc() - 2, offset)
     }
 }
 
@@ -233,12 +266,16 @@ impl Instruction for SlaMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        //TODO info!("{:#06x}: SLA (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OA|OF|OIY|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: SLA (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r)
     }
 }
 
@@ -257,12 +294,16 @@ impl Instruction for SlaMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        //TODO info!("{:#06x}: SLA (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OA|OF|OIY|OWZ, OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: SLA (IY{:+#04X})", cpu.get_pc() - 2, offset)
     }
 }
 
@@ -285,12 +326,16 @@ impl Instruction for SraMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        //TODO info!("{:#06x}: SRA (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: SRA (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r)
     }
 }
 
@@ -309,12 +354,16 @@ impl Instruction for SraMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        //TODO info!("{:#06x}: SRA (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OWZ, OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: SRA (IY{:+#04X})", cpu.get_pc() - 2, offset)
     }
 }
 
@@ -337,12 +386,16 @@ impl Instruction for SllMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        //TODO info!("{:#06x}: SLL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: SLL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r)
     }
 }
 
@@ -361,12 +414,16 @@ impl Instruction for SllMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x80 != 0 );
 
-        //TODO info!("{:#06x}: SLL (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OWZ, OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: SLL (IY{:+#04X})", cpu.get_pc() - 2, offset)
     }
 }
 
@@ -389,12 +446,16 @@ impl Instruction for SrlMemIyDR {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        //TODO info!("{:#06x}: SRL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OutputRegisters::from(self.r), OF|OutputRegisters::from(self.r))
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: SRL (IY{:+#04X}), {:?}", cpu.get_pc() - 2, offset, self.r)
     }
 }
 
@@ -413,12 +474,16 @@ impl Instruction for SrlMemIyD {
         cpu.clear_flag ( HALF_CARRY_FLAG                      );
         cpu.cond_flag  ( CARRY_FLAG      , memval & 0x01 != 0 );
 
-        //TODO info!("{:#06x}: SRL (IY{:+#04X})", cpu.get_pc() - 2, offset);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY|OWZ, OF|OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: SRL (IY{:+#04X})", cpu.get_pc() - 2, offset)
     }
 }
 
@@ -435,13 +500,16 @@ impl Instruction for BitBMemIyD {
         update_flags_bit(cpu, self.b, memval & (1 << self.b) != 0);
         update_xyflags_bit(cpu);
 
-        //TODO
-        //info!("{:#06x}: BIT {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OF|OIY, OF)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: BIT {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset)
     }
 }
 
@@ -459,12 +527,16 @@ impl Instruction for ResBMemIyDR {
         cpu.write_reg8(self.r, memval & !(1 << self.b));
         cpu.write_word(addr, memval & !(1 << self.b));
 
-        //TODO info!("{:#06x}: RES {}, (IY{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OIY|OutputRegisters::from(self.r), OutputRegisters::from(self.r))
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: RES {}, (IY{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r)
     }
 }
 
@@ -478,12 +550,16 @@ impl Instruction for ResBMemIyD {
         cpu.write_word(addr, memval & !(1 << self.b));
         cpu.write_reg16(Reg16::WZ, addr);
 
-        //TODO info!("{:#06x}: RES {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OIY|OWZ, OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: RES {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset)
     }
 }
 
@@ -501,12 +577,16 @@ impl Instruction for SetBMemIyDR {
         cpu.write_reg8(self.r, memval | (1 << self.b));
         cpu.write_word(addr, memval | (1 << self.b));
 
-        //TODO info!("{:#06x}: SET {}, (IY{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OIY|OutputRegisters::from(self.r), OutputRegisters::from(self.r))
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: SET {}, (IY{:+#04X}), {:?}", cpu.get_pc() - 2, self.b, offset, self.r)
     }
 }
 
@@ -520,12 +600,16 @@ impl Instruction for SetBMemIyD {
         cpu.write_word(addr, memval | (1 << self.b));
         cpu.write_reg16(Reg16::WZ, addr);
 
-        //TODO info!("{:#06x}: SET {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset);
         cpu.inc_pc(2);
     }
 
     fn get_accessed_regs(&self) -> (OutputRegisters, OutputRegisters) {
         (OIY|OWZ, OWZ)
+    }
+
+    fn get_string(&self, cpu: &Cpu, memory: &Memory) -> String {
+        let offset = memory.read_word(cpu.get_pc()) as i16;
+        format!("{:#06x}: SET {}, (IY{:+#04X})", cpu.get_pc() - 2, self.b, offset)
     }
 }
 
