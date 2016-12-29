@@ -69,8 +69,8 @@ mod test_zex {
                         .rom0(dummyrom0)
                         .writable_rom(true)
                         .finalize()));
-        let ay = Rc::new(RefCell::new(Ay { value: 0 }));
-        let ula = Rc::new(RefCell::new(Ula { value: 0 }));
+        let ay = Rc::new(RefCell::new(Ay::new()));
+        let ula = Rc::new(RefCell::new(Ula::new()));
 
         let interconnect = Interconnect::new(
             memory.clone(),

@@ -31,8 +31,8 @@ fn main() {
         .rom0(rom0)
         .rom1(rom1)
         .finalize()));
-    let ay = Rc::new(RefCell::new(Ay { value: 0 }));
-    let ula = Rc::new(RefCell::new(Ula { value: 0 }));
+    let ay = Rc::new(RefCell::new(Ay::new()));
+    let ula = Rc::new(RefCell::new(Ula::new()));
 
     let interconnect = Interconnect::new(
         memory.clone(),

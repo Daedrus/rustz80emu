@@ -1,4 +1,4 @@
-use super::peripherals::Peripheral;
+use super::Peripheral;
 use std::fmt;
 
 #[derive(RustcEncodable, RustcDecodable)]
