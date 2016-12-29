@@ -385,9 +385,15 @@ impl Debugger {
 
                 Ok(Command::Cont) => {
                     loop {
-                        let (pre_regs, post_regs) =
-                            self.peek_at_next_instruction().get_accessed_regs();
+                        let (pre_regs, post_regs, instr_str) = {
+                            let next_instr = self.peek_at_next_instruction();
+                            let accessed_regs = next_instr.get_accessed_regs();
+                            (accessed_regs.0,
+                             accessed_regs.1,
+                             next_instr.get_string(&self.cpu, &self.memory.borrow()))
+                        };
                         debug!("{}", self.output(pre_regs));
+                        debug!("{}", instr_str);
                         self.cpu.handle_interrupts();
                         self.cpu.run_instruction();
                         debug!("{}", self.output(post_regs));
@@ -396,9 +402,15 @@ impl Debugger {
 
                 Ok(Command::Step(count)) if count > 0 => {
                     for _ in 0..count {
-                        let (pre_regs, post_regs) =
-                            self.peek_at_next_instruction().get_accessed_regs();
+                        let (pre_regs, post_regs, instr_str) = {
+                            let next_instr = self.peek_at_next_instruction();
+                            let accessed_regs = next_instr.get_accessed_regs();
+                            (accessed_regs.0,
+                             accessed_regs.1,
+                             next_instr.get_string(&self.cpu, &self.memory.borrow()))
+                        };
                         debug!("{}", self.output(pre_regs));
+                        debug!("{}", instr_str);
                         self.cpu.handle_interrupts();
                         self.cpu.run_instruction();
                         debug!("{}", self.output(post_regs));
