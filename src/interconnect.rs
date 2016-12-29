@@ -45,7 +45,7 @@ impl Interconnect {
     }
 
     #[inline(always)]
-    pub fn contend_read(&mut self, addr: u16, curr_tcycle: u32, tcycles: u32) -> u32 {
+    pub fn contend_read(&self, addr: u16, curr_tcycle: u32, tcycles: u32) -> u32 {
         println_if_trace!("{: >5} MC {:04x}", curr_tcycle, addr);
         let delay = if self.is_addr_contended(addr) {
             self.ula_contention[curr_tcycle as usize] as u32
@@ -56,7 +56,7 @@ impl Interconnect {
     }
 
     #[inline(always)]
-    pub fn contend_read_no_mreq(&mut self, addr: u16, curr_tcycle: u32) -> u32 {
+    pub fn contend_read_no_mreq(&self, addr: u16, curr_tcycle: u32) -> u32 {
         println_if_trace!("{: >5} MC {:04x}", curr_tcycle, addr);
         let delay = if self.is_addr_contended(addr) {
             self.ula_contention_no_mreq[curr_tcycle as usize] as u32
@@ -67,7 +67,7 @@ impl Interconnect {
     }
 
     #[inline(always)]
-    pub fn contend_write_no_mreq(&mut self, addr: u16, curr_tcycle: u32) -> u32 {
+    pub fn contend_write_no_mreq(&self, addr: u16, curr_tcycle: u32) -> u32 {
         println_if_trace!("{: >5} MC {:04x}", curr_tcycle, addr);
         let delay = if self.is_addr_contended(addr) {
             self.ula_contention_no_mreq[curr_tcycle as usize] as u32
@@ -85,12 +85,12 @@ impl Interconnect {
     }
 
     #[cfg_attr(not(feature = "trace-interconnect"), allow(unused_variables))]
-    pub fn write_word(&mut self, addr: u16, val: u8, curr_tcycle: u32) {
+    pub fn write_word(&self, addr: u16, val: u8, curr_tcycle: u32) {
         self.memory.borrow_mut().write_word(addr, val);
         println_if_trace!("{: >5} MW {:04x} {:02x}", curr_tcycle, addr, val);
     }
 
-    pub fn contend_port_early(&mut self, port: u16, curr_tcycle: u32) -> u32 {
+    pub fn contend_port_early(&self, port: u16, curr_tcycle: u32) -> u32 {
         let delay = if self.is_addr_contended(port) {
             println_if_trace!("{: >5} PC {:04x}", curr_tcycle, port);
             self.ula_contention_no_mreq[curr_tcycle as usize] as u32
@@ -100,7 +100,7 @@ impl Interconnect {
         delay + 1
     }
 
-    pub fn contend_port_late(&mut self, port: u16, curr_tcycle: u32) -> u32 {
+    pub fn contend_port_late(&self, port: u16, curr_tcycle: u32) -> u32 {
         let delay = if (port & 0x0001) == 0 {
             println_if_trace!("{: >5} PC {:04x}", curr_tcycle, port);
             (self.ula_contention_no_mreq[curr_tcycle as usize] as u32) + 2
@@ -122,7 +122,7 @@ impl Interconnect {
     }
 
     #[cfg_attr(not(feature = "trace-interconnect"), allow(unused_variables))]
-    pub fn read_port(&mut self, port: u16, curr_tcycle: u32) -> u8 {
+    pub fn read_port(&self, port: u16, curr_tcycle: u32) -> u8 {
         let val = match port {
             port if port & 0x0001 == 0 => self.ula.borrow().read_port(port),
             0x7ffd => self.memory.borrow().read_port(port),
@@ -134,7 +134,7 @@ impl Interconnect {
     }
 
     #[cfg_attr(not(feature = "trace-interconnect"), allow(unused_variables))]
-    pub fn write_port(&mut self, port: u16, val: u8, curr_tcycle: u32) {
+    pub fn write_port(&self, port: u16, val: u8, curr_tcycle: u32) {
         println_if_trace!("{: >5} PW {:04x} {:02x}", curr_tcycle, port, val);
         match port {
             port if port & 0x0001 == 0 => self.ula.borrow_mut().write_port(port, val),
@@ -144,7 +144,7 @@ impl Interconnect {
         };
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&self) {
         self.memory.borrow_mut().clear();
     }
 }
