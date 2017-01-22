@@ -39,40 +39,55 @@ impl FromStr for Command {
 
 named!(
     command<Command>,
-    chain!(
+    do_parse!(
         c: alt_complete!(
             step |
             mem  |
             cont |
-            exit) ~
-            eof!(),
-    || c));
+            exit) >>
+        eof!() >>
+
+        (c)
+    )
+);
 
 named!(
     step<Command>,
-    chain!(
-        alt_complete!(tag!("step") | tag!("s")) ~
-        count: opt!(preceded!(space, u16_parser)),
-    || Command::Step(count.unwrap_or(1))));
+    do_parse!(
+        alt_complete!(tag!("step") | tag!("s")) >>
+        count: opt!(complete!(preceded!(space, u16_parser))) >>
+
+        (Command::Step(count.unwrap_or(1)))
+    )
+);
 
 named!(
     mem<Command>,
-    chain!(
-        alt_complete!(tag!("mem") | tag!("m")) ~
-        addr: preceded!(space, u16_hex_parser),
-    || Command::Mem(addr)));
+    do_parse!(
+        alt_complete!(tag!("mem") | tag!("m")) >>
+        addr: preceded!(space, u16_hex_parser) >>
+
+        (Command::Mem(addr))
+    )
+);
 
 named!(
     cont<Command>,
-    map!(
-        alt_complete!(tag!("cont") | tag!("c")),
-    |_| Command::Cont));
+    do_parse!(
+        alt_complete!(tag!("cont") | tag!("c")) >>
+
+        (Command::Cont)
+    )
+);
 
 named!(
     exit<Command>,
-    map!(
-        alt_complete!(tag!("exit") | tag!("e") | tag!("quit") | tag!("q")),
-    |_| Command::Exit));
+    do_parse!(
+        alt_complete!(tag!("exit") | tag!("e") | tag!("quit") | tag!("q")) >>
+
+        (Command::Exit)
+    )
+);
 
 named!(u16_parser<u16>,
     map_res!(
@@ -83,12 +98,15 @@ named!(u16_parser<u16>,
 
 // TODO: I have a feeling this can be done in a better way, without the unwrap()
 named!(u16_hex_parser<u16>,
-    chain!(
-        opt!(tag!("0x")) ~
+    do_parse!(
+        opt!(tag!("0x")) >>
         number: map_res!(
             hex_digit,
-            str::from_utf8),
-    || u16::from_str_radix(number, 16).unwrap()));
+            str::from_utf8) >>
+
+        (u16::from_str_radix(number, 16).unwrap())
+    )
+);
 
 
 pub mod output_registers {
