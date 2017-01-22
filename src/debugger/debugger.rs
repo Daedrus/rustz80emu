@@ -22,6 +22,7 @@ use std::cell::RefCell;
 enum Command {
     Step(u16),
     Mem(u16),
+    MemRng(u16, u16),
     Cont,
     Exit,
 }
@@ -65,9 +66,13 @@ named!(
     mem<Command>,
     do_parse!(
         alt_complete!(tag!("mem") | tag!("m")) >>
-        addr: preceded!(space, u16_hex_parser) >>
+        addrs: many_m_n!(1, 2, preceded!(space, u16_hex_parser)) >>
 
-        (Command::Mem(addr))
+        (match addrs.len() {
+            1 => Command::Mem(addrs[0]),
+            2 => Command::MemRng(addrs[0], addrs[1]),
+            _ => unreachable!(),
+        })
     )
 );
 
@@ -433,6 +438,29 @@ impl Debugger {
                         self.cpu.run_instruction();
                         debug!("{}", self.output(post_regs));
                     }
+                }
+
+                Ok(Command::MemRng(addrstart, addrend)) => {
+                    let realaddrstart =
+                        if addrstart % 16 == 0 {
+                            addrstart
+                        } else {
+                            addrstart - (addrstart % 16)
+                        };
+                    let realaddrend =
+                        if addrend % 16 == 0 {
+                            addrend
+                        } else {
+                            addrend + (16 - (addrend % 16))
+                        };
+                    for addr in realaddrstart..realaddrend {
+                        if addr % 16 == 0 {
+                            println!();
+                            print!("{:#06X}: ", addr);
+                        }
+                        print!("{:02X} ", self.memory.borrow().read_word(addr));
+                    }
+                    println!();
                 }
 
                 Ok(Command::Mem(addr)) => println!("{:#04X}", self.memory.borrow().read_word(addr)),
