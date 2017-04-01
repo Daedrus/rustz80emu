@@ -85,8 +85,6 @@ mod test_fuse {
                 idx = idx + 1;
             }
         }
-
-        let emptyline: String = read!("{}", file);
     }
 
     #[test]
