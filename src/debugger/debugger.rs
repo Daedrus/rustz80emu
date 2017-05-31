@@ -119,37 +119,37 @@ pub mod output_registers {
     use ::cpu::{Reg8, Reg16};
 
     bitflags! {
-        pub flags OutputRegisters: u32 {
-            const ONONE = 0x00000000,
+        pub struct OutputRegisters: u32 {
+            const ONONE = 0x00000000;
 
-            const OA = 0x00000001,
-            const OF = 0x00000002,
-            const OB = 0x00000004,
-            const OC = 0x00000008,
-            const OD = 0x00000010,
-            const OE = 0x00000020,
-            const OH = 0x00000040,
-            const OL = 0x00000080,
+            const OA = 0x00000001;
+            const OF = 0x00000002;
+            const OB = 0x00000004;
+            const OC = 0x00000008;
+            const OD = 0x00000010;
+            const OE = 0x00000020;
+            const OH = 0x00000040;
+            const OL = 0x00000080;
 
-            const OA_ALT = 0x00000100,
-            const OF_ALT = 0x00000200,
-            const OB_ALT = 0x00000400,
-            const OC_ALT = 0x00000800,
-            const OD_ALT = 0x00001000,
-            const OE_ALT = 0x00002000,
-            const OH_ALT = 0x00004000,
-            const OL_ALT = 0x00008000,
+            const OA_ALT = 0x00000100;
+            const OF_ALT = 0x00000200;
+            const OB_ALT = 0x00000400;
+            const OC_ALT = 0x00000800;
+            const OD_ALT = 0x00001000;
+            const OE_ALT = 0x00002000;
+            const OH_ALT = 0x00004000;
+            const OL_ALT = 0x00008000;
 
-            const OIX = 0x00010000,
-            const OIY = 0x00020000,
-            const OSP = 0x00040000,
-            const OPC = 0x00080000,
-            const OWZ = 0x00100000,
+            const OIX = 0x00010000;
+            const OIY = 0x00020000;
+            const OSP = 0x00040000;
+            const OPC = 0x00080000;
+            const OWZ = 0x00100000;
 
-            const OI = 0x00200000,
-            const OR = 0x00400080,
+            const OI = 0x00200000;
+            const OR = 0x00400080;
 
-            const OALL = 0xFFFFFFFF,
+            const OALL = 0xFFFFFFFF;
         }
     }
 
