@@ -1,13 +1,21 @@
 use super::Peripheral;
+use super::Memory;
+
+use std::rc::Rc;
+use std::cell::RefCell;
 
 #[derive(RustcEncodable, RustcDecodable)]
 pub struct Ula {
     value: u8,
+
+    memory: Rc<RefCell<Memory>>,
 }
 
 impl Ula {
-    pub fn new() -> Self {
-        Ula { value: 0 }
+    pub fn new(memory: Rc<RefCell<Memory>>) -> Self {
+        Ula { value: 0,
+              memory: memory,
+        }
     }
 }
 

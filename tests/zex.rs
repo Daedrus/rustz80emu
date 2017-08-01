@@ -70,7 +70,7 @@ mod test_zex {
                         .writable_rom(true)
                         .finalize()));
         let ay = Rc::new(RefCell::new(Ay::new()));
-        let ula = Rc::new(RefCell::new(Ula::new()));
+        let ula = Rc::new(RefCell::new(Ula::new(memory.clone())));
 
         let interconnect = Interconnect::new(
             memory.clone(),
