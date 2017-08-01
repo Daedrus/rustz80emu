@@ -15,4 +15,6 @@ pub mod cpu;
 pub mod interconnect;
 pub mod peripherals;
 pub mod debugger;
+pub mod utils;
+pub mod machine;
 
