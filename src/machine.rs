@@ -13,10 +13,11 @@ use std::cell::RefCell;
 pub struct Machine {
     cpu: Rc<RefCell<Cpu>>,
     memory: Rc<RefCell<Memory>>,
+    debug_on: bool,
 }
 
 impl Machine {
-    pub fn new() -> Self {
+    pub fn new(start_in_debug: bool) -> Self {
         let rom0 = read_bin(Path::new("./roms/128-0.rom"));
         let rom1 = read_bin(Path::new("./roms/128-1.rom"));
 
@@ -38,13 +39,21 @@ impl Machine {
         Machine {
             cpu: cpu,
             memory: memory,
+            debug_on: start_in_debug,
         }
     }
 
     pub fn run(&self) {
-        loop {
-            self.cpu.borrow_mut().handle_interrupts();
-            self.cpu.borrow_mut().run_instruction();
+        if self.debug_on {
+            let mut debugger = Debugger::new(
+                self.cpu.clone(),
+                self.memory.clone());
+            debugger.run();
+        } else {
+            loop {
+                self.cpu.borrow_mut().handle_interrupts();
+                self.cpu.borrow_mut().run_instruction();
+            }
         }
     }
 }

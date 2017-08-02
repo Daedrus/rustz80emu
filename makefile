@@ -1,7 +1,7 @@
 run:
-	cargo run --release roms/128-0.rom roms/128-1.rom
+	cargo run --release
 run_with_debugger:
-	RUST_LOG=debug cargo run --release roms/128-0.rom roms/128-1.rom
+	cargo run --release start_in_debug
 
 test_zex:
 	cargo test test_zex --release -- --nocapture

@@ -10,10 +10,6 @@ use std::str::{self, FromStr};
 
 use nom::{IResult, space, digit, hex_digit};
 
-use log::LogRecord;
-use env_logger::LogBuilder;
-use std::env;
-
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -211,12 +207,12 @@ macro_rules! reg_str {
 }
 
 pub struct Debugger {
-    cpu: Cpu,
+    cpu: Rc<RefCell<Cpu>>,
     memory: Rc<RefCell<Memory>>,
 }
 
 impl Debugger {
-    pub fn new(cpu: Cpu, memory: Rc<RefCell<Memory>>) -> Self {
+    pub fn new(cpu: Rc<RefCell<Cpu>>, memory: Rc<RefCell<Memory>>) -> Self {
         Debugger {
             cpu: cpu,
             memory: memory,
@@ -228,60 +224,60 @@ impl Debugger {
         let mut outstr = String::new();
 
         let astr =
-            reg_str!(regs, OA    , " {:02X} ", self.cpu.read_reg8(Reg8::A)       , "    "      );
+            reg_str!(regs, OA    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::A)       , "    "      );
         let aaltstr =
-            reg_str!(regs, OA_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::A_ALT)   , "    "      );
+            reg_str!(regs, OA_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::A_ALT)   , "    "      );
         let fstr =
-            reg_str!(regs, OF    , " {:02X} ", self.cpu.get_flags().bits() as u8 , "    "      );
+            reg_str!(regs, OF    , " {:02X} ", self.cpu.borrow().get_flags().bits() as u8 , "    "      );
         let fbinstr =
-            reg_str!(regs, OF    , " {:08b} ", self.cpu.get_flags().bits()       , "          ");
+            reg_str!(regs, OF    , " {:08b} ", self.cpu.borrow().get_flags().bits()       , "          ");
         let faltstr =
-            reg_str!(regs, OF_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::F_ALT)   , "    "      );
+            reg_str!(regs, OF_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::F_ALT)   , "    "      );
         let bstr =
-            reg_str!(regs, OB    , " {:02X} ", self.cpu.read_reg8(Reg8::B)       , "    "      );
+            reg_str!(regs, OB    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::B)       , "    "      );
         let baltstr =
-            reg_str!(regs, OB_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::B_ALT)   , "    "      );
+            reg_str!(regs, OB_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::B_ALT)   , "    "      );
         let cstr =
-            reg_str!(regs, OC    , " {:02X} ", self.cpu.read_reg8(Reg8::C)       , "    "      );
+            reg_str!(regs, OC    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::C)       , "    "      );
         let caltstr =
-            reg_str!(regs, OC_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::C_ALT)   , "    "      );
+            reg_str!(regs, OC_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::C_ALT)   , "    "      );
         let dstr =
-            reg_str!(regs, OD    , " {:02X} ", self.cpu.read_reg8(Reg8::D)       , "    "      );
+            reg_str!(regs, OD    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::D)       , "    "      );
         let daltstr =
-            reg_str!(regs, OD_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::D_ALT)   , "    "      );
+            reg_str!(regs, OD_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::D_ALT)   , "    "      );
         let estr =
-            reg_str!(regs, OE    , " {:02X} ", self.cpu.read_reg8(Reg8::E)       , "    "      );
+            reg_str!(regs, OE    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::E)       , "    "      );
         let ealtstr =
-            reg_str!(regs, OE_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::E_ALT)   , "    "      );
+            reg_str!(regs, OE_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::E_ALT)   , "    "      );
         let hstr =
-            reg_str!(regs, OH    , " {:02X} ", self.cpu.read_reg8(Reg8::H)       , "    "      );
+            reg_str!(regs, OH    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::H)       , "    "      );
         let haltstr =
-            reg_str!(regs, OH_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::H_ALT)   , "    "      );
+            reg_str!(regs, OH_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::H_ALT)   , "    "      );
         let lstr =
-            reg_str!(regs, OL    , " {:02X} ", self.cpu.read_reg8(Reg8::L)       , "    "      );
+            reg_str!(regs, OL    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::L)       , "    "      );
         let laltstr =
-            reg_str!(regs, OL_ALT, " {:02X} ", self.cpu.read_reg8(Reg8::L_ALT)   , "    "      );
+            reg_str!(regs, OL_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::L_ALT)   , "    "      );
         let ixstr =
-            reg_str!(regs, OIX   , " {:04X} ", self.cpu.read_reg16(Reg16::IX)    , "      "    );
+            reg_str!(regs, OIX   , " {:04X} ", self.cpu.borrow().read_reg16(Reg16::IX)    , "      "    );
         let iystr =
-            reg_str!(regs, OIY   , " {:04X} ", self.cpu.read_reg16(Reg16::IY)    , "      "    );
+            reg_str!(regs, OIY   , " {:04X} ", self.cpu.borrow().read_reg16(Reg16::IY)    , "      "    );
         let spstr =
-            reg_str!(regs, OSP   , " {:04X} ", self.cpu.read_reg16(Reg16::SP)    , "      "    );
+            reg_str!(regs, OSP   , " {:04X} ", self.cpu.borrow().read_reg16(Reg16::SP)    , "      "    );
 
-        let pcstr = format!(" {:04X} ", self.cpu.get_pc());
+        let pcstr = format!(" {:04X} ", self.cpu.borrow().get_pc());
 
-        let tcyclesstr = format!("{:05}", self.cpu.tcycles);
-        let istr = format!("{:02X}", self.cpu.read_reg8(Reg8::I));
-        let rstr = format!("{:02X}", self.cpu.read_reg8(Reg8::R));
+        let tcyclesstr = format!("{:05}", self.cpu.borrow().tcycles);
+        let istr = format!("{:02X}", self.cpu.borrow().read_reg8(Reg8::I));
+        let rstr = format!("{:02X}", self.cpu.borrow().read_reg8(Reg8::R));
 
         let mem0str = format!("{}", self.memory.borrow().get_0000_bank());
         let mem4str = format!("{}", self.memory.borrow().get_4000_bank());
         let mem8str = format!("{}", self.memory.borrow().get_8000_bank());
         let memcstr = format!("{}", self.memory.borrow().get_c000_bank());
 
-        let imstr = format!("{}", self.cpu.get_im());
-        let iff1str = format!("{}", if self.cpu.get_iff1() {1} else {0});
-        let iff2str = format!("{}", if self.cpu.get_iff2() {1} else {0});
+        let imstr = format!("{}", self.cpu.borrow().get_im());
+        let iff1str = format!("{}", if self.cpu.borrow().get_iff1() {1} else {0});
+        let iff2str = format!("{}", if self.cpu.borrow().get_iff2() {1} else {0});
 
         outstr.push_str("                    -----------        -----------\n");
         outstr.push_str("                af: |");
@@ -366,7 +362,7 @@ impl Debugger {
     }
 
     fn peek_at_next_instruction(&self) -> &Instruction {
-        let curr_pc = self.cpu.get_pc();
+        let curr_pc = self.cpu.borrow().get_pc();
 
         let i0 = self.memory.borrow().read_word(curr_pc);
         let i1 = self.memory.borrow().read_word(curr_pc + 1);
@@ -384,17 +380,6 @@ impl Debugger {
     }
 
     pub fn run(&mut self) {
-        let mut builder = LogBuilder::new();
-
-        let format = |record: &LogRecord| format!("{}", record.args());
-        builder.format(format);
-
-        if env::var("RUST_LOG").is_ok() {
-            builder.parse(&env::var("RUST_LOG").unwrap());
-        }
-
-        builder.init().unwrap();
-
         loop {
             print!("z80> ");
             stdout().flush().unwrap();
@@ -413,13 +398,13 @@ impl Debugger {
                             let accessed_regs = next_instr.get_accessed_regs();
                             (accessed_regs.0,
                              accessed_regs.1,
-                             next_instr.get_string(&self.cpu, &self.memory.borrow()))
+                             next_instr.get_string(&self.cpu.borrow(), &self.memory.borrow()))
                         };
-                        debug!("{}", self.output(pre_regs));
-                        debug!("{}", instr_str);
-                        self.cpu.handle_interrupts();
-                        self.cpu.run_instruction();
-                        debug!("{}", self.output(post_regs));
+                        println!("{}", self.output(pre_regs));
+                        println!("{}", instr_str);
+                        self.cpu.borrow_mut().handle_interrupts();
+                        self.cpu.borrow_mut().run_instruction();
+                        println!("{}", self.output(post_regs));
                     }
                 }
 
@@ -430,13 +415,13 @@ impl Debugger {
                             let accessed_regs = next_instr.get_accessed_regs();
                             (accessed_regs.0,
                              accessed_regs.1,
-                             next_instr.get_string(&self.cpu, &self.memory.borrow()))
+                             next_instr.get_string(&self.cpu.borrow(), &self.memory.borrow()))
                         };
-                        debug!("{}", self.output(pre_regs));
-                        debug!("{}", instr_str);
-                        self.cpu.handle_interrupts();
-                        self.cpu.run_instruction();
-                        debug!("{}", self.output(post_regs));
+                        println!("{}", self.output(pre_regs));
+                        println!("{}", instr_str);
+                        self.cpu.borrow_mut().handle_interrupts();
+                        self.cpu.borrow_mut().run_instruction();
+                        println!("{}", self.output(post_regs));
                     }
                 }
 
