@@ -97,15 +97,14 @@ named!(u16_parser<u16>,
             str::from_utf8),
         FromStr::from_str));
 
-// TODO: I have a feeling this can be done in a better way, without the unwrap()
 named!(u16_hex_parser<u16>,
     do_parse!(
         opt!(tag!("0x")) >>
         number: map_res!(
             hex_digit,
             str::from_utf8) >>
-
-        (u16::from_str_radix(number, 16).unwrap())
+        u16number: expr_res!(u16::from_str_radix(number, 16)) >>
+        (u16number)
     )
 );
 
