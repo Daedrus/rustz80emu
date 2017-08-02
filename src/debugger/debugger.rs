@@ -219,146 +219,51 @@ impl Debugger {
         }
     }
 
-    // TODO: Rewrite this mess
     fn output(&self, regs: OutputRegisters) -> String {
-        let mut outstr = String::new();
-
-        let astr =
-            reg_str!(regs, OA    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::A)       , "    "      );
-        let aaltstr =
-            reg_str!(regs, OA_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::A_ALT)   , "    "      );
-        let fstr =
-            reg_str!(regs, OF    , " {:02X} ", self.cpu.borrow().get_flags().bits() as u8 , "    "      );
-        let fbinstr =
-            reg_str!(regs, OF    , " {:08b} ", self.cpu.borrow().get_flags().bits()       , "          ");
-        let faltstr =
-            reg_str!(regs, OF_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::F_ALT)   , "    "      );
-        let bstr =
-            reg_str!(regs, OB    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::B)       , "    "      );
-        let baltstr =
-            reg_str!(regs, OB_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::B_ALT)   , "    "      );
-        let cstr =
-            reg_str!(regs, OC    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::C)       , "    "      );
-        let caltstr =
-            reg_str!(regs, OC_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::C_ALT)   , "    "      );
-        let dstr =
-            reg_str!(regs, OD    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::D)       , "    "      );
-        let daltstr =
-            reg_str!(regs, OD_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::D_ALT)   , "    "      );
-        let estr =
-            reg_str!(regs, OE    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::E)       , "    "      );
-        let ealtstr =
-            reg_str!(regs, OE_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::E_ALT)   , "    "      );
-        let hstr =
-            reg_str!(regs, OH    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::H)       , "    "      );
-        let haltstr =
-            reg_str!(regs, OH_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::H_ALT)   , "    "      );
-        let lstr =
-            reg_str!(regs, OL    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::L)       , "    "      );
-        let laltstr =
-            reg_str!(regs, OL_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::L_ALT)   , "    "      );
-        let ixstr =
-            reg_str!(regs, OIX   , " {:04X} ", self.cpu.borrow().read_reg16(Reg16::IX)    , "      "    );
-        let iystr =
-            reg_str!(regs, OIY   , " {:04X} ", self.cpu.borrow().read_reg16(Reg16::IY)    , "      "    );
-        let spstr =
-            reg_str!(regs, OSP   , " {:04X} ", self.cpu.borrow().read_reg16(Reg16::SP)    , "      "    );
-
-        let pcstr = format!(" {:04X} ", self.cpu.borrow().get_pc());
-
-        let tcyclesstr = format!("{:05}", self.cpu.borrow().tcycles);
-        let istr = format!("{:02X}", self.cpu.borrow().read_reg8(Reg8::I));
-        let rstr = format!("{:02X}", self.cpu.borrow().read_reg8(Reg8::R));
-
-        let mem0str = format!("{}", self.memory.borrow().get_0000_bank());
-        let mem4str = format!("{}", self.memory.borrow().get_4000_bank());
-        let mem8str = format!("{}", self.memory.borrow().get_8000_bank());
-        let memcstr = format!("{}", self.memory.borrow().get_c000_bank());
-
-        let imstr = format!("{}", self.cpu.borrow().get_im());
-        let iff1str = format!("{}", if self.cpu.borrow().get_iff1() {1} else {0});
-        let iff2str = format!("{}", if self.cpu.borrow().get_iff2() {1} else {0});
-
-        outstr.push_str("                    -----------        -----------\n");
-        outstr.push_str("                af: |");
-        outstr.push_str(&astr);
-        outstr.push_str("|");
-        outstr.push_str(&fstr);
-        outstr.push_str("|   af': |");
-        outstr.push_str(&aaltstr);
-        outstr.push_str("|");
-        outstr.push_str(&faltstr);
-        outstr.push_str("|   tcycles: ");
-        outstr.push_str(&tcyclesstr);
-        outstr.push_str("    im: ");
-        outstr.push_str(&imstr);
-        outstr.push_str("\n");
-        outstr.push_str("                bc: |");
-        outstr.push_str(&bstr);
-        outstr.push_str("|");
-        outstr.push_str(&cstr);
-        outstr.push_str("|   bc': |");
-        outstr.push_str(&baltstr);
-        outstr.push_str("|");
-        outstr.push_str(&caltstr);
-        outstr.push_str("|         i: ");
-        outstr.push_str(&istr);
-        outstr.push_str("     iff1: ");
-        outstr.push_str(&iff1str);
-        outstr.push_str("\n");
-        outstr.push_str("                de: |");
-        outstr.push_str(&dstr);
-        outstr.push_str("|");
-        outstr.push_str(&estr);
-        outstr.push_str("|   de': |");
-        outstr.push_str(&daltstr);
-        outstr.push_str("|");
-        outstr.push_str(&ealtstr);
-        outstr.push_str("|         r: ");
-        outstr.push_str(&rstr);
-        outstr.push_str("     iff2: ");
-        outstr.push_str(&iff2str);
-        outstr.push_str("\n");
-        outstr.push_str("                hl: |");
-        outstr.push_str(&hstr);
-        outstr.push_str("|");
-        outstr.push_str(&lstr);
-        outstr.push_str("|   hl': |");
-        outstr.push_str(&haltstr);
-        outstr.push_str("|");
-        outstr.push_str(&laltstr);
-        outstr.push_str("|\n");
-        outstr.push_str("                    -----------        -----------\n");
-        outstr.push_str("                    ----------         ------------\n");
-        outstr.push_str("                ix: | ");
-        outstr.push_str(&ixstr);
-        outstr.push_str(" |         | SZ_H_PNC |");
-        outstr.push_str("   0x0000: ROM ");
-        outstr.push_str(&mem0str);
-        outstr.push_str("\n");
-        outstr.push_str("                iy: | ");
-        outstr.push_str(&iystr);
-        outstr.push_str(" |      f: |");
-        outstr.push_str(&fbinstr);
-        outstr.push_str("|");
-        outstr.push_str("   0x4000: RAM ");
-        outstr.push_str(&mem4str);
-        outstr.push_str("\n");
-        outstr.push_str("                sp: | ");
-        outstr.push_str(&spstr);
-        outstr.push_str(" |         ------------");
-        outstr.push_str("   0x8000: RAM ");
-        outstr.push_str(&mem8str);
-        outstr.push_str("\n");
-        outstr.push_str("                pc: | ");
-        outstr.push_str(&pcstr);
-        outstr.push_str(" |");
-        outstr.push_str("                        0xC000: RAM ");
-        outstr.push_str(&memcstr);
-        outstr.push_str("\n");
-        outstr.push_str("                    ----------\n");
-
-        outstr
+        format!(
+            "                 -----------        -----------
+             af: |{}|{}|   af': |{}|{}|   tcycles: {}    im: {}
+             bc: |{}|{}|   bc': |{}|{}|         i: {}     iff1: {}
+             de: |{}|{}|   de': |{}|{}|         r: {}     iff2: {}
+             hl: |{}|{}|   hl': |{}|{}|
+                 -----------        -----------
+                 ----------         ------------
+             ix: | {} |         | SZ_H_PNC |   0x0000: ROM {}
+             iy: | {} |      f: |{}|   0x4000: ROM {}
+             sp: | {} |         ------------   0x8000: ROM {}
+             pc: | {} |                        0xC000: ROM {}
+                 ----------",
+            reg_str!(regs, OA    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::A)       , "    "      ),
+            reg_str!(regs, OF    , " {:02X} ", self.cpu.borrow().get_flags().bits() as u8 , "    "      ),
+            reg_str!(regs, OA_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::A_ALT)   , "    "      ),
+            reg_str!(regs, OF_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::F_ALT)   , "    "      ),
+            format!("{:05}", self.cpu.borrow().tcycles),
+            format!("{}", self.cpu.borrow().get_im()),
+            reg_str!(regs, OB    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::B)       , "    "      ),
+            reg_str!(regs, OC    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::C)       , "    "      ),
+            reg_str!(regs, OB_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::B_ALT)   , "    "      ),
+            reg_str!(regs, OC_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::C_ALT)   , "    "      ),
+            format!("{:02X}", self.cpu.borrow().read_reg8(Reg8::I)),
+            format!("{}", if self.cpu.borrow().get_iff1() {1} else {0}),
+            reg_str!(regs, OD    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::D)       , "    "      ),
+            reg_str!(regs, OE    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::E)       , "    "      ),
+            reg_str!(regs, OD_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::D_ALT)   , "    "      ),
+            reg_str!(regs, OE_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::E_ALT)   , "    "      ),
+            format!("{:02X}", self.cpu.borrow().read_reg8(Reg8::R)),
+            format!("{}", if self.cpu.borrow().get_iff2() {1} else {0}),
+            reg_str!(regs, OH    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::H)       , "    "      ),
+            reg_str!(regs, OL    , " {:02X} ", self.cpu.borrow().read_reg8(Reg8::L)       , "    "      ),
+            reg_str!(regs, OH_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::H_ALT)   , "    "      ),
+            reg_str!(regs, OL_ALT, " {:02X} ", self.cpu.borrow().read_reg8(Reg8::L_ALT)   , "    "      ),
+            reg_str!(regs, OIX   , " {:04X} ", self.cpu.borrow().read_reg16(Reg16::IX)    , "      "    ),
+            format!("{}", self.memory.borrow().get_0000_bank()),
+            reg_str!(regs, OIY   , " {:04X} ", self.cpu.borrow().read_reg16(Reg16::IY)    , "      "    ),
+            reg_str!(regs, OF    , " {:08b} ", self.cpu.borrow().get_flags().bits()       , "          "),
+            format!("{}", self.memory.borrow().get_4000_bank()),
+            reg_str!(regs, OSP   , " {:04X} ", self.cpu.borrow().read_reg16(Reg16::SP)    , "      "    ),
+            format!("{}", self.memory.borrow().get_8000_bank()),
+            format!(" {:04X} ", self.cpu.borrow().get_pc()),
+            format!("{}", self.memory.borrow().get_c000_bank()))
     }
 
     fn peek_at_next_instruction(&self) -> &Instruction {
