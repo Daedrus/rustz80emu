@@ -195,16 +195,6 @@ pub mod output_registers {
     }
 }
 
-macro_rules! reg_str {
-    ($regs: ident, $outreg: ident, $fmtstr: expr, $reg: expr, $nostr: expr) => {{
-        if $regs.contains($outreg) {
-            format!($fmtstr, $reg)
-        } else {
-            String::from($nostr)
-        }
-    }}
-}
-
 pub struct Debugger {
     cpu: Rc<RefCell<Cpu>>,
     memory: Rc<RefCell<Memory>>,
@@ -219,6 +209,16 @@ impl Debugger {
     }
 
     fn output(&self, regs: OutputRegisters) -> String {
+        macro_rules! reg_str {
+            ($regs: ident, $outreg: ident, $fmtstr: expr, $reg: expr, $nostr: expr) => {{
+                if $regs.contains($outreg) {
+                    format!($fmtstr, $reg)
+                } else {
+                    String::from($nostr)
+                }
+            }}
+        }
+
         format!(
             "                 -----------        -----------
              af: |{}|{}|   af': |{}|{}|   tcycles: {}    im: {}
