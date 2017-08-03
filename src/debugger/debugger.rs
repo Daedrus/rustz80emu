@@ -8,6 +8,8 @@ use std::io::Write;
 use std::borrow::Cow;
 use std::str::{self, FromStr};
 
+use std::process;
+
 use nom::{IResult, space, digit, hex_digit};
 
 use std::rc::Rc;
@@ -195,9 +197,21 @@ pub mod output_registers {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+enum Mode {
+    Normal,
+    Step(u16),
+    Cont,
+}
+
 pub struct Debugger {
     cpu: Rc<RefCell<Cpu>>,
     memory: Rc<RefCell<Memory>>,
+    mode: Mode,
+
+    pre_regs: OutputRegisters,
+    post_regs: OutputRegisters,
+    instruction: String,
 }
 
 impl Debugger {
@@ -205,6 +219,11 @@ impl Debugger {
         Debugger {
             cpu: cpu,
             memory: memory,
+            mode: Mode::Normal,
+
+            pre_regs: ONONE,
+            post_regs: ONONE,
+            instruction: String::from("NOT STARTED"),
         }
     }
 
@@ -265,14 +284,14 @@ impl Debugger {
             format!("{}", self.memory.borrow().get_c000_bank()))
     }
 
-    fn peek_at_next_instruction(&self) -> &Instruction {
+    fn decode_next_instruction(&mut self) {
         let curr_pc = self.cpu.borrow().get_pc();
 
         let i0 = self.memory.borrow().read_word(curr_pc);
         let i1 = self.memory.borrow().read_word(curr_pc + 1);
         let i3 = self.memory.borrow().read_word(curr_pc + 3);
 
-        match (i0, i1) {
+        let next_instr = match (i0, i1) {
             (0xDD, 0xCB) => INSTR_TABLE_DDCB[i3 as usize],
             (0xDD, _   ) => INSTR_TABLE_DD[i1 as usize],
             (0xFD, 0xCB) => INSTR_TABLE_FDCB[i3 as usize],
@@ -280,82 +299,109 @@ impl Debugger {
             (0xCB, _   ) => INSTR_TABLE_CB[i1 as usize],
             (0xED, _   ) => INSTR_TABLE_ED[i1 as usize],
             (_   , _   ) => INSTR_TABLE[i0 as usize],
+        };
+
+        let accessed_regs = next_instr.get_accessed_regs();
+        self.pre_regs = accessed_regs.0;
+        self.post_regs = accessed_regs.1;
+
+        self.instruction = next_instr.get_string(&self.cpu.borrow(), &self.memory.borrow());
+    }
+
+    fn print_pre(&self) {
+        println!("{}", self.output(self.pre_regs));
+        println!("{}", self.instruction);
+    }
+
+    pub fn pre(&mut self) {
+        match self.mode {
+            Mode::Normal => {
+                loop {
+                    print!("z80> ");
+                    stdout().flush().unwrap();
+
+                    let mut input = String::new();
+                    stdin().read_line(&mut input).unwrap();
+                    let input: String = input.trim().into();
+
+                    match input.parse() {
+                        Ok(Command::Exit) => {
+                            process::exit(0);
+                        }
+
+                        Ok(Command::Cont) => {
+                            self.mode = Mode::Cont;
+                            self.decode_next_instruction();
+                            self.print_pre();
+                            break;
+                        }
+
+                        Ok(Command::Step(count)) if count > 0 => {
+                            self.mode = Mode::Step(count);
+                            self.decode_next_instruction();
+                            self.print_pre();
+                            break;
+                        }
+
+                        Ok(Command::MemRng(addrstart, addrend)) => {
+                            let realaddrstart =
+                                if addrstart % 16 == 0 {
+                                    addrstart
+                                } else {
+                                    addrstart - (addrstart % 16)
+                                };
+                            let realaddrend =
+                                if addrend % 16 == 0 {
+                                    addrend
+                                } else {
+                                    addrend + (16 - (addrend % 16))
+                                };
+                            for addr in realaddrstart..realaddrend {
+                                if addr % 16 == 0 {
+                                    println!();
+                                    print!("{:#06X}: ", addr);
+                                }
+                                print!("{:02X} ", self.memory.borrow().read_word(addr));
+                            }
+                            println!();
+                        }
+
+                        Ok(Command::Mem(addr)) => {
+                            println!("{:#04X}", self.memory.borrow().read_word(addr));
+                        }
+
+                        _ => println!("Unknown command"),
+                    }
+                }
+            }
+            Mode::Cont => {
+                self.print_pre();
+            }
+            Mode::Step(_) => {
+                self.print_pre();
+            }
         }
     }
 
-    pub fn run(&mut self) {
-        loop {
-            print!("z80> ");
-            stdout().flush().unwrap();
+    fn print_post(&self) {
+        println!("{}", self.output(self.post_regs));
+    }
 
-            let mut input = String::new();
-            stdin().read_line(&mut input).unwrap();
-            let input: String = input.trim().into();
-
-            match input.parse() {
-                Ok(Command::Exit) => break,
-
-                Ok(Command::Cont) => {
-                    loop {
-                        let (pre_regs, post_regs, instr_str) = {
-                            let next_instr = self.peek_at_next_instruction();
-                            let accessed_regs = next_instr.get_accessed_regs();
-                            (accessed_regs.0,
-                             accessed_regs.1,
-                             next_instr.get_string(&self.cpu.borrow(), &self.memory.borrow()))
-                        };
-                        println!("{}", self.output(pre_regs));
-                        println!("{}", instr_str);
-                        self.cpu.borrow_mut().handle_interrupts();
-                        self.cpu.borrow_mut().run_instruction();
-                        println!("{}", self.output(post_regs));
-                    }
+    pub fn post(&mut self) {
+        match self.mode {
+            Mode::Normal => {
+            }
+            Mode::Cont => {
+                self.print_post();
+            }
+            Mode::Step(count) => {
+                self.print_post();
+                if count == 1 {
+                    self.mode = Mode::Normal;
+                } else {
+                    self.mode = Mode::Step(count - 1);
                 }
-
-                Ok(Command::Step(count)) if count > 0 => {
-                    for _ in 0..count {
-                        let (pre_regs, post_regs, instr_str) = {
-                            let next_instr = self.peek_at_next_instruction();
-                            let accessed_regs = next_instr.get_accessed_regs();
-                            (accessed_regs.0,
-                             accessed_regs.1,
-                             next_instr.get_string(&self.cpu.borrow(), &self.memory.borrow()))
-                        };
-                        println!("{}", self.output(pre_regs));
-                        println!("{}", instr_str);
-                        self.cpu.borrow_mut().handle_interrupts();
-                        self.cpu.borrow_mut().run_instruction();
-                        println!("{}", self.output(post_regs));
-                    }
-                }
-
-                Ok(Command::MemRng(addrstart, addrend)) => {
-                    let realaddrstart =
-                        if addrstart % 16 == 0 {
-                            addrstart
-                        } else {
-                            addrstart - (addrstart % 16)
-                        };
-                    let realaddrend =
-                        if addrend % 16 == 0 {
-                            addrend
-                        } else {
-                            addrend + (16 - (addrend % 16))
-                        };
-                    for addr in realaddrstart..realaddrend {
-                        if addr % 16 == 0 {
-                            println!();
-                            print!("{:#06X}: ", addr);
-                        }
-                        print!("{:02X} ", self.memory.borrow().read_word(addr));
-                    }
-                    println!();
-                }
-
-                Ok(Command::Mem(addr)) => println!("{:#04X}", self.memory.borrow().read_word(addr)),
-
-                _ => println!("Unknown command"),
-            };
+            }
         }
     }
 }

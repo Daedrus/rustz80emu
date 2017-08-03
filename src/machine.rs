@@ -44,16 +44,17 @@ impl Machine {
     }
 
     pub fn run(&self) {
-        if self.debug_on {
-            let mut debugger = Debugger::new(
-                self.cpu.clone(),
-                self.memory.clone());
-            debugger.run();
-        } else {
-            loop {
-                self.cpu.borrow_mut().handle_interrupts();
-                self.cpu.borrow_mut().run_instruction();
-            }
+        let mut debugger = Debugger::new(
+            self.cpu.clone(),
+            self.memory.clone());
+
+        loop {
+            if self.debug_on { debugger.pre(); }
+
+            self.cpu.borrow_mut().handle_interrupts();
+            self.cpu.borrow_mut().run_instruction();
+
+            if self.debug_on { debugger.post(); }
         }
     }
 }
