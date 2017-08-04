@@ -9,10 +9,14 @@ use std::path::Path;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+extern crate sdl2;
+use sdl2::pixels::PixelFormatEnum;
+use sdl2::rect::Rect;
 
 pub struct Machine {
     cpu: Rc<RefCell<Cpu>>,
     memory: Rc<RefCell<Memory>>,
+    ula: Rc<RefCell<Ula>>,
     debug_on: bool,
 }
 
@@ -39,6 +43,7 @@ impl Machine {
         Machine {
             cpu: cpu,
             memory: memory,
+            ula: ula,
             debug_on: start_in_debug,
         }
     }
@@ -48,11 +53,33 @@ impl Machine {
             self.cpu.clone(),
             self.memory.clone());
 
+        let sdl_context = sdl2::init().unwrap();
+        let video_subsystem = sdl_context.video().unwrap();
+
+        let window = video_subsystem.window("rustz80emu", 256, 192)
+            .position_centered()
+            .build()
+            .unwrap();
+
+        let mut canvas = window.into_canvas().build().unwrap();
+
+        let texture_creator = canvas.texture_creator();
+        let mut texture = texture_creator.create_texture_streaming(
+            PixelFormatEnum::RGB24, 256, 192).unwrap();
+
         loop {
             if self.debug_on { debugger.pre(); }
 
             self.cpu.borrow_mut().handle_interrupts();
             self.cpu.borrow_mut().run_instruction();
+
+            if self.cpu.borrow().tcycles > 70800 {
+                self.ula.borrow().display(&mut texture);
+
+                canvas.clear();
+                canvas.copy(&texture, None, Some(Rect::new(0, 0, 256, 192))).unwrap();
+                canvas.present();
+            }
 
             if self.debug_on { debugger.post(); }
         }

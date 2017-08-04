@@ -1,6 +1,6 @@
 [package]
 name = "rustz80emu"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Andrei Faur <da3drus@gmail.com>"]
 license = "MIT"
 
@@ -14,6 +14,7 @@ bincode = "*"
 rustc-serialize = "*"
 nom = "*"
 text_io = "*"
+sdl2 = "*"
 
 [features]
 # This feature is only meant to be used by the fuse tests

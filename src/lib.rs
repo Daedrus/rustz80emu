@@ -7,6 +7,7 @@ extern crate rustc_serialize;
 extern crate bincode;
 #[macro_use]
 extern crate nom;
+extern crate sdl2;
 
 pub mod cpu;
 pub mod interconnect;
