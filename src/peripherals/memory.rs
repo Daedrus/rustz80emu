@@ -50,8 +50,6 @@ impl Memory {
                     }
                     _ => unreachable!(),
                 }
-            } else {
-                panic!("Trying to write to unrecognized address: {:#x}", addr);
             }
         }
     }
