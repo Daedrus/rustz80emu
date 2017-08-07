@@ -8,6 +8,8 @@ extern crate bincode;
 #[macro_use]
 extern crate nom;
 extern crate sdl2;
+#[macro_use]
+extern crate lazy_static;
 
 pub mod cpu;
 pub mod interconnect;
