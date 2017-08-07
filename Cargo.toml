@@ -1,6 +1,6 @@
 [package]
 name = "rustz80emu"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Andrei Faur <da3drus@gmail.com>"]
 license = "MIT"
 
