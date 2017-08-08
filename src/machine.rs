@@ -180,7 +180,7 @@ impl Machine {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
 
-        let window = video_subsystem.window("rustz80emu", 256, 192)
+        let window = video_subsystem.window("rustz80emu", 512, 384)
             .position_centered()
             .build()
             .unwrap();
@@ -227,7 +227,7 @@ impl Machine {
                 self.ula.borrow().display(&mut texture);
 
                 canvas.clear();
-                canvas.copy(&texture, None, Some(Rect::new(0, 0, 256, 192))).unwrap();
+                canvas.copy(&texture, None, Some(Rect::new(0, 0, 512, 384))).unwrap();
                 canvas.present();
             }
 
