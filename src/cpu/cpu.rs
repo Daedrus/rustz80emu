@@ -362,7 +362,6 @@ impl Cpu {
         self.im
     }
 
-    // TODO: Properly model halting
     pub fn halt(&mut self) {
         self.halted = true;
     }
@@ -409,11 +408,16 @@ impl Cpu {
         }
     }
 
-    pub fn handle_interrupts(&mut self) -> bool {
+    pub fn handle_interrupts(&mut self) {
         if self.tcycles >= 70908 {
             self.tcycles -= 70908;
 
             if self.iff1 {
+                if self.is_halted() {
+                    self.inc_pc(1);
+                    self.resume();
+                }
+
                 self.clear_iff1();
                 self.clear_iff2();
                 self.inc_r(1);
@@ -443,9 +447,6 @@ impl Cpu {
                     }
                 }
             }
-            true
-        } else {
-            false
         }
     }
 

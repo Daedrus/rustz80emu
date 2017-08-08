@@ -223,16 +223,16 @@ impl Machine {
 
             if self.debug_on { debugger.pre(); }
 
-            self.cpu.borrow_mut().handle_interrupts();
-            self.cpu.borrow_mut().run_instruction();
-
-            if self.cpu.borrow().tcycles > 70800 {
+            if self.cpu.borrow().tcycles > 70908 {
                 self.ula.borrow().display(&mut texture);
 
                 canvas.clear();
                 canvas.copy(&texture, None, Some(Rect::new(0, 0, 256, 192))).unwrap();
                 canvas.present();
             }
+
+            self.cpu.borrow_mut().handle_interrupts();
+            self.cpu.borrow_mut().run_instruction();
 
             if self.debug_on { debugger.post(); }
         }
