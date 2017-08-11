@@ -16,6 +16,8 @@ nom = "*"
 text_io = "*"
 sdl2 = "*"
 lazy_static = "*"
+getopts = "*"
+
 
 [features]
 # This feature is only meant to be used by the fuse tests

@@ -1,7 +1,7 @@
 run:
 	cargo run --release
 run_with_debugger:
-	cargo run --release start_in_debug
+	cargo run --release -- --debug
 
 test_zex:
 	cargo test test_zex --release -- --nocapture
