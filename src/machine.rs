@@ -165,9 +165,9 @@ impl Machine {
         let cpu = Rc::new(RefCell::new(Cpu::new(interconnect)));
 
         Machine {
-            cpu: cpu,
-            memory: memory,
-            ula: ula,
+            cpu,
+            memory,
+            ula,
             debug_on: start_in_debug,
         }
     }

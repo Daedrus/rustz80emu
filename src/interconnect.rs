@@ -31,9 +31,9 @@ impl Interconnect {
         let ula_contention_no_mreq = include_bytes!("peripherals/ulacontentionnomreq.bin");
 
         Interconnect {
-            memory: memory,
-            ay: ay,
-            ula: ula,
+            memory,
+            ay,
+            ula,
             ula_contention: ula_contention.to_vec(),
             ula_contention_no_mreq: ula_contention_no_mreq.to_vec(),
         }

@@ -95,7 +95,7 @@ pub struct Ula {
 impl Ula {
     pub fn new(memory: Rc<RefCell<Memory>>) -> Self {
         Ula { value: 0,
-              memory: memory,
+              memory,
               keyboard_ports: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
         }
     }

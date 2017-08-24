@@ -217,8 +217,8 @@ pub struct Debugger {
 impl Debugger {
     pub fn new(cpu: Rc<RefCell<Cpu>>, memory: Rc<RefCell<Memory>>) -> Self {
         Debugger {
-            cpu: cpu,
-            memory: memory,
+            cpu,
+            memory,
             mode: Mode::Normal,
 
             pre_regs: ONONE,
