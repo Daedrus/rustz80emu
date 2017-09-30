@@ -2,6 +2,7 @@ use ::interconnect::*;
 use ::peripherals::*;
 use ::cpu::*;
 use ::debugger::*;
+use ::snapshot::*;
 use ::utils::read_bin;
 
 use std::path::Path;
@@ -145,6 +146,55 @@ pub struct Machine {
 }
 
 impl Machine {
+    pub fn from_snapshot(start_in_debug: bool, header: &Z80Header, mut data: Vec<u8>) -> Self {
+        // TODO ROM detection based on snapshot
+        let rom0 = read_bin(Path::new("./roms/48.rom"));
+        let bank0 = data.split_off(2 * 16 * 1024).into_boxed_slice();
+        let bank2 = data.split_off(16 * 1024).into_boxed_slice();
+        let bank5 = data.into_boxed_slice();
+        let memory = Rc::new(RefCell::new(MemoryBuilder::new()
+            .rom0(rom0)
+            .bank0(bank0)
+            .bank2(bank2)
+            .bank5(bank5)
+            .finalize()));
+
+        let ay = Rc::new(RefCell::new(Ay::new()));
+        let ula = Rc::new(RefCell::new(Ula::new(memory.clone())));
+
+        let interconnect = Interconnect::new(
+            memory.clone(),
+            ay.clone(),
+            ula.clone());
+
+        let cpu = Rc::new(RefCell::new(Cpu::new(interconnect)));
+        cpu.borrow_mut().write_reg8(Reg8::A, header.a);
+        cpu.borrow_mut().set_all_flags(header.f);
+        cpu.borrow_mut().write_reg16(Reg16::BC, header.bc);
+        cpu.borrow_mut().write_reg16(Reg16::HL, header.hl);
+        cpu.borrow_mut().set_pc(header.pc);
+        cpu.borrow_mut().write_reg16(Reg16::SP, header.sp);
+        cpu.borrow_mut().write_reg8(Reg8::I, header.ir);
+        cpu.borrow_mut().write_reg8(Reg8::R, header.r);
+        cpu.borrow_mut().write_reg16(Reg16::DE, header.de);
+        cpu.borrow_mut().write_reg16(Reg16::BC_ALT, header.bc_alt);
+        cpu.borrow_mut().write_reg16(Reg16::DE_ALT, header.de_alt);
+        cpu.borrow_mut().write_reg16(Reg16::HL_ALT, header.hl_alt);
+        cpu.borrow_mut().write_reg16(Reg16::AF_ALT, header.af_alt);
+        cpu.borrow_mut().write_reg16(Reg16::IX, header.ix);
+        cpu.borrow_mut().write_reg16(Reg16::IY, header.iy);
+        if header.iff1 { cpu.borrow_mut().set_iff1() }
+        if header.iff2 { cpu.borrow_mut().set_iff2() }
+        cpu.borrow_mut().set_im(header.misc2 & 0x03);
+
+        Machine {
+            cpu,
+            memory,
+            ula,
+            debug_on: start_in_debug,
+        }
+    }
+
     pub fn new(start_in_debug: bool) -> Self {
         let rom0 = read_bin(Path::new("./roms/128-0.rom"));
         let rom1 = read_bin(Path::new("./roms/128-1.rom"));

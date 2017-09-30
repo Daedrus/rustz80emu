@@ -164,6 +164,21 @@ impl MemoryBuilder {
         self
     }
 
+    pub fn bank0(mut self, mem: Box<[u8]>) -> MemoryBuilder {
+        self.bank[0] = mem;
+        self
+    }
+
+    pub fn bank2(mut self, mem: Box<[u8]>) -> MemoryBuilder {
+        self.bank[2] = mem;
+        self
+    }
+
+    pub fn bank5(mut self, mem: Box<[u8]>) -> MemoryBuilder {
+        self.bank[5] = mem;
+        self
+    }
+
     pub fn writable_rom(mut self, val: bool) -> MemoryBuilder {
         self.writable_rom = val;
         self

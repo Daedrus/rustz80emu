@@ -17,4 +17,5 @@ pub mod peripherals;
 pub mod debugger;
 pub mod utils;
 pub mod machine;
+pub mod snapshot;
 
