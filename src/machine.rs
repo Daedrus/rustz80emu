@@ -168,8 +168,7 @@ impl Machine {
             ula.clone());
 
         let cpu = Rc::new(RefCell::new(Cpu::new(interconnect)));
-        cpu.borrow_mut().write_reg8(Reg8::A, header.a);
-        cpu.borrow_mut().set_all_flags(header.f);
+        cpu.borrow_mut().write_reg16(Reg16::AF, header.af);
         cpu.borrow_mut().write_reg16(Reg16::BC, header.bc);
         cpu.borrow_mut().write_reg16(Reg16::HL, header.hl);
         cpu.borrow_mut().set_pc(header.pc);

@@ -372,9 +372,6 @@ impl Cpu {
         self.halted
     }
 
-    pub fn set_all_flags(&mut self, flags: u8) {
-        self.f = StatusIndicatorFlags::from_bits_truncate(flags);
-    }
     pub fn set_flag(&mut self, flag: StatusIndicatorFlags) {
         self.f.insert(flag);
     }

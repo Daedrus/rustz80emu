@@ -2,8 +2,7 @@ use nom::{IResult, be_u8, be_u16, le_u16};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Z80Header {
-    pub a: u8,
-    pub f: u8,
+    pub af: u16,
     pub bc: u16,
     pub hl: u16,
     pub pc: u16,
@@ -38,8 +37,7 @@ named!(
 
 pub fn header(input:&[u8]) -> IResult<&[u8], (Z80Header, Vec<u8>)> {
     do_parse!(input,
-      a: be_u8 >>
-      f: be_u8 >>
+      af: le_u16 >>
       bc: le_u16 >>
       hl: le_u16 >>
       pc: le_u16 >>
@@ -71,8 +69,7 @@ pub fn header(input:&[u8]) -> IResult<&[u8], (Z80Header, Vec<u8>)> {
      (
        (
         Z80Header {
-          a,
-          f,
+          af,
           bc,
           hl,
           pc,
